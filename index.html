@@ -7,7 +7,7 @@
   <meta name="description" content="LoggX erstellt moderne, schnelle Webseiten für kleine und mittlere Unternehmen. Persönliche Betreuung von Constantin Moritz Loggen – von der Idee bis zum Livegang.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23122B45'/%3E%3Cpath d='M9 9l14 14M23 9L9 23' stroke='%23FFD166' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 </head>
@@ -16,6 +16,7 @@
   <a class="skip-link" href="#main">Zum Inhalt springen</a>
 
   <header class="site-header">
+    <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
     <div class="container header-inner">
       <a href="#top" class="brand" aria-label="LoggX Startseite">
         <span class="brand-mark" aria-hidden="true">
@@ -47,16 +48,20 @@
     <section class="hero" id="top">
       <div class="container hero-grid">
         <div class="hero-copy">
-          <h1>Ihre Webseite.<br>Gebaut für Kunden,<br>nicht nur für Google.</h1>
-          <p class="hero-lead">
+          <h1 class="hero-title">
+            <span class="hero-line">Webseiten für</span>
+            <span class="hero-line rotator-wrap"><span class="rotator" id="rotator" aria-live="polite">Praxen</span></span>
+            <span class="hero-line">die Anfragen bringen.</span>
+          </h1>
+          <p class="hero-lead hero-in" style="--d:.55s">
             LoggX aus Osnabrück entwickelt schnelle, klare Webseiten für Praxen, Studios,
             Handwerk und Dienstleister. Ein Ansprechpartner, ein Festpreis, ein fertiges Ergebnis.
           </p>
-          <div class="hero-actions">
+          <div class="hero-actions hero-in" style="--d:.7s">
             <a href="#kontakt" class="btn btn-primary">Kostenloses Erstgespräch</a>
             <a href="#leistungen" class="btn btn-ghost">Was ich anbiete</a>
           </div>
-          <dl class="hero-facts">
+          <dl class="hero-facts hero-in" style="--d:.85s">
             <div><dt>Lieferzeit</dt><dd>ab 14 Tagen</dd></div>
             <div><dt>Preis</dt><dd>fest, vorab</dd></div>
             <div><dt>Betreuung</dt><dd>persönlich</dd></div>
@@ -119,11 +124,17 @@
 
         <div class="references">
           <article class="reference">
-            <a class="reference-frame" href="https://www.dr-loggen.de/" target="_blank" rel="noopener" aria-label="dr-loggen.de öffnen">
+            <a class="reference-frame" href="https://www.dr-loggen.de/" data-preview="https://www.dr-loggen.de/" data-title="Zahnarztpraxis Dr. Loggen" target="_blank" rel="noopener" aria-label="Vorschau von dr-loggen.de öffnen">
               <span class="frame-bar" aria-hidden="true"><span></span><span></span><span></span><em>dr-loggen.de</em></span>
               <span class="frame-body">
                 <span class="frame-title">Zahnarztpraxis<br>Dr. Loggen</span>
                 <span class="frame-sub">Bissendorf bei Osnabrück</span>
+                <img class="frame-shot" src="img/dr-loggen.jpg" alt="Startseite der Zahnarztpraxis Dr. Loggen" loading="lazy"
+                     data-fallback="https://image.thum.io/get/width/1200/crop/750/https://www.dr-loggen.de/">
+                <span class="frame-hint" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Vorschau öffnen
+                </span>
               </span>
             </a>
             <div class="reference-copy">
@@ -135,16 +146,25 @@
                 <li>Online-Termine</li>
                 <li>6 Unterseiten</li>
               </ul>
-              <a href="https://www.dr-loggen.de/" target="_blank" rel="noopener" class="reference-link">dr-loggen.de ansehen</a>
+              <div class="reference-actions">
+                <button type="button" class="btn btn-primary" data-preview="https://www.dr-loggen.de/" data-title="Zahnarztpraxis Dr. Loggen">Live-Vorschau</button>
+                <a href="https://www.dr-loggen.de/" target="_blank" rel="noopener" class="reference-link">dr-loggen.de ↗</a>
+              </div>
             </div>
           </article>
 
           <article class="reference">
-            <a class="reference-frame" href="https://www.fitness4fun.de/" target="_blank" rel="noopener" aria-label="fitness4fun.de öffnen">
+            <a class="reference-frame" href="https://www.fitness4fun.de/" data-preview="https://www.fitness4fun.de/" data-title="4 fun Fitness &amp; Beauty" data-embed="false" target="_blank" rel="noopener" aria-label="Vorschau von fitness4fun.de öffnen">
               <span class="frame-bar" aria-hidden="true"><span></span><span></span><span></span><em>fitness4fun.de</em></span>
               <span class="frame-body">
                 <span class="frame-title">4 fun<br>Fitness &amp; Beauty</span>
                 <span class="frame-sub">Hasbergen</span>
+                <img class="frame-shot" src="img/fitness4fun.jpg" alt="Startseite von 4 fun Fitness & Beauty" loading="lazy"
+                     data-fallback="https://image.thum.io/get/width/1200/crop/750/https://www.fitness4fun.de/">
+                <span class="frame-hint" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Vorschau öffnen
+                </span>
               </span>
             </a>
             <div class="reference-copy">
@@ -156,7 +176,10 @@
                 <li>Kursplan</li>
                 <li>Angebotsformular</li>
               </ul>
-              <a href="https://www.fitness4fun.de/" target="_blank" rel="noopener" class="reference-link">fitness4fun.de ansehen</a>
+              <div class="reference-actions">
+                <button type="button" class="btn btn-primary" data-preview="https://www.fitness4fun.de/" data-title="4 fun Fitness &amp; Beauty" data-embed="false">Vorschau</button>
+                <a href="https://www.fitness4fun.de/" target="_blank" rel="noopener" class="reference-link">fitness4fun.de ↗</a>
+              </div>
             </div>
           </article>
         </div>
@@ -336,13 +359,19 @@
             mit einem Terminvorschlag für ein kostenloses Erstgespräch.
           </p>
           <address class="contact-details">
-            <a href="mailto:kontakt@loggx.de">kontakt@loggx.de</a>
+            <a href="mailto:constantinloggen@icloud.com">constantinloggen@icloud.com</a>
             <a href="tel:+490000000000">+49 (0) 000 000 00 00</a>
             <span>Zum Himmelreich 5<br>49082 Osnabrück</span>
           </address>
         </div>
 
-        <form class="contact-form" id="contact-form" novalidate>
+        <form class="contact-form" id="contact-form" action="https://formsubmit.co/constantinloggen@icloud.com" method="post" novalidate>
+          <!-- Versand-Einstellungen (FormSubmit) -->
+          <input type="hidden" name="_subject" value="Neue Anfrage über loggx.de">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_captcha" value="false">
+          <input type="hidden" name="_next" id="form-next" value="">
+          <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
           <div class="field">
             <label for="name">Ihr Name</label>
             <input type="text" id="name" name="name" autocomplete="name" required>
@@ -378,13 +407,102 @@
             <label for="privacy">Ich habe die <a href="datenschutz.html">Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Daten einverstanden.</label>
             <span class="field-error" aria-live="polite"></span>
           </div>
-          <button type="submit" class="btn btn-primary btn-block">Anfrage senden</button>
+          <button type="submit" class="btn btn-primary btn-block" id="form-submit">Anfrage senden</button>
           <p class="form-status" id="form-status" aria-live="polite"></p>
         </form>
       </div>
     </section>
 
   </main>
+
+  <!-- Live-Vorschau -->
+  <div class="preview" id="preview" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
+    <div class="preview-backdrop" data-preview-close></div>
+    <div class="preview-panel">
+      <header class="preview-head">
+        <div class="preview-meta">
+          <strong id="preview-title">Vorschau</strong>
+          <span id="preview-url"></span>
+        </div>
+        <div class="preview-devices" role="group" aria-label="Ansicht wählen">
+          <button type="button" class="device-btn is-active" data-device="desktop" aria-pressed="true">
+            <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Desktop
+          </button>
+          <button type="button" class="device-btn" data-device="phone" aria-pressed="false">
+            <svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Handy
+          </button>
+        </div>
+        <a id="preview-open" class="btn btn-ghost btn-small" href="#" target="_blank" rel="noopener">Neuer Tab ↗</a>
+        <button type="button" class="preview-close" data-preview-close aria-label="Vorschau schließen">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="preview-stage" id="preview-stage" data-device="desktop">
+        <div class="device">
+          <div class="device-loader" id="preview-loader"><span></span></div>
+          <iframe id="preview-frame" title="Live-Vorschau der Webseite" loading="lazy" referrerpolicy="no-referrer"></iframe>
+          <div class="device-shot" id="preview-shot" hidden>
+            <img id="preview-shot-img" alt="Screenshot der Webseite">
+            <p class="device-shot-error" id="preview-shot-error" hidden>Screenshot konnte nicht geladen werden – bitte „Neuer Tab“ nutzen.</p>
+          </div>
+        </div>
+      </div>
+      <p class="preview-note" id="preview-note">Live-Ansicht der Webseite. Sie können darin scrollen und klicken.</p>
+    </div>
+  </div>
+
+  <!-- Cookie-Hinweis -->
+  <div class="cookie" id="cookie" role="dialog" aria-modal="false" aria-labelledby="cookie-title" hidden>
+    <div class="cookie-box">
+      <div class="cookie-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-4-4 4 4 0 0 1-4-4 3 3 0 0 1-2-2z"/><circle cx="8" cy="10" r="1.2"/><circle cx="10" cy="15" r="1.2"/><circle cx="15" cy="15" r="1.2"/></svg>
+      </div>
+      <div class="cookie-text">
+        <strong id="cookie-title">Cookies auf dieser Webseite</strong>
+        <p>Ich nutze notwendige Cookies, damit die Seite funktioniert. Optional helfen mir Statistik-Cookies zu verstehen, wie die Seite genutzt wird. Details in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
+      </div>
+
+      <div class="cookie-options" id="cookie-options" hidden>
+        <label class="cookie-option">
+          <input type="checkbox" checked disabled>
+          <span><strong>Notwendig</strong><small>Speichert Ihre Cookie-Auswahl. Immer aktiv.</small></span>
+        </label>
+        <label class="cookie-option">
+          <input type="checkbox" id="cookie-stats">
+          <span><strong>Statistik</strong><small>Anonyme Besucherzahlen, um die Seite zu verbessern.</small></span>
+        </label>
+      </div>
+
+      <div class="cookie-actions">
+        <button type="button" class="btn btn-ghost btn-small" id="cookie-settings">Einstellungen</button>
+        <button type="button" class="btn btn-ghost btn-small" id="cookie-necessary">Nur notwendige</button>
+        <button type="button" class="btn btn-primary btn-small" id="cookie-accept">Alle akzeptieren</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="mobile-bar" aria-label="Schnellnavigation">
+    <a href="#top" data-target="top">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+      <span>Start</span>
+    </a>
+    <a href="#leistungen" data-target="leistungen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+      <span>Leistungen</span>
+    </a>
+    <a href="#referenzen" data-target="referenzen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18" stroke-width="2"/></svg>
+      <span>Referenzen</span>
+    </a>
+    <a href="#preise" data-target="preise">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="8" cy="8" r="1.6"/></svg>
+      <span>Preise</span>
+    </a>
+    <a href="#kontakt" data-target="kontakt" class="mobile-bar-cta">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l2-6 12-12 4 4L8 18z"/><path d="M14 4l4 4" stroke-width="2"/></svg>
+      <span>Anfrage</span>
+    </a>
+  </nav>
 
   <footer class="site-footer">
     <div class="container footer-inner">
@@ -395,6 +513,7 @@
       <nav class="footer-nav" aria-label="Rechtliches">
         <a href="impressum.html">Impressum</a>
         <a href="datenschutz.html">Datenschutz</a>
+        <a href="#" id="cookie-reopen">Cookie-Einstellungen</a>
         <a href="#top">Nach oben</a>
       </nav>
       <p class="footer-copy">© <span id="year"></span> LoggX</p>
