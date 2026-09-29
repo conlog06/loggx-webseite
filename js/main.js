@@ -464,3 +464,148 @@
     });
   }
 })();
+
+
+/* --- NEUE FEATURES LOGIK (SYSTEM DARK MODE) --- */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Systemerkennung & Dark Mode Logik
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    // Ermittle das aktuelle Theme (Nutzer-Auswahl geht vor System-Einstellung)
+    const getCurrentTheme = () => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            return savedTheme;
+        }
+        return prefersDarkScheme.matches ? 'dark' : 'light';
+    };
+
+    // Theme setzen (HTML Attribut)
+    const applyTheme = (theme) => {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+    };
+
+    let currentTheme = getCurrentTheme();
+    applyTheme(currentTheme);
+
+    // Floating Button erstellen
+    const themeToggle = document.createElement('button');
+    themeToggle.className = 'theme-btn-floating';
+    themeToggle.innerHTML = currentTheme === 'dark' ? '<span class="theme-icon">☀️</span><span class="theme-text">Hell</span>' : '<span class="theme-icon">🌓</span><span class="theme-text">Dunkel</span>';
+    document.body.appendChild(themeToggle);
+
+    // Manueller Wechsel durch Klick
+    themeToggle.addEventListener('click', () => {
+        currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(currentTheme);
+        localStorage.setItem('theme', currentTheme); // Präferenz speichern
+        themeToggle.innerHTML = currentTheme === 'dark' ? '<span class="theme-icon">☀️</span><span class="theme-text">Hell</span>' : '<span class="theme-icon">🌓</span><span class="theme-text">Dunkel</span>';
+    });
+
+    // Lauschen, ob sich die Systemeinstellung ändert (nur anwenden, wenn der Nutzer nichts manuell überschrieben hat)
+    prefersDarkScheme.addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            currentTheme = e.matches ? 'dark' : 'light';
+            applyTheme(currentTheme);
+            themeToggle.innerHTML = currentTheme === 'dark' ? '<span class="theme-icon">☀️</span><span class="theme-text">Hell</span>' : '<span class="theme-icon">🌓</span><span class="theme-text">Dunkel</span>';
+        }
+    });
+
+    // 2. Scroll Animationen (Intersection Observer)
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+    };
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    // Animation auf Sektionen anwenden
+    document.querySelectorAll('section, article, .footer-inner').forEach(element => {
+        element.classList.add('fade-in');
+        observer.observe(element);
+    });
+});
+
+
+/* --- 5 NEUE FEATURE-SKRIPTE --- */
+document.addEventListener('DOMContentLoaded', () => {
+    // Feature 1 Neu: Paket-Berater
+    window.nextAdv = function(needsComplex) {
+        if(needsComplex) {
+            showResult('Individuell');
+        } else {
+            document.getElementById('adv-q1').style.display = 'none';
+            document.getElementById('adv-q2').style.display = 'block';
+        }
+    };
+    window.showResult = function(plan) {
+        document.getElementById('adv-q1').style.display = 'none';
+        document.getElementById('adv-q2').style.display = 'none';
+        document.getElementById('adv-res').style.display = 'block';
+        document.getElementById('adv-result-title').textContent = 'Paket: ' + plan;
+        
+        // Übernimmt das Paket auch direkt ins Formular, falls vorhanden
+        const planSelect = document.getElementById('plan');
+        if(planSelect) {
+            const match = Array.from(planSelect.options).find(o => o.value === plan || o.text === plan);
+            if (match) planSelect.value = match.value;
+        }
+    };
+    window.resetAdv = function() {
+        document.getElementById('adv-q1').style.display = 'block';
+        document.getElementById('adv-q2').style.display = 'none';
+        document.getElementById('adv-res').style.display = 'none';
+    };
+
+    // Feature 2: Farb-Akzent-Umschalter
+    const accentDots = document.querySelectorAll('.accent-dot');
+    const savedAccent = localStorage.getItem('loggx_accent');
+    if (savedAccent) {
+        document.documentElement.style.setProperty('--accent', savedAccent);
+    }
+
+    accentDots.forEach(dot => {
+        dot.addEventListener('click', () => {
+            const color = dot.getAttribute('data-color');
+            if (color) {
+                document.documentElement.style.setProperty('--accent', color);
+                localStorage.setItem('loggx_accent', color);
+            }
+        });
+    });
+
+    // Feature 3: Text-to-Speech Vorlese-Funktion
+    const ttsBtn = document.getElementById('tts-speak-btn');
+    if (ttsBtn && 'speechSynthesis' in window) {
+        ttsBtn.addEventListener('click', () => {
+            window.speechSynthesis.cancel();
+            const textToSpeak = "LoggX aus Osnabrück entwickelt schnelle, klare Webseiten für Praxen, Studios, Handwerk und Dienstleister. Ein Ansprechpartner, ein Festpreis, ein fertiges Ergebnis.";
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'de-DE';
+            utterance.rate = 1.0;
+            
+            ttsBtn.style.opacity = '0.7';
+            ttsBtn.querySelector('span').textContent = 'Liest vor …';
+            
+            utterance.onend = () => {
+                ttsBtn.style.opacity = '1';
+                ttsBtn.querySelector('span').textContent = 'Einleitung vorlesen lassen (Audio)';
+            };
+            window.speechSynthesis.speak(utterance);
+        });
+    } else if (ttsBtn) {
+        ttsBtn.style.display = 'none'; // Verstecken, falls Browser es nicht unterstützt
+    }
+});

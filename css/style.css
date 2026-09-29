@@ -756,3 +756,187 @@ body.preview-open { overflow: hidden; }
   body { padding-bottom: 76px; }
   .site-nav { padding-bottom: 5rem; }
 }
+
+
+/* --- BESSERER DARK MODE & ANIMATIONEN --- */
+
+/* Überschreibe die bestehenden Farbvariablen der Vorlage für den Dark Mode */
+[data-theme="dark"] {
+    --bg: #0f172a;           /* Sehr dunkles Blau/Grau als Hintergrund */
+    --bg-tint: #1e293b;      /* Etwas helleres Grau für leicht abgesetzte Bereiche */
+    --ink: #f1f5f9;          /* Sehr heller Text (fast weiß) */
+    --ink-soft: #cbd5e1;     /* Etwas weicherer, hellgrauer Text */
+    --muted: #94a3b8;        /* Abgeschwächter Text */
+    --line: #334155;         /* Trennlinien und Rahmen dunkel */
+    --white: #1e293b;        /* Karten-Hintergründe, Navigationsleiste etc. dunkel anpassen */
+    --accent: #60a5fa;       /* Helles Blau für bessere Sichtbarkeit bei Links/Buttons */
+    --accent-deep: #3b82f6;
+}
+
+body {
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.site-header {
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+    background: var(--white); /* Passt sich nun auch an */
+}
+
+.theme-btn-floating {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--white);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    padding: 10px 16px;
+    border-radius: 50px;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.theme-btn-floating:hover {
+    transform: scale(1.05);
+    border-color: var(--accent);
+}
+
+.fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+.fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Anpassungen für den Dark Mode Button auf Handys */
+.theme-btn-floating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+@media (max-width: 760px) {
+    .theme-btn-floating {
+        bottom: 90px; /* Rückt den Button über die untere Handy-Navigation */
+        padding: 0;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        justify-content: center;
+    }
+    .theme-btn-floating .theme-text {
+        display: none; /* Versteckt den Text am Handy, zeigt nur Icon */
+    }
+    .theme-btn-floating .theme-icon {
+        font-size: 20px;
+        line-height: 1;
+    }
+}
+
+/* Fix für Dark Mode Sektionen mit festem Dark Hintergrund */
+[data-theme="dark"] .section-dark {
+    background: #090d16 !important;
+    color: #f1f5f9 !important;
+}
+[data-theme="dark"] .contact-form {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+[data-theme="dark"] .contact-form input,
+[data-theme="dark"] .contact-form select,
+[data-theme="dark"] .contact-form textarea {
+    background: #0f172a !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+}
+
+/* Styles für die 5 neuen Features */
+/* 1. ROI / Rechner */
+.calc-box {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 10px 30px -15px rgba(0,0,0,0.1);
+}
+.calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+@media(max-width: 760px) { .calc-grid { grid-template-columns: 1fr; gap: 1rem; } }
+.calc-slider { width: 100%; accent-color: var(--accent); margin: .75rem 0; }
+.calc-result {
+    background: var(--bg-tint);
+    padding: 1.5rem;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+.calc-number { font-size: 2rem; font-weight: 800; color: var(--accent); font-family: var(--font-display); }
+
+/* 2. Accent Switcher (Farbauswahl) */
+.accent-switcher {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 1rem;
+}
+.accent-dot {
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--white);
+    cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.2s;
+}
+.accent-dot:hover { transform: scale(1.2); }
+
+/* 3. Live-Estimator Modal / Widget */
+.estimator-modal {
+    position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+    display: grid; place-items: center; padding: 1rem;
+}
+.estimator-card {
+    background: var(--white); border-radius: 12px; width: min(100%, 600px); padding: 2.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); position: relative;
+}
+
+/* 4. Text-to-Speech Button */
+.tts-btn {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--bg-tint);
+    border: 1px solid var(--line); padding: .4rem .8rem; border-radius: 20px; font-size: .85rem;
+    cursor: pointer; color: var(--ink-soft); transition: all 0.2s; margin-top: 1rem;
+}
+.tts-btn:hover { background: var(--accent); color: var(--white); border-color: var(--accent); }
+
+/* 5. Timeline / Live Status Widget */
+.timeline-widget {
+    background: var(--white); border: 1px solid var(--line); border-radius: 8px; padding: 1.5rem; margin-top: 2rem;
+}
+.timeline-steps-mini {
+    display: flex; justify-content: space-between; position: relative; margin-top: 1rem;
+}
+.timeline-steps-mini::before {
+    content: ""; position: absolute; top: 12px; left: 10px; right: 10px; height: 2px; background: var(--line); z-index: 1;
+}
+.t-step-dot {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--bg-tint); border: 2px solid var(--line);
+    display: grid; place-items: center; font-size: 11px; font-weight: 700; position: relative; z-index: 2; color: var(--muted);
+}
+.t-step-dot.is-done { background: var(--accent); border-color: var(--accent); color: var(--white); }
+
+/* Kontakt-Details Sichtbarkeit im Darkmode (Hellere E-Mail & Telefonnummer) */
+[data-theme="dark"] .contact-details a {
+    color: #60a5fa !important; /* Helles Blau für gute Lesbarkeit */
+}
+[data-theme="dark"] .contact-details a:hover {
+    color: #93c5fd !important;
+}
+[data-theme="dark"] .contact-details span {
+    color: #f8fafc !important; /* Strahlendes Weiß für die Adresse */
+}

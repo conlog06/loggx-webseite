@@ -10,6 +10,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23122B45'/%3E%3Cpath d='M9 9l14 14M23 9L9 23' stroke='%23FFD166' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
 
@@ -199,7 +210,7 @@
             <span class="step-num">1</span>
             <div>
               <h3>Erstgespräch</h3>
-              <p>30 Minuten am Telefon oder vor Ort. Was machen Sie, wer sind Ihre Kunden, was soll die Seite erreichen? Danach erhalten Sie ein Festpreis-Angebot.</p>
+              <p>Ca. 1 Stunde am Telefon oder per Video-Call. Was machen Sie, wer sind Ihre Kunden, was soll die Seite erreichen? Danach erhalten Sie ein Festpreis-Angebot.</p>
             </div>
           </li>
           <li class="step">
@@ -345,6 +356,82 @@
             <summary>Ich habe schon eine Domain. Ist das ein Problem?</summary>
             <p>Nein. Die Domain bleibt bei Ihnen, ich verbinde sie einfach mit der neuen Seite. Falls Sie noch keine haben, registriere ich eine auf Ihren Namen.</p>
           </details>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Feature 1 Neu: Interaktiver Paket-Berater -->
+    <section class="section section-tint" id="berater">
+      <div class="container">
+        <div class="section-head" style="text-align: center; margin: 0 auto 2rem auto;">
+          <h2>Welches Paket passt zu Ihnen?</h2>
+          <p>Beantworten Sie zwei kurze Fragen und erhalten Sie eine direkte Empfehlung.</p>
+        </div>
+
+        <div class="calc-box" id="advisor-box" style="max-width: 600px; margin: 0 auto; text-align: center;">
+          <div id="adv-q1">
+            <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">Brauchen Sie Funktionen wie einen Online-Shop oder ein Buchungssystem?</h3>
+            <div style="display:flex; gap:1rem; justify-content:center; flex-wrap: wrap;">
+              <button class="btn btn-ghost adv-btn" onclick="nextAdv(true)">Ja, brauche ich</button>
+              <button class="btn btn-ghost adv-btn" onclick="nextAdv(false)">Nein, nur reine Informationen</button>
+            </div>
+          </div>
+          
+          <div id="adv-q2" style="display:none;">
+            <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">Wie umfangreich soll die Seite werden?</h3>
+            <div style="display:flex; flex-direction:column; gap:1rem; align-items:center;">
+              <button class="btn btn-ghost adv-btn" style="width:100%; max-width:320px;" onclick="showResult('Visitenkarte')">Kompakt (1 Seite als Onepager)</button>
+              <button class="btn btn-ghost adv-btn" style="width:100%; max-width:320px;" onclick="showResult('Firmenwebseite')">Mittel (bis 6 Unterseiten)</button>
+              <button class="btn btn-ghost adv-btn" style="width:100%; max-width:320px;" onclick="showResult('Individuell')">Groß (Mehr als 6 Seiten)</button>
+            </div>
+          </div>
+          
+          <div id="adv-res" style="display:none; padding: 1rem 0;">
+            <p style="color:var(--muted); font-size:0.9rem; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:1px; font-weight:700;">Mein Tipp für Sie:</p>
+            <div class="calc-number" id="adv-result-title" style="margin-bottom: 1.5rem; color: var(--accent);">Paket</div>
+            <a href="#kontakt" class="btn btn-primary" onclick="resetAdv()">Jetzt anfragen</a>
+            <button class="btn btn-ghost" style="margin-left:0.5rem;" onclick="resetAdv()">Neu starten</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 2 & 5: Live Farb-Akzent-Auswahl & Projekt-Fortschritts-Demo -->
+    <section class="section" id="extras">
+      <div class="container" style="display:grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items:center;">
+        <div>
+          <h2>Individuelle Akzente &amp; Extras</h2>
+          <p>Sie möchten Ihrer Webseite einen ganz persönlichen Look verpassen? Wählen Sie hier live Ihren Wunsch-Farbakzent für das Design:</p>
+          <div class="accent-switcher">
+            <span style="font-weight:600; font-size:.9rem; margin-right:5px;">Farbe wählen:</span>
+            <button class="accent-dot" data-color="#3D5AFE" style="background:#3D5AFE;" title="Classic Blau"></button>
+            <button class="accent-dot" data-color="#10B981" style="background:#10B981;" title="Emerald Grün"></button>
+            <button class="accent-dot" data-color="#8B5CF6" style="background:#8B5CF6;" title="Royal Violett"></button>
+            <button class="accent-dot" data-color="#F59E0B" style="background:#F59E0B;" title="Sunset Gold"></button>
+            <button class="accent-dot" data-color="#EC4899" style="background:#EC4899;" title="Neon Pink"></button>
+          </div>
+          <button type="button" class="tts-btn" id="tts-speak-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            <span>Einleitung vorlesen lassen (Audio)</span>
+          </button>
+        </div>
+
+        <div class="timeline-widget">
+          <h3 style="font-size:1.1rem; margin-bottom:.5rem;">Live-Status Vorschau (Kunden-Dashboard)</h3>
+          <p style="font-size:.9rem; color:var(--muted);">So verfolgen LoggX-Kunden den Live-Entwicklungsstand ihres Projekts:</p>
+          <div class="timeline-steps-mini">
+            <div class="t-step-dot is-done" title="1. Erstgespräch">1</div>
+            <div class="t-step-dot is-done" title="2. Konzept &amp; Design">2</div>
+            <div class="t-step-dot is-active" title="3. Umsetzung &amp; Code" style="background:var(--accent); color:var(--white); border-color:var(--accent);">3</div>
+            <div class="t-step-dot" title="4. Livegang">4</div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:.75rem; color:var(--muted); margin-top:.5rem;">
+            <span>Gespräch</span>
+            <span>Entwurf</span>
+            <strong style="color:var(--accent);">Umsetzung</strong>
+            <span>Livegang</span>
+          </div>
         </div>
       </div>
     </section>
