@@ -1,59 +1,40 @@
-LoggX – Webseite
-================
+LoggX – Webseite (Version 3: Animationen (nur transform/opacity – laufen flüssig, auch auf älteren Handys)
+  - Hero: Überschrift fährt ein, Wort wechselt, Handys gleiten ein und schweben leicht
+  - Abschnitte blenden beim Scrollen ein (teils von links/rechts), gelber Strich unter Überschriften
+  - Ablauf: Linie füllt sich, Schritt-Nummern springen auf
+  - Preise: Karten heben sich beim Hover, Lichtreflex, Zahlen zählen hoch
+  - Designbeispiele: Vorschau scrollt beim Hover durch die ganze Seite
+  Besucher mit "Bewegung reduzieren" im System sehen alles ohne Animation.
 
-Dateien
-  index.html        Startseite (Hero, Leistungen, Referenzen, Ablauf, Preise, Über mich, FAQ, Kontakt)
-  impressum.html    Impressum (Vorlage)
-  danke.html        Bestätigungsseite nach dem Absenden des Formulars
-  datenschutz.html  Datenschutzerklärung (Vorlage)
-  css/style.css     Gesamtes Styling, responsiv bis Smartphone
-  kontakt.php       Server-Skript für den E-Mail-Versand des Formulars
-  js/main.js        Mobile Navigation, Bottom-Leiste (Handy), Scroll-Reveal, rotierendes
-                    Hero-Wort, Fortschrittsbalken, Paketauswahl, Formularprüfung
+Dark Mode
+  Umschalter (Sonne/Mond) oben rechts auf allen Seiten. Die Wahl wird im Browser
+  gespeichert (localStorage "loggx-theme") und gilt auch für Impressum, Datenschutz
+  und Danke-Seite. Ohne gespeicherte Wahl folgt die Seite der Systemeinstellung.
+  Farben: Variablen unter :root und :root[data-theme="dark"] in css/style.css.
 
-Schriftart
-  Plus Jakarta Sans (Google Fonts). Zum Tauschen: Link im <head> jeder HTML-Datei
-  und die Variablen --font-display / --font-body in css/style.css ändern.
-  Rotierende Wörter im Hero: Liste "words" in js/main.js.
+Designbeispiele
+  img/work/*.webp       Vorschaubilder (Hero) für die Handys oben
+  img/work/full/*.webp  Ganze Seiten (Desktop 1200 px breit, Handy "-m" 390 px)
+  Klick öffnet die Großansicht mit Desktop/Handy-Umschalter und Funktionsliste.
+  Beschreibung und Funktionen stehen in index.html an jeder <figure class="shot">
+  (data-desc, data-features – mit | getrennt).
 
-Vor der Veröffentlichung anpassen
-  1. Steuernummer, Telefonnummer und Hoster (gelb markiert) in impressum.html
-     und datenschutz.html eintragen.
-  2. E-Mail (constantinloggen@icloud.com) in index.html, impressum.html und js/main.js ersetzen,
-     falls abweichend.
-  3. Referenzen: Die Karten zeigen automatisch einen Screenshot der Live-Seiten
-     (über image.thum.io), solange kein eigenes Bild vorhanden ist. Für die
-     Veröffentlichung eigene Screenshots als img/dr-loggen.jpg und
-     img/fitness4fun.jpg ablegen (Format 16:10, z. B. 1200×750 px) – dann wird
-     kein externer Dienst mehr geladen (besser für den Datenschutz).
-     Klick auf eine Karte oder "Live-Vorschau" öffnet die Seite im Popup mit
-     Desktop- und Handy-Ansicht. fitness4fun.de erlaubt kein Einbetten – dort wird
-     stattdessen ein scrollbarer Ganzseiten-Screenshot gezeigt (automatisch geladen;
-     eigene Bilder: img/fitness4fun-de-full.jpg und img/fitness4fun-de-full-mobile.jpg).
-     Für andere Referenzen ohne Einbettung einfach data-embed="false" setzen.
-  4. Portrait: In index.html den Block .portrait-frame durch ein <img> ersetzen.
-  5. Kontaktformular – Anfragen kommen direkt per E-Mail an (ohne Server-Setup):
-     a) In js/main.js oben bei CONFIG.contactEmail die eigene Adresse eintragen.
-     b) In index.html beim <form ...> im action-Attribut dieselbe Adresse eintragen
-        (Fallback, falls JavaScript aus ist).
-     c) Seite hochladen, Formular einmal selbst absenden. Es kommt eine
-        Aktivierungs-Mail von formsubmit.co – auf "Activate" klicken. Fertig.
-        Ab dann landet jede Anfrage als übersichtliche Tabelle im Postfach,
-        Antworten geht direkt an den Absender.
-     Ablauf: Erst wird im Hintergrund gesendet (Erfolg direkt im Formular).
-     Klappt das nicht (z. B. lokal geöffnet oder noch nicht aktiviert), wird das
-     Formular klassisch an formsubmit.co übergeben und danach auf danke.html
-     zurückgeleitet. Beim allerersten Absenden zeigt formsubmit.co eine
-     Aktivierungsseite – Mail bestätigen, ab dann läuft alles.
-     Alternative ohne Drittanbieter: CONFIG.formEndpoint = "kontakt.php" setzen
-     und in kontakt.php die Adressen eintragen (nur bei Hosting mit PHP).
-     Schlägt der Versand fehl, öffnet sich automatisch das Mailprogramm.
+Live-Vorschau der Referenzen
+  data-phone="false" am Link/Button blendet die Handy-Ansicht aus
+  (aktuell bei fitness4fun.de, weil der Ganzseiten-Screenshot dort komisch aussieht).
 
-  6. Cookie-Hinweis: Erscheint bei jedem Besucher ohne gespeicherte Auswahl (also
-     auch wieder, wenn Cookies gelöscht wurden). Statistik-Tools (Google Analytics,
-     Matomo) nur in js/main.js in der Funktion applyConsent() einhängen, damit sie
-     ausschließlich nach Zustimmung laden. Dann in datenschutz.html Abschnitt 6 ergänzen.
+und datenschutz.html eintragen. Telefonnummer auch in index.html (Kontakt).
+  2. Portrait: eigenes Foto als img/portrait.jpg ablegen (Hochformat, ca. 900×1100 px).
+     Solange es fehlt, werden die Initialen "CL" angezeigt.
+  3. Referenzen: eigene Screenshots als img/dr-loggen.jpg und img/fitness4fun.jpg
+     (1200×750 px). Solange sie fehlen, kommt ein Screenshot von image.thum.io.
+  4. Designbeispiele: Die Bilder in img/work/ sind Entwürfe für fiktive Betriebe.
+     Eigene Bilder einfach unter gleichem Namen ersetzen.
+  5. Kontaktformular: E-Mail in js/main.js (CONFIG.contactEmail) und im
+     action-Attribut des <form> in index.html. Beim ersten Absenden kommt eine
+     Aktivierungs-Mail von formsubmit.co – einmal "Activate" klicken.
+  6. Cookie-Hinweis: Statistik-Tools nur in js/main.js in applyConsent() einhängen.
 
 Hochladen
   Alle Dateien und Ordner unverändert in das Web-Verzeichnis des Hosters kopieren.
-  Es wird keine Datenbank und kein Framework benötigt.
+  Keine Datenbank, kein Build-Schritt nötig.

@@ -4,21 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LoggX – Webseiten für Unternehmen | Constantin Moritz Loggen</title>
-  <meta name="description" content="LoggX erstellt moderne, schnelle Webseiten für kleine und mittlere Unternehmen. Persönliche Betreuung von Constantin Moritz Loggen – von der Idee bis zum Livegang.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="description" content="LoggX erstellt moderne, schnelle Webseiten für Praxen, Studios, Handwerk und Dienstleister. Persönliche Betreuung von Constantin Moritz Loggen aus Osnabrück – zum Festpreis.">
+  <meta name="theme-color" content="#0F2540">
+  <meta property="og:title" content="LoggX – Webseiten, die Anfragen bringen">
+  <meta property="og:description" content="Moderne Webseiten für Praxen, Studios, Handwerk und Dienstleister. Festpreis, persönlich, aus Osnabrück.">
+  <meta property="og:image" content="img/work/dental.webp">
+  <link rel="preload" href="fonts/bricolage-grotesque-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23122B45'/%3E%3Cpath d='M9 9l14 14M23 9L9 23' stroke='%23FFD166' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F2540'/%3E%3Cpath d='M9 9l14 14M23 9L9 23' stroke='%23FFD166' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <meta name="color-scheme" content="light dark">
   <script>
-    (function() {
-      try {
-        var savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.setAttribute('data-theme', 'dark');
-        }
-      } catch (e) {}
+    /* Farbschema vor dem ersten Zeichnen setzen (verhindert Aufblitzen) */
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("loggx-theme"); } catch (e) {}
+      if (t !== "dark" && t !== "light") t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", t);
+      document.documentElement.classList.add("js");
     })();
   </script>
 </head>
@@ -26,18 +29,20 @@
 
   <a class="skip-link" href="#main">Zum Inhalt springen</a>
 
-  <header class="site-header">
+
+  <header class="site-header" id="site-header">
     <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
     <div class="container header-inner">
       <a href="#top" class="brand" aria-label="LoggX Startseite">
         <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="32" height="32"><rect width="32" height="32" rx="7" fill="currentColor"/><path d="M9 9l14 14M23 9L9 23" stroke="#FFD166" stroke-width="4" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 32 32" width="32" height="32"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M9 9l14 14M23 9L9 23" stroke="#FFD166" stroke-width="4" stroke-linecap="round"/></svg>
         </span>
         <span class="brand-name">LoggX</span>
       </a>
 
       <nav class="site-nav" id="site-nav" aria-label="Hauptnavigation">
         <ul>
+          <li><a href="#beispiele">Beispiele</a></li>
           <li><a href="#leistungen">Leistungen</a></li>
           <li><a href="#referenzen">Referenzen</a></li>
           <li><a href="#ablauf">Ablauf</a></li>
@@ -47,148 +52,186 @@
         </ul>
       </nav>
 
-      <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
-        <span></span><span></span><span></span>
-      </button>
+      <div class="header-actions">
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Dunkelmodus einschalten" title="Hell/Dunkel umschalten">
+          <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+          <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+        </button>
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
+          <span></span><span></span>
+        </button>
+      </div>
     </div>
   </header>
 
   <main id="main">
 
-    <!-- Hero -->
+    <!-- ============ HERO ============ -->
     <section class="hero" id="top">
-      <div class="container hero-grid">
+      <div class="hero-bg" aria-hidden="true">
+        <svg class="hero-x" viewBox="0 0 400 400" fill="none">
+          <path class="hx hx-a" d="M60 60 L340 340" stroke-width="64" stroke-linecap="round"/>
+          <path class="hx hx-b" d="M340 60 L60 340" stroke-width="64" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <div class="container hero-layout">
         <div class="hero-copy">
-          <h1 class="hero-title">
-            <span class="hero-line">Webseiten für</span>
-            <span class="hero-line rotator-wrap"><span class="rotator" id="rotator" aria-live="polite">Praxen</span></span>
-            <span class="hero-line">die Anfragen bringen.</span>
+          <p class="hero-kicker" data-hero-in>Webdesign aus Osnabrück</p>
+          <h1 class="hero-title" aria-label="Webseiten für Praxen, Studios, Handwerk, Cafés und Salons, die Anfragen bringen.">
+            <span class="line" aria-hidden="true"><span class="line-in">Webseiten für</span></span>
+            <span class="line rotator-line" aria-hidden="true">
+              <span class="line-in rotator" id="rotator">
+                <span class="rot-word is-active">Praxen</span>
+                <span class="rot-word">Studios</span>
+                <span class="rot-word">Handwerk</span>
+                <span class="rot-word">Cafés</span>
+                <span class="rot-word">Salons</span>
+              </span>
+            </span>
+            <span class="line" aria-hidden="true"><span class="line-in">die Anfragen</span></span>
+            <span class="line" aria-hidden="true"><span class="line-in">bringen.</span></span>
           </h1>
-          <p class="hero-lead hero-in" style="--d:.55s">
-            LoggX aus Osnabrück entwickelt schnelle, klare Webseiten für Praxen, Studios,
-            Handwerk und Dienstleister. Ein Ansprechpartner, ein Festpreis, ein fertiges Ergebnis.
+          <p class="hero-lead" data-hero-in>
+            Schnelle, klare Webseiten für Betriebe aus der Region. Ein Ansprechpartner,
+            ein Festpreis, ein fertiges Ergebnis – in wenigen Wochen online.
           </p>
-          <div class="hero-actions hero-in" style="--d:.7s">
-            <a href="#kontakt" class="btn btn-primary">Kostenloses Erstgespräch</a>
-            <a href="#leistungen" class="btn btn-ghost">Was ich anbiete</a>
+          <div class="hero-actions" data-hero-in>
+            <a href="#kontakt" class="btn btn-primary"><span>Kostenloses Erstgespräch</span></a>
+            <a href="#beispiele" class="btn btn-ghost"><span>Beispiele ansehen</span></a>
           </div>
-          <dl class="hero-facts hero-in" style="--d:.85s">
-            <div><dt>Lieferzeit</dt><dd>ab 14 Tagen</dd></div>
-            <div><dt>Preis</dt><dd>fest, vorab</dd></div>
-            <div><dt>Betreuung</dt><dd>persönlich</dd></div>
+          <dl class="hero-facts" data-hero-in>
+            <div><dt>Online in</dt><dd><span class="count" data-to="14">14</span> Tagen</dd></div>
+            <div><dt>Ladezeit</dt><dd>&lt; <span class="count" data-to="2">2</span> Sek.</dd></div>
+            <div><dt>Festpreis ab</dt><dd><span class="count" data-to="790">790</span> €</dd></div>
           </dl>
         </div>
 
-        <div class="hero-mark" aria-hidden="true">
-          <svg id="hero-x" viewBox="0 0 400 400" fill="none">
-            <path class="x-stroke x-stroke-a" d="M60 60 L340 340" stroke-width="56" stroke-linecap="round"/>
-            <path class="x-stroke x-stroke-b" d="M340 60 L60 340" stroke-width="56" stroke-linecap="round"/>
-          </svg>
+        <div class="hero-stage" aria-hidden="true">
+          <div class="phone phone-1"><img src="img/work/dental-m.webp" alt="" width="390" height="844"></div>
+          <div class="phone phone-2"><img src="img/work/gym-m.webp" alt="" width="390" height="844"></div>
+          <div class="phone phone-3"><img src="img/work/cafe-m.webp" alt="" width="390" height="844"></div>
+</div>
+      </div>
+
+    </section>
+
+    <!-- ============ DESIGNBEISPIELE ============ -->
+    <section class="section section-ink" id="beispiele">
+      <div class="container">
+        <div class="section-head reveal">
+          <h2>Designbeispiele</h2>
+          <p>Entwürfe für typische Betriebe aus der Region – jeder mit eigenem Charakter, alle mobil optimiert. Mit der Maus darüberfahren oder klicken, um die ganze Seite zu sehen – am Desktop und am Handy.</p>
+        </div>
+        <div class="shots">
+          <figure class="shot reveal" data-id="dental" data-url="praxis-lindenhof.de" data-desc="Ruhige Farben, viel Weißraum und ein Termin-Button, der immer sichtbar ist – damit neue Patienten ohne Anruf buchen." data-features="Online-Terminbuchung|Sprechzeiten &amp; Leistungsübersicht|Praxis-Rundgang mit Bildern|Anfahrt mit Karte">
+            <div class="shot-frame"><span class="shot-bar"><i></i><i></i><i></i><em>praxis-lindenhof.de</em></span><div class="shot-img"><img src="img/work/full/dental.webp" alt="Designbeispiel Zahnarztpraxis: komplette Startseite" loading="lazy" width="1200" height="2667"></div><span class="shot-hint">Ganze Seite ansehen</span></div>
+            <figcaption><strong>Zahnarztpraxis</strong><span>Online-Termine, Leistungen, Sprechzeiten</span></figcaption>
+          </figure>
+          <figure class="shot reveal" data-id="gym" data-url="kraftwerk-gym.de" data-desc="Kräftige Farben und große Schrift für ein Studio, das Energie ausstrahlen will. Das Probetraining ist der wichtigste Klick." data-features="Kursplan zum Durchscrollen|Probetraining-Formular|Bildergalerie der Trainingsbereiche|Öffnungszeiten 24/7">
+            <div class="shot-frame"><span class="shot-bar"><i></i><i></i><i></i><em>kraftwerk-gym.de</em></span><div class="shot-img"><img src="img/work/full/gym.webp" alt="Designbeispiel Fitnessstudio: komplette Startseite" loading="lazy" width="1200" height="2667"></div><span class="shot-hint">Ganze Seite ansehen</span></div>
+            <figcaption><strong>Fitnessstudio</strong><span>Kursplan, Probetraining, Preise</span></figcaption>
+          </figure>
+          <figure class="shot reveal" data-id="wood" data-url="tischlerei-holm.de" data-desc="Warme Holztöne und eine klassische Schrift für einen Meisterbetrieb, der Qualität und Tradition zeigen will." data-features="Projekt-Galerie|Leistungen mit Preisrahmen|Beratungstermin anfragen|Werkstatt &amp; Team vorstellen">
+            <div class="shot-frame"><span class="shot-bar"><i></i><i></i><i></i><em>tischlerei-holm.de</em></span><div class="shot-img"><img src="img/work/full/wood.webp" alt="Designbeispiel Tischlerei: komplette Startseite" loading="lazy" width="1200" height="2667"></div><span class="shot-hint">Ganze Seite ansehen</span></div>
+            <figcaption><strong>Tischlerei</strong><span>Leistungen, Projekte, Beratung</span></figcaption>
+          </figure>
+          <figure class="shot reveal" data-id="cafe" data-url="cafe-nordlicht.de" data-desc="Verspielte Typografie und Pastellfarben – die Seite soll Lust auf Kaffee und Kuchen machen, bevor man das Café betritt." data-features="Speisekarte mit Preisen|Tischreservierung|Tagesangebot aus der Vitrine|Torten vorbestellen">
+            <div class="shot-frame"><span class="shot-bar"><i></i><i></i><i></i><em>cafe-nordlicht.de</em></span><div class="shot-img"><img src="img/work/full/cafe.webp" alt="Designbeispiel Café: komplette Startseite" loading="lazy" width="1200" height="2667"></div><span class="shot-hint">Ganze Seite ansehen</span></div>
+            <figcaption><strong>Café</strong><span>Speisekarte, Reservierung</span></figcaption>
+          </figure>
+          <figure class="shot reveal" data-id="salon" data-url="schnittwerk.de" data-desc="Dunkles, elegantes Design mit Farbverläufen für einen Salon, der modern und hochwertig wirken möchte." data-features="Online-Buchung freier Termine|Transparente Preisliste|Team-Vorstellung|Galerie mit Vorher/Nachher">
+            <div class="shot-frame"><span class="shot-bar"><i></i><i></i><i></i><em>schnittwerk.de</em></span><div class="shot-img"><img src="img/work/full/salon.webp" alt="Designbeispiel Friseursalon: komplette Startseite" loading="lazy" width="1200" height="2667"></div><span class="shot-hint">Ganze Seite ansehen</span></div>
+            <figcaption><strong>Friseursalon</strong><span>Online-Buchung, Preisliste</span></figcaption>
+          </figure>
+          <figure class="shot reveal" data-id="physio" data-url="physio-am-hafen.de" data-desc="Frisches Blau und klare Struktur: Patienten finden in Sekunden die passende Therapie und den nächsten freien Kurs." data-features="Therapien mit Rezept-Hinweis|Kursangebot mit freien Plätzen|Terminanfrage|Barrierefreie Anfahrt">
+            <div class="shot-frame"><span class="shot-bar"><i></i><i></i><i></i><em>physio-am-hafen.de</em></span><div class="shot-img"><img src="img/work/full/physio.webp" alt="Designbeispiel Physiotherapie: komplette Startseite" loading="lazy" width="1200" height="2667"></div><span class="shot-hint">Ganze Seite ansehen</span></div>
+            <figcaption><strong>Physiotherapie</strong><span>Therapien, Kurse, Termine</span></figcaption>
+          </figure>
         </div>
       </div>
     </section>
 
-    <!-- Leistungen -->
+    <!-- ============ LEISTUNGEN ============ -->
     <section class="section" id="leistungen">
       <div class="container">
-        <div class="section-head">
-          <h2>Leistungen</h2>
+        <div class="section-head reveal">
+          <h2 class="split-title">Leistungen</h2>
           <p>Alles, was eine Firmenwebseite braucht – und nichts, was Sie nicht brauchen.</p>
         </div>
 
-        <ul class="service-list">
-          <li class="service">
-            <div class="service-title">
-              <h3>Neue Webseite</h3>
-            </div>
+        <ul class="service-list" id="service-list">
+          <li class="service reveal" data-img="img/work/physio.webp">
+            <h3>Neue Webseite</h3>
             <p>Design und Umsetzung von Grund auf. Startseite, Leistungen, Über uns, Kontakt – abgestimmt auf Ihre Branche, mobil optimiert, DSGVO-konform mit Impressum und Datenschutz.</p>
+            <span class="service-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
           </li>
-          <li class="service">
-            <div class="service-title">
-              <h3>Relaunch bestehender Seiten</h3>
-            </div>
+          <li class="service reveal" data-img="img/work/wood.webp">
+            <h3>Relaunch</h3>
             <p>Ihre Seite ist da, sieht aber aus wie 2014? Ich übernehme Inhalte, modernisiere Design und Technik und sorge dafür, dass Ihre Google-Platzierung erhalten bleibt.</p>
+            <span class="service-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
           </li>
-          <li class="service">
-            <div class="service-title">
-              <h3>Landingpages</h3>
-            </div>
+          <li class="service reveal" data-img="img/work/gym.webp">
+            <h3>Landingpages</h3>
             <p>Eine Seite, ein Ziel: Anfragen für ein bestimmtes Angebot, eine Aktion oder eine Werbekampagne. Schnell gebaut, messbar im Ergebnis.</p>
+            <span class="service-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
           </li>
-          <li class="service">
-            <div class="service-title">
-              <h3>Pflege und Hosting</h3>
-            </div>
+          <li class="service reveal" data-img="img/work/salon.webp">
+            <h3>Pflege &amp; Hosting</h3>
             <p>Updates, kleine Textänderungen, Sicherheits-Checks und Erreichbarkeit – damit Sie sich nie wieder um Technik kümmern müssen. Monatlich, jederzeit kündbar.</p>
+            <span class="service-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
           </li>
         </ul>
       </div>
+      <div class="service-float" id="service-float" aria-hidden="true"><img alt="" id="service-float-img"></div>
     </section>
 
-    <!-- Referenzen -->
-    <section class="section section-tint" id="referenzen">
+    <!-- ============ REFERENZEN ============ -->
+    <section class="section section-ink" id="referenzen">
       <div class="container">
-        <div class="section-head">
-          <h2>Referenzen</h2>
+        <div class="section-head reveal">
+          <h2 class="split-title">Referenzen</h2>
           <p>Zwei Projekte aus der Region, die heute live sind.</p>
         </div>
 
         <div class="references">
-          <article class="reference">
+          <article class="reference reveal">
             <a class="reference-frame" href="https://www.dr-loggen.de/" data-preview="https://www.dr-loggen.de/" data-title="Zahnarztpraxis Dr. Loggen" target="_blank" rel="noopener" aria-label="Vorschau von dr-loggen.de öffnen">
-              <span class="frame-bar" aria-hidden="true"><span></span><span></span><span></span><em>dr-loggen.de</em></span>
+              <span class="frame-bar" aria-hidden="true"><i></i><i></i><i></i><em>dr-loggen.de</em></span>
               <span class="frame-body">
                 <span class="frame-title">Zahnarztpraxis<br>Dr. Loggen</span>
-                <span class="frame-sub">Bissendorf bei Osnabrück</span>
                 <img class="frame-shot" src="img/dr-loggen.jpg" alt="Startseite der Zahnarztpraxis Dr. Loggen" loading="lazy"
                      data-fallback="https://image.thum.io/get/width/1200/crop/750/https://www.dr-loggen.de/">
-                <span class="frame-hint" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Vorschau öffnen
-                </span>
               </span>
             </a>
             <div class="reference-copy">
               <p class="reference-label">Aktuellstes Projekt</p>
               <h3>Zahnarztpraxis Dr. Frank Loggen</h3>
               <p>Praxiswebseite mit Leistungsübersicht, Sprechzeiten, Bildergalerie und Online-Terminbuchung. Mehrere Unterseiten, Karriereseite angebunden, für Smartphone optimiert.</p>
-              <ul class="reference-tags">
-                <li>Praxiswebseite</li>
-                <li>Online-Termine</li>
-                <li>6 Unterseiten</li>
-              </ul>
+              <ul class="reference-tags"><li>Praxiswebseite</li><li>Online-Termine</li><li>6 Unterseiten</li></ul>
               <div class="reference-actions">
-                <button type="button" class="btn btn-primary" data-preview="https://www.dr-loggen.de/" data-title="Zahnarztpraxis Dr. Loggen">Live-Vorschau</button>
+                <button type="button" class="btn btn-yellow" data-preview="https://www.dr-loggen.de/" data-title="Zahnarztpraxis Dr. Loggen"><span>Live-Vorschau</span></button>
                 <a href="https://www.dr-loggen.de/" target="_blank" rel="noopener" class="reference-link">dr-loggen.de ↗</a>
               </div>
             </div>
           </article>
 
-          <article class="reference">
-            <a class="reference-frame" href="https://www.fitness4fun.de/" data-preview="https://www.fitness4fun.de/" data-title="4 fun Fitness &amp; Beauty" data-embed="false" target="_blank" rel="noopener" aria-label="Vorschau von fitness4fun.de öffnen">
-              <span class="frame-bar" aria-hidden="true"><span></span><span></span><span></span><em>fitness4fun.de</em></span>
+          <article class="reference reveal reference-flip">
+            <a class="reference-frame" href="https://www.fitness4fun.de/" data-preview="https://www.fitness4fun.de/" data-title="4 fun Fitness &amp; Beauty" data-embed="false" data-phone="false" target="_blank" rel="noopener" aria-label="Vorschau von fitness4fun.de öffnen">
+              <span class="frame-bar" aria-hidden="true"><i></i><i></i><i></i><em>fitness4fun.de</em></span>
               <span class="frame-body">
                 <span class="frame-title">4 fun<br>Fitness &amp; Beauty</span>
-                <span class="frame-sub">Hasbergen</span>
                 <img class="frame-shot" src="img/fitness4fun.jpg" alt="Startseite von 4 fun Fitness & Beauty" loading="lazy"
                      data-fallback="https://image.thum.io/get/width/1200/crop/750/https://www.fitness4fun.de/">
-                <span class="frame-hint" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Vorschau öffnen
-                </span>
               </span>
             </a>
             <div class="reference-copy">
               <p class="reference-label">Studio-Webseite</p>
               <h3>4 fun Fitness &amp; Beauty</h3>
-              <p>Webseite für ein Fitness- und Beautystudio mit Angebot, Kursplan, Preisen, Galerie und Kontaktseite. Anfragen laufen direkt über ein Angebotsformular.</p>
-              <ul class="reference-tags">
-                <li>Studio-Webseite</li>
-                <li>Kursplan</li>
-                <li>Angebotsformular</li>
-              </ul>
+              <p>Webseite für ein Fitness- und Beautystudio in Hasbergen mit Angebot, Kursplan, Preisen, Galerie und Kontaktseite. Anfragen laufen direkt über ein Angebotsformular.</p>
+              <ul class="reference-tags"><li>Studio-Webseite</li><li>Kursplan</li><li>Angebotsformular</li></ul>
               <div class="reference-actions">
-                <button type="button" class="btn btn-primary" data-preview="https://www.fitness4fun.de/" data-title="4 fun Fitness &amp; Beauty" data-embed="false">Vorschau</button>
+                <button type="button" class="btn btn-yellow" data-preview="https://www.fitness4fun.de/" data-title="4 fun Fitness &amp; Beauty" data-embed="false" data-phone="false"><span>Vorschau</span></button>
                 <a href="https://www.fitness4fun.de/" target="_blank" rel="noopener" class="reference-link">fitness4fun.de ↗</a>
               </div>
             </div>
@@ -197,37 +240,37 @@
       </div>
     </section>
 
-    <!-- Ablauf -->
+    <!-- ============ ABLAUF ============ -->
     <section class="section" id="ablauf">
-      <div class="container">
-        <div class="section-head">
-          <h2>So läuft ein Projekt ab</h2>
+      <div class="container process">
+        <div class="process-head reveal reveal-left">
+          <h2 class="split-title">So läuft ein Projekt ab</h2>
           <p>Vier Schritte, klar getaktet. Sie wissen immer, wo wir gerade stehen.</p>
         </div>
-
-        <ol class="steps">
-          <li class="step">
+        <ol class="steps" id="steps">
+          <li class="steps-line" aria-hidden="true"></li>
+          <li class="step reveal">
             <span class="step-num">1</span>
             <div>
               <h3>Erstgespräch</h3>
               <p>Ca. 1 Stunde am Telefon oder per Video-Call. Was machen Sie, wer sind Ihre Kunden, was soll die Seite erreichen? Danach erhalten Sie ein Festpreis-Angebot.</p>
             </div>
           </li>
-          <li class="step">
+          <li class="step reveal">
             <span class="step-num">2</span>
             <div>
               <h3>Konzept und Entwurf</h3>
               <p>Ich baue eine erste Version Ihrer Startseite. Sie sehen früh, wohin es geht, und wir passen Farben, Texte und Struktur gemeinsam an.</p>
             </div>
           </li>
-          <li class="step">
+          <li class="step reveal">
             <span class="step-num">3</span>
             <div>
               <h3>Umsetzung</h3>
               <p>Alle Seiten werden fertiggestellt, für Handy und Desktop getestet und auf Ladezeit optimiert. Zwei Korrekturrunden sind inklusive.</p>
             </div>
           </li>
-          <li class="step">
+          <li class="step reveal">
             <span class="step-num">4</span>
             <div>
               <h3>Livegang</h3>
@@ -238,18 +281,18 @@
       </div>
     </section>
 
-    <!-- Preise -->
-    <section class="section" id="preise">
+    <!-- ============ PREISE ============ -->
+    <section class="section section-paper" id="preise">
       <div class="container">
-        <div class="section-head">
-          <h2>Preise</h2>
+        <div class="section-head reveal">
+          <h2 class="split-title">Preise</h2>
           <p>Festpreise ohne Überraschungen. Sie erfahren vor dem Start, was es kostet.</p>
         </div>
 
         <div class="pricing">
-          <article class="plan">
+          <article class="plan reveal">
             <h3>Visitenkarte</h3>
-            <p class="plan-price">ab 790&nbsp;€</p>
+            <p class="plan-price">ab <span class="count" data-to="790">790</span>&nbsp;€</p>
             <p class="plan-for">Für Einzelunternehmer, die online gefunden werden wollen.</p>
             <ul class="plan-list">
               <li>Einseitige Webseite (Onepager)</li>
@@ -258,13 +301,13 @@
               <li>Mobil optimiert</li>
               <li>Lieferung in 14 Tagen</li>
             </ul>
-            <a href="#kontakt" class="btn btn-ghost btn-block" data-plan="Visitenkarte">Visitenkarte anfragen</a>
+            <a href="#kontakt" class="btn btn-ghost btn-block" data-plan="Visitenkarte"><span>Visitenkarte anfragen</span></a>
           </article>
 
-          <article class="plan plan-featured">
+          <article class="plan reveal plan-featured">
             <span class="plan-badge">Meistgewählt</span>
             <h3>Firmenwebseite</h3>
-            <p class="plan-price">ab 1.890&nbsp;€</p>
+            <p class="plan-price">ab <span class="count" data-to="1890" data-format="de">1.890</span>&nbsp;€</p>
             <p class="plan-for">Für Betriebe mit mehreren Leistungen, Team und Referenzen.</p>
             <ul class="plan-list">
               <li>Bis zu 6 Unterseiten</li>
@@ -274,10 +317,10 @@
               <li>Einweisung zur Selbstpflege</li>
               <li>Lieferung in 3–4 Wochen</li>
             </ul>
-            <a href="#kontakt" class="btn btn-primary btn-block" data-plan="Firmenwebseite">Firmenwebseite anfragen</a>
+            <a href="#kontakt" class="btn btn-yellow btn-block" data-plan="Firmenwebseite"><span>Firmenwebseite anfragen</span></a>
           </article>
 
-          <article class="plan">
+          <article class="plan reveal">
             <h3>Individuell</h3>
             <p class="plan-price">auf Anfrage</p>
             <p class="plan-for">Für Onlineshops, Buchungssysteme oder mehrsprachige Seiten.</p>
@@ -288,7 +331,7 @@
               <li>Mehrsprachigkeit</li>
               <li>Zeitplan nach Absprache</li>
             </ul>
-            <a href="#kontakt" class="btn btn-ghost btn-block" data-plan="Individuell">Individuell anfragen</a>
+            <a href="#kontakt" class="btn btn-ghost btn-block" data-plan="Individuell"><span>Individuell anfragen</span></a>
           </article>
         </div>
 
@@ -296,151 +339,107 @@
           Alle Preise sind Endpreise. Als Kleinunternehmer nach §&nbsp;19 UStG weise ich keine Umsatzsteuer aus.
           Optional: Pflege und Hosting ab 29&nbsp;€ monatlich.
         </p>
+
+        <!-- Paket-Berater -->
+        <div class="advisor reveal" id="advisor">
+          <div class="advisor-head">
+            <h3>Unsicher, welches Paket passt?</h3>
+            <p>Zwei Fragen, eine Empfehlung.</p>
+          </div>
+          <div class="advisor-body">
+            <div class="adv-step is-active" data-step="1">
+              <p class="adv-q">Brauchen Sie Funktionen wie einen Online-Shop oder ein Buchungssystem?</p>
+              <div class="adv-options">
+                <button type="button" class="adv-btn" data-adv="complex">Ja, brauche ich</button>
+                <button type="button" class="adv-btn" data-adv="next">Nein, nur Informationen</button>
+              </div>
+            </div>
+            <div class="adv-step" data-step="2">
+              <p class="adv-q">Wie umfangreich soll die Seite werden?</p>
+              <div class="adv-options">
+                <button type="button" class="adv-btn" data-adv-result="Visitenkarte">Kompakt – eine Seite</button>
+                <button type="button" class="adv-btn" data-adv-result="Firmenwebseite">Mittel – bis 6 Unterseiten</button>
+                <button type="button" class="adv-btn" data-adv-result="Individuell">Groß – mehr als 6 Seiten</button>
+              </div>
+            </div>
+            <div class="adv-step" data-step="3">
+              <p class="adv-q">Meine Empfehlung für Sie:</p>
+              <p class="adv-result" id="adv-result">Firmenwebseite</p>
+              <div class="adv-options">
+                <a href="#kontakt" class="btn btn-primary" id="adv-cta" data-plan="Firmenwebseite"><span>Jetzt anfragen</span></a>
+                <button type="button" class="adv-btn adv-reset" data-adv="reset">Neu starten</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Über mich -->
-    <section class="section section-bordered" id="ueber">
+    <!-- ============ ÜBER MICH ============ -->
+    <section class="section" id="ueber">
       <div class="container about-grid">
-        <div class="about-portrait" aria-hidden="true">
-          <div class="portrait-frame">
-            <span class="portrait-initials">CL</span>
+        <div class="about-portrait reveal reveal-zoom">
+          <div class="portrait-frame" id="portrait-frame">
+            <!-- Eigenes Foto: als img/portrait.jpg ablegen (Hochformat, z. B. 900×1100 px) -->
+            <img src="img/portrait.jpg" alt="Constantin Moritz Loggen" class="portrait-img" id="portrait-img">
+            <span class="portrait-initials" aria-hidden="true">CL</span>
           </div>
+          <div class="portrait-tag">Constantin Moritz Loggen<br><small>Inhaber von LoggX</small></div>
         </div>
-        <div class="about-copy">
-          <h2>Constantin Moritz Loggen</h2>
-          <p class="about-role">Inhaber von LoggX</p>
-          <p>
+        <div class="about-copy reveal reveal-right">
+          <h2 class="split-title">Sie sprechen mit dem, der baut.</h2>
+          <p class="about-text">
             Ich baue Webseiten für Unternehmen, die sich nicht mit Technik beschäftigen wollen,
-            sondern mit ihrem Geschäft. Bei mir gibt es keine Agentur-Zwischenstationen:
-            Sie sprechen mit dem, der Ihre Seite auch tatsächlich entwickelt.
-          </p>
-          <p>
+            sondern mit ihrem Geschäft. Keine Agentur-Zwischenstationen, keine Weitergabe an Dritte.
             Was mir wichtig ist: eine Seite, die in unter zwei Sekunden lädt, auf dem Handy
-            genauso gut funktioniert wie am Rechner, und die Ihre Kunden dazu bringt,
-            anzurufen oder zu schreiben. Alles andere ist Dekoration.
+            genauso gut funktioniert wie am Rechner und Ihre Kunden dazu bringt, anzurufen oder zu schreiben.
           </p>
-          <ul class="about-facts">
-            <li>Antwort auf Anfragen innerhalb von 24 Stunden</li>
-            <li>Festpreis vor Projektstart</li>
-            <li>Sie behalten alle Rechte an Ihrer Webseite</li>
+          <ul class="about-facts reveal">
+            <li><strong>24 h</strong><span>Antwort auf jede Anfrage</span></li>
+            <li><strong>Festpreis</strong><span>vor Projektstart</span></li>
+            <li><strong>100 %</strong><span>Rechte an Ihrer Webseite</span></li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- FAQ -->
-    <section class="section" id="faq">
+    <!-- ============ FAQ ============ -->
+    <section class="section section-paper" id="faq">
       <div class="container faq-grid">
-        <div class="section-head">
-          <h2>Häufige Fragen</h2>
+        <div class="section-head reveal">
+          <h2 class="split-title">Häufige Fragen</h2>
+          <p>Nicht dabei? Schreiben Sie mir einfach.</p>
         </div>
         <div class="faq-list">
-          <details class="faq">
+          <details class="faq reveal">
             <summary>Wie lange dauert es, bis meine Webseite online ist?</summary>
-            <p>Eine Visitenkarten-Seite ist in der Regel nach 14 Tagen online, eine Firmenwebseite nach drei bis vier Wochen. Die größte Verzögerung entsteht meist beim Sammeln von Texten und Fotos – dabei helfe ich Ihnen.</p>
+            <div class="faq-body"><p>Eine Visitenkarten-Seite ist in der Regel nach 14 Tagen online, eine Firmenwebseite nach drei bis vier Wochen. Die größte Verzögerung entsteht meist beim Sammeln von Texten und Fotos – dabei helfe ich Ihnen.</p></div>
           </details>
-          <details class="faq">
+          <details class="faq reveal">
             <summary>Was brauchen Sie von mir?</summary>
-            <p>Ihr Logo (falls vorhanden), ein paar Fotos aus Ihrem Betrieb und eine grobe Beschreibung Ihrer Leistungen. Den Rest – Struktur, Texte, Design – erarbeite ich mit Ihnen gemeinsam.</p>
+            <div class="faq-body"><p>Ihr Logo (falls vorhanden), ein paar Fotos aus Ihrem Betrieb und eine grobe Beschreibung Ihrer Leistungen. Den Rest – Struktur, Texte, Design – erarbeite ich mit Ihnen gemeinsam.</p></div>
           </details>
-          <details class="faq">
+          <details class="faq reveal">
             <summary>Kann ich meine Seite später selbst ändern?</summary>
-            <p>Ja. Nach dem Livegang zeige ich Ihnen, wie Sie Texte, Bilder und Öffnungszeiten selbst anpassen. Wer das lieber abgibt, bucht das Pflegepaket.</p>
+            <div class="faq-body"><p>Ja. Nach dem Livegang zeige ich Ihnen, wie Sie Texte, Bilder und Öffnungszeiten selbst anpassen. Wer das lieber abgibt, bucht das Pflegepaket.</p></div>
           </details>
-          <details class="faq">
+          <details class="faq reveal">
             <summary>Gehört die Webseite danach mir?</summary>
-            <p>Vollständig. Sie erhalten alle Dateien und Zugänge. Es gibt keine Bindung an mich oder an ein bestimmtes System.</p>
+            <div class="faq-body"><p>Vollständig. Sie erhalten alle Dateien und Zugänge. Es gibt keine Bindung an mich oder an ein bestimmtes System.</p></div>
           </details>
-          <details class="faq">
+          <details class="faq reveal">
             <summary>Ich habe schon eine Domain. Ist das ein Problem?</summary>
-            <p>Nein. Die Domain bleibt bei Ihnen, ich verbinde sie einfach mit der neuen Seite. Falls Sie noch keine haben, registriere ich eine auf Ihren Namen.</p>
+            <div class="faq-body"><p>Nein. Die Domain bleibt bei Ihnen, ich verbinde sie einfach mit der neuen Seite. Falls Sie noch keine haben, registriere ich eine auf Ihren Namen.</p></div>
           </details>
         </div>
       </div>
     </section>
 
-
-    <!-- Feature 1 Neu: Interaktiver Paket-Berater -->
-    <section class="section section-tint" id="berater">
-      <div class="container">
-        <div class="section-head" style="text-align: center; margin: 0 auto 2rem auto;">
-          <h2>Welches Paket passt zu Ihnen?</h2>
-          <p>Beantworten Sie zwei kurze Fragen und erhalten Sie eine direkte Empfehlung.</p>
-        </div>
-
-        <div class="calc-box" id="advisor-box" style="max-width: 600px; margin: 0 auto; text-align: center;">
-          <div id="adv-q1">
-            <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">Brauchen Sie Funktionen wie einen Online-Shop oder ein Buchungssystem?</h3>
-            <div style="display:flex; gap:1rem; justify-content:center; flex-wrap: wrap;">
-              <button class="btn btn-ghost adv-btn" onclick="nextAdv(true)">Ja, brauche ich</button>
-              <button class="btn btn-ghost adv-btn" onclick="nextAdv(false)">Nein, nur reine Informationen</button>
-            </div>
-          </div>
-          
-          <div id="adv-q2" style="display:none;">
-            <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">Wie umfangreich soll die Seite werden?</h3>
-            <div style="display:flex; flex-direction:column; gap:1rem; align-items:center;">
-              <button class="btn btn-ghost adv-btn" style="width:100%; max-width:320px;" onclick="showResult('Visitenkarte')">Kompakt (1 Seite als Onepager)</button>
-              <button class="btn btn-ghost adv-btn" style="width:100%; max-width:320px;" onclick="showResult('Firmenwebseite')">Mittel (bis 6 Unterseiten)</button>
-              <button class="btn btn-ghost adv-btn" style="width:100%; max-width:320px;" onclick="showResult('Individuell')">Groß (Mehr als 6 Seiten)</button>
-            </div>
-          </div>
-          
-          <div id="adv-res" style="display:none; padding: 1rem 0;">
-            <p style="color:var(--muted); font-size:0.9rem; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:1px; font-weight:700;">Mein Tipp für Sie:</p>
-            <div class="calc-number" id="adv-result-title" style="margin-bottom: 1.5rem; color: var(--accent);">Paket</div>
-            <a href="#kontakt" class="btn btn-primary" onclick="resetAdv()">Jetzt anfragen</a>
-            <button class="btn btn-ghost" style="margin-left:0.5rem;" onclick="resetAdv()">Neu starten</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Feature 2 & 5: Live Farb-Akzent-Auswahl & Projekt-Fortschritts-Demo -->
-    <section class="section" id="extras">
-      <div class="container" style="display:grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items:center;">
-        <div>
-          <h2>Individuelle Akzente &amp; Extras</h2>
-          <p>Sie möchten Ihrer Webseite einen ganz persönlichen Look verpassen? Wählen Sie hier live Ihren Wunsch-Farbakzent für das Design:</p>
-          <div class="accent-switcher">
-            <span style="font-weight:600; font-size:.9rem; margin-right:5px;">Farbe wählen:</span>
-            <button class="accent-dot" data-color="#3D5AFE" style="background:#3D5AFE;" title="Classic Blau"></button>
-            <button class="accent-dot" data-color="#10B981" style="background:#10B981;" title="Emerald Grün"></button>
-            <button class="accent-dot" data-color="#8B5CF6" style="background:#8B5CF6;" title="Royal Violett"></button>
-            <button class="accent-dot" data-color="#F59E0B" style="background:#F59E0B;" title="Sunset Gold"></button>
-            <button class="accent-dot" data-color="#EC4899" style="background:#EC4899;" title="Neon Pink"></button>
-          </div>
-          <button type="button" class="tts-btn" id="tts-speak-btn">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-            <span>Einleitung vorlesen lassen (Audio)</span>
-          </button>
-        </div>
-
-        <div class="timeline-widget">
-          <h3 style="font-size:1.1rem; margin-bottom:.5rem;">Live-Status Vorschau (Kunden-Dashboard)</h3>
-          <p style="font-size:.9rem; color:var(--muted);">So verfolgen LoggX-Kunden den Live-Entwicklungsstand ihres Projekts:</p>
-          <div class="timeline-steps-mini">
-            <div class="t-step-dot is-done" title="1. Erstgespräch">1</div>
-            <div class="t-step-dot is-done" title="2. Konzept &amp; Design">2</div>
-            <div class="t-step-dot is-active" title="3. Umsetzung &amp; Code" style="background:var(--accent); color:var(--white); border-color:var(--accent);">3</div>
-            <div class="t-step-dot" title="4. Livegang">4</div>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-size:.75rem; color:var(--muted); margin-top:.5rem;">
-            <span>Gespräch</span>
-            <span>Entwurf</span>
-            <strong style="color:var(--accent);">Umsetzung</strong>
-            <span>Livegang</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Kontakt -->
-    <section class="section section-dark" id="kontakt">
+    <!-- ============ KONTAKT ============ -->
+    <section class="section section-ink contact" id="kontakt">
       <div class="container contact-grid">
-        <div class="contact-copy">
-          <h2>Lassen Sie uns über Ihre Webseite sprechen.</h2>
+        <div class="contact-copy reveal reveal-left">
+          <h2 class="contact-title">Lassen Sie uns über Ihre Webseite sprechen.</h2>
           <p>
             Schreiben Sie mir kurz, was Sie vorhaben. Ich melde mich innerhalb von 24 Stunden
             mit einem Terminvorschlag für ein kostenloses Erstgespräch.
@@ -448,33 +447,31 @@
           <address class="contact-details">
             <a href="mailto:constantinloggen@icloud.com">constantinloggen@icloud.com</a>
             <a href="tel:+490000000000">+49 (0) 000 000 00 00</a>
-            <span>Zum Himmelreich 5<br>49082 Osnabrück</span>
+            <span>Zum Himmelreich 5, 49082 Osnabrück</span>
           </address>
         </div>
 
-        <form class="contact-form" id="contact-form" action="https://formsubmit.co/constantinloggen@icloud.com" method="post" novalidate>
-          <!-- Versand-Einstellungen (FormSubmit) -->
+        <form class="contact-form reveal reveal-right" id="contact-form" action="https://formsubmit.co/constantinloggen@icloud.com" method="post" novalidate>
           <input type="hidden" name="_subject" value="Neue Anfrage über loggx.de">
           <input type="hidden" name="_template" value="table">
           <input type="hidden" name="_captcha" value="false">
           <input type="hidden" name="_next" id="form-next" value="">
           <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
           <div class="field">
+            <input type="text" id="name" name="name" autocomplete="name" placeholder=" " required>
             <label for="name">Ihr Name</label>
-            <input type="text" id="name" name="name" autocomplete="name" required>
             <span class="field-error" aria-live="polite"></span>
           </div>
           <div class="field">
+            <input type="email" id="email" name="email" autocomplete="email" placeholder=" " required>
             <label for="email">E-Mail-Adresse</label>
-            <input type="email" id="email" name="email" autocomplete="email" required>
             <span class="field-error" aria-live="polite"></span>
           </div>
           <div class="field">
-            <label for="company">Firma <span class="optional">(optional)</span></label>
-            <input type="text" id="company" name="company" autocomplete="organization">
+            <input type="text" id="company" name="company" autocomplete="organization" placeholder=" ">
+            <label for="company">Firma (optional)</label>
           </div>
-          <div class="field">
-            <label for="plan">Interesse an</label>
+          <div class="field field-select">
             <select id="plan" name="plan">
               <option value="">Noch unentschieden</option>
               <option>Visitenkarte</option>
@@ -483,18 +480,19 @@
               <option>Relaunch</option>
               <option>Pflege und Hosting</option>
             </select>
+            <label for="plan">Interesse an</label>
           </div>
           <div class="field">
+            <textarea id="message" name="message" rows="4" placeholder=" " required></textarea>
             <label for="message">Worum geht es?</label>
-            <textarea id="message" name="message" rows="5" required></textarea>
             <span class="field-error" aria-live="polite"></span>
           </div>
           <div class="field field-check">
             <input type="checkbox" id="privacy" name="privacy" required>
-            <label for="privacy">Ich habe die <a href="datenschutz.html">Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Daten einverstanden.</label>
+            <label for="privacy">Ich habe die <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Daten einverstanden.</label>
             <span class="field-error" aria-live="polite"></span>
           </div>
-          <button type="submit" class="btn btn-primary btn-block" id="form-submit">Anfrage senden</button>
+          <button type="submit" class="btn btn-yellow btn-block" id="form-submit"><span>Anfrage senden</span></button>
           <p class="form-status" id="form-status" aria-live="polite"></p>
         </form>
       </div>
@@ -519,7 +517,7 @@
             <svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Handy
           </button>
         </div>
-        <a id="preview-open" class="btn btn-ghost btn-small" href="#" target="_blank" rel="noopener">Neuer Tab ↗</a>
+        <a id="preview-open" class="btn btn-ghost btn-small" href="#" target="_blank" rel="noopener"><span>Neuer Tab ↗</span></a>
         <button type="button" class="preview-close" data-preview-close aria-label="Vorschau schließen">
           <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
@@ -541,14 +539,10 @@
   <!-- Cookie-Hinweis -->
   <div class="cookie" id="cookie" role="dialog" aria-modal="false" aria-labelledby="cookie-title" hidden>
     <div class="cookie-box">
-      <div class="cookie-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-4-4 4 4 0 0 1-4-4 3 3 0 0 1-2-2z"/><circle cx="8" cy="10" r="1.2"/><circle cx="10" cy="15" r="1.2"/><circle cx="15" cy="15" r="1.2"/></svg>
-      </div>
       <div class="cookie-text">
         <strong id="cookie-title">Cookies auf dieser Webseite</strong>
         <p>Ich nutze notwendige Cookies, damit die Seite funktioniert. Optional helfen mir Statistik-Cookies zu verstehen, wie die Seite genutzt wird. Details in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
       </div>
-
       <div class="cookie-options" id="cookie-options" hidden>
         <label class="cookie-option">
           <input type="checkbox" checked disabled>
@@ -559,43 +553,27 @@
           <span><strong>Statistik</strong><small>Anonyme Besucherzahlen, um die Seite zu verbessern.</small></span>
         </label>
       </div>
-
       <div class="cookie-actions">
-        <button type="button" class="btn btn-ghost btn-small" id="cookie-settings">Einstellungen</button>
-        <button type="button" class="btn btn-ghost btn-small" id="cookie-necessary">Nur notwendige</button>
-        <button type="button" class="btn btn-primary btn-small" id="cookie-accept">Alle akzeptieren</button>
+        <button type="button" class="btn btn-ghost btn-small" id="cookie-settings"><span>Einstellungen</span></button>
+        <button type="button" class="btn btn-ghost btn-small" id="cookie-necessary"><span>Nur notwendige</span></button>
+        <button type="button" class="btn btn-primary btn-small" id="cookie-accept"><span>Alle akzeptieren</span></button>
       </div>
     </div>
   </div>
 
   <nav class="mobile-bar" aria-label="Schnellnavigation">
-    <a href="#top" data-target="top">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
-      <span>Start</span>
-    </a>
-    <a href="#leistungen" data-target="leistungen">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
-      <span>Leistungen</span>
-    </a>
-    <a href="#referenzen" data-target="referenzen">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18" stroke-width="2"/></svg>
-      <span>Referenzen</span>
-    </a>
-    <a href="#preise" data-target="preise">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="8" cy="8" r="1.6"/></svg>
-      <span>Preise</span>
-    </a>
-    <a href="#kontakt" data-target="kontakt" class="mobile-bar-cta">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l2-6 12-12 4 4L8 18z"/><path d="M14 4l4 4" stroke-width="2"/></svg>
-      <span>Anfrage</span>
-    </a>
+    <a href="#top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span>Start</span></a>
+    <a href="#beispiele"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg><span>Beispiele</span></a>
+    <a href="#leistungen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg><span>Leistungen</span></a>
+    <a href="#preise"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="8" cy="8" r="1.6"/></svg><span>Preise</span></a>
+    <a href="#kontakt" class="mobile-bar-cta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l2-6 12-12 4 4L8 18z"/></svg><span>Anfrage</span></a>
   </nav>
 
   <footer class="site-footer">
     <div class="container footer-inner">
       <div class="footer-brand">
         <span class="brand-name">LoggX</span>
-        <p>Webseiten für Unternehmen.<br>Inhaber: Constantin Moritz Loggen<br>Zum Himmelreich 5 · 49082 Osnabrück</p>
+        <p>Webseiten für Unternehmen.<br>Inhaber: Constantin Moritz Loggen<br>Zum Himmelreich 5, 49082 Osnabrück</p>
       </div>
       <nav class="footer-nav" aria-label="Rechtliches">
         <a href="impressum.html">Impressum</a>
