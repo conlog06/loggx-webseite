@@ -28,6 +28,34 @@
   unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+20A0-20AB,U+20AD-20C0,U+2C60-2C7F,U+A720-A7FF;
 }
 
+/* Lenis (weiches Scrollen) */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch],
+.lenis [data-lenis-prevent-vertical],
+.lenis [data-lenis-prevent-horizontal] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+.lenis.lenis-autoToggle {
+  transition-property: overflow;
+  transition-duration: 1ms;
+  transition-behavior: allow-discrete;
+}
+
 :root {
   --ink: #0F2540;        /* Marken-Navy */
   --ink-2: #16314F;
@@ -574,3 +602,30 @@ body.preview-open { overflow: hidden; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .js .plan.reveal.is-visible:hover { transform: translateY(-8px); }
+
+/* ==========================================================================
+   Animations-Modul (js/effects.js, nur aktiv mit GSAP + ohne "Bewegung reduzieren")
+   ========================================================================== */
+.fx .reveal:not(.is-done) { transition: none !important; }
+.fx .steps.is-visible .steps-line::after { transform: scaleY(var(--p, 0)); transition: none; }
+.rot-fx .rot-word { transform: none; transition: none; }
+.rc, .sf-char { display: inline-block; will-change: transform; }
+.sf-word { white-space: nowrap; }
+
+/* ShinyText (React Bits) */
+.shiny-text { color: transparent; background: linear-gradient(110deg, var(--text) 40%, var(--cobalt) 50%, var(--text) 60%) 0 0 / 220% 100%; -webkit-background-clip: text; background-clip: text; animation: shine 4.5s linear infinite; }
+[data-theme="dark"] .shiny-text { background-image: linear-gradient(110deg, var(--text) 40%, var(--sun) 50%, var(--text) 60%); }
+@keyframes shine { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+
+/* SpotlightCard (React Bits) */
+.spotlight { position: relative; }
+.spotlight::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0; opacity: 0; transition: opacity .4s;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(59,91,255,.12), transparent 70%); }
+.spotlight:hover::before { opacity: 1; }
+.plan-featured.spotlight::before, .contact-form.spotlight::before { background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(255,209,102,.16), transparent 70%); }
+.advisor.spotlight::before { background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.45), transparent 70%); }
+[data-theme="dark"] .spotlight::before { background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(255,209,102,.12), transparent 70%); }
+.spotlight > *:not(.hp):not(.plan-badge) { position: relative; z-index: 1; }
+.plan.spotlight > .plan-badge { position: absolute; z-index: 2; }
+
+@media (prefers-reduced-motion: reduce) { .shiny-text { animation: none; color: inherit; background: none; } }

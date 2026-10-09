@@ -1,10 +1,19 @@
-LoggX – Webseite (Version 3: Animationen (nur transform/opacity – laufen flüssig, auch auf älteren Handys)
-  - Hero: Überschrift fährt ein, Wort wechselt, Handys gleiten ein und schweben leicht
-  - Abschnitte blenden beim Scrollen ein (teils von links/rechts), gelber Strich unter Überschriften
-  - Ablauf: Linie füllt sich, Schritt-Nummern springen auf
-  - Preise: Karten heben sich beim Hover, Lichtreflex, Zahlen zählen hoch
-  - Designbeispiele: Vorschau scrollt beim Hover durch die ganze Seite
-  Besucher mit "Bewegung reduzieren" im System sehen alles ohne Animation.
+LoggX – Webseite (Version 3: Animationen & Scroll-Verhalten (js/effects.js)
+  - Lenis: weiches Scrollen mit Mausrad/Trackpad, auf Handys bleibt natives Scrollen
+  - GSAP ScrollTrigger: Abschnitte gleiten ein (ein gemeinsamer Observer per batch),
+    Hero-Parallaxe, Ablauf-Linie folgt dem Scrollen, Portrait-Zoom
+  - Nachbauten aus React Bits (ohne React, als Vanilla-JS):
+      ScrollFloat   Überschriften fallen Buchstabe für Buchstabe herein
+      ScrollReveal  "Über mich"-Text füllt sich Wort für Wort
+      RotatingText  wechselndes Wort im Hero, Buchstabe für Buchstabe
+      CountUp       Zahlen im Hero und bei den Preisen
+      Magnet        Buttons ziehen leicht zur Maus
+      SpotlightCard Lichtkegel folgt der Maus (Preise, Berater, Formular)
+      ShinyText     Glanz über "Webdesign aus Osnabrück"
+    React Bits – Copyright (c) 2026 David Haz – MIT + Commons Clause
+  - Nur transform/opacity, keine Blur-Filter, kein Pinning → ruckelfrei
+  - Fällt GSAP aus oder ist "Bewegung reduzieren" aktiv, läuft die Seite ohne
+    diese Effekte normal weiter (main.js übernimmt einfache Einblendungen).
 
 Dark Mode
   Umschalter (Sonne/Mond) oben rechts auf allen Seiten. Die Wahl wird im Browser

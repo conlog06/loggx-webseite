@@ -47,11 +47,19 @@
     });
   }
 
+  /* Animations-Modul (js/effects.js mit GSAP + Lenis) aktiv? */
+  var FX = window.LoggFX && window.LoggFX.active ? window.LoggFX : null;
+  function lockScroll(on) {
+    body.style.overflow = on ? "hidden" : "";
+    if (FX && FX.lenis) { if (on) FX.lenis.stop(); else FX.lenis.start(); }
+  }
+
   /* ---------- Hilfsfunktion: sanft zu einem Ziel scrollen ---------- */
   function scrollToTarget(target) {
     var header = document.getElementById("site-header");
     var offset = header ? -header.offsetHeight + 1 : 0;
     if (target.id === "top") offset = 0;
+    if (FX && FX.lenis) { FX.lenis.scrollTo(target, { offset: offset, duration: 1.3 }); return; }
     window.scrollTo({ top: target.getBoundingClientRect().top + window.pageYOffset + offset, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
@@ -71,11 +79,13 @@
   var toggle = document.getElementById("nav-toggle");
   var nav = document.getElementById("site-nav");
   function setNav(open) {
+    var hdr = document.getElementById("site-header");
+    if (open && hdr) hdr.classList.remove("is-hidden");
     nav.classList.toggle("is-open", open);
     body.classList.toggle("nav-open", open);
     toggle.setAttribute("aria-expanded", String(open));
     toggle.setAttribute("aria-label", open ? "Menü schließen" : "Menü öffnen");
-    body.style.overflow = open ? "hidden" : "";
+    lockScroll(open);
   }
   if (toggle && nav) {
     toggle.addEventListener("click", function () { setNav(!nav.classList.contains("is-open")); });
@@ -122,7 +132,7 @@
 
   /* ---------- Rotierendes Wort im Hero ---------- */
   var rotator = document.getElementById("rotator");
-  if (rotator && !reduceMotion) {
+  if (rotator && !reduceMotion && !FX) {
     var words = rotator.querySelectorAll(".rot-word");
     var wi = 0;
     setInterval(function () {
@@ -222,11 +232,13 @@
       }
       preview.hidden = false;
       body.classList.add("preview-open");
+      if (FX && FX.lenis) FX.lenis.stop();
       preview.querySelector(".preview-close").focus();
     };
     var closePreview = function () {
       preview.hidden = true;
       body.classList.remove("preview-open");
+      if (FX && FX.lenis) FX.lenis.start();
       frame.src = "about:blank";
       shotImg.removeAttribute("src");
       if (lastFocus) lastFocus.focus();
@@ -282,10 +294,10 @@
         '<button type="button" class="lightbox-close" data-lb-close aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
         '<div class="lightbox-view" data-device="desktop">' +
           '<div class="lightbox-browser"><span class="shot-bar"><i></i><i></i><i></i><em class="lb-url"></em></span>' +
-          '<div class="lightbox-scroll" tabindex="0" aria-label="Seite zum Scrollen"><img class="lb-img" alt=""></div></div>' +
+          '<div class="lightbox-scroll" tabindex="0" aria-label="Seite zum Scrollen" data-lenis-prevent><img class="lb-img" alt=""></div></div>' +
           '<span class="scroll-cue">Scrollen ↓</span>' +
         '</div>' +
-        '<aside class="lightbox-side">' +
+        '<aside class="lightbox-side" data-lenis-prevent>' +
           '<h3 id="lb-title"></h3>' +
           '<div class="preview-devices" role="group" aria-label="Ansicht wählen">' +
             '<button type="button" class="device-btn is-active" data-lb-device="desktop" aria-pressed="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Desktop</button>' +
@@ -319,10 +331,10 @@
       lbImg.alt = "Designbeispiel " + shot.querySelector("strong").textContent + " – komplette Seite";
       setDevice(window.innerWidth < 700 ? "phone" : "desktop");
       lb.hidden = false;
-      body.style.overflow = "hidden";
+      lockScroll(true);
       lb.querySelector(".lightbox-close").focus();
     };
-    var closeLb = function () { lb.hidden = true; body.style.overflow = ""; if (lbFocus) lbFocus.focus(); };
+    var closeLb = function () { lb.hidden = true; lockScroll(false); if (lbFocus) lbFocus.focus(); };
     lbScroll.addEventListener("scroll", function () { if (lbScroll.scrollTop > 40) cue.classList.add("is-gone"); }, { passive: true });
     lb.addEventListener("click", function (e) {
       var d = e.target.closest("[data-lb-device]");
@@ -504,9 +516,11 @@
     });
   }
 
-  /* ---------- Sanftes Einblenden beim Scrollen (leichtgewichtig) ---------- */
+  /* ---------- Einblenden ohne Animations-Modul (Fallback) ---------- */
   var reveals = document.querySelectorAll(".reveal");
-  if ("IntersectionObserver" in window && !reduceMotion) {
+  if (FX) {
+    /* übernimmt js/effects.js */
+  } else if ("IntersectionObserver" in window && !reduceMotion) {
     var revealObserver = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
@@ -530,7 +544,7 @@
   }
 
   /* ---------- Hero-Zahlen beim Laden hochzählen ---------- */
-  if (!reduceMotion) document.querySelectorAll(".hero-facts .count").forEach(function (el, i) { setTimeout(function () { countUp(el); }, 500 + i * 120); });
+  if (!reduceMotion && !FX) document.querySelectorAll(".hero-facts .count").forEach(function (el, i) { setTimeout(function () { countUp(el); }, 500 + i * 120); });
 
   /* ---------- Preise hochzählen (einmalig, wenn sichtbar) ---------- */
   function countUp(el) {
@@ -547,7 +561,7 @@
     requestAnimationFrame(frame);
   }
   var pricing = document.querySelector(".pricing");
-  if (pricing && "IntersectionObserver" in window && !reduceMotion) {
+  if (pricing && "IntersectionObserver" in window && !reduceMotion && !FX) {
     var priceObserver = new IntersectionObserver(function (entries) {
       if (!entries[0].isIntersecting) return;
       pricing.querySelectorAll(".count").forEach(countUp);
