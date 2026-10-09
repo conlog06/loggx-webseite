@@ -40,7 +40,7 @@
         <span class="brand-name">LoggX</span>
       </a>
 
-      <nav class="site-nav" id="site-nav" aria-label="Hauptnavigation">
+      <nav class="site-nav" id="site-nav" aria-label="Hauptnavigation" data-lenis-prevent>
         <ul>
           <li><a href="#beispiele">Beispiele</a></li>
           <li><a href="#leistungen">Leistungen</a></li>
@@ -77,7 +77,7 @@
 
       <div class="container hero-layout">
         <div class="hero-copy">
-          <p class="hero-kicker" data-hero-in>Webdesign aus Osnabrück</p>
+          <p class="hero-kicker" data-hero-in><span class="shiny-text">Webdesign aus Osnabrück</span></p>
           <h1 class="hero-title" aria-label="Webseiten für Praxen, Studios, Handwerk, Cafés und Salons, die Anfragen bringen.">
             <span class="line" aria-hidden="true"><span class="line-in">Webseiten für</span></span>
             <span class="line rotator-line" aria-hidden="true">
@@ -290,7 +290,7 @@
         </div>
 
         <div class="pricing">
-          <article class="plan reveal">
+          <article class="plan spotlight reveal">
             <h3>Visitenkarte</h3>
             <p class="plan-price">ab <span class="count" data-to="790">790</span>&nbsp;€</p>
             <p class="plan-for">Für Einzelunternehmer, die online gefunden werden wollen.</p>
@@ -304,7 +304,7 @@
             <a href="#kontakt" class="btn btn-ghost btn-block" data-plan="Visitenkarte"><span>Visitenkarte anfragen</span></a>
           </article>
 
-          <article class="plan reveal plan-featured">
+          <article class="plan spotlight reveal plan-featured">
             <span class="plan-badge">Meistgewählt</span>
             <h3>Firmenwebseite</h3>
             <p class="plan-price">ab <span class="count" data-to="1890" data-format="de">1.890</span>&nbsp;€</p>
@@ -320,7 +320,7 @@
             <a href="#kontakt" class="btn btn-yellow btn-block" data-plan="Firmenwebseite"><span>Firmenwebseite anfragen</span></a>
           </article>
 
-          <article class="plan reveal">
+          <article class="plan spotlight reveal">
             <h3>Individuell</h3>
             <p class="plan-price">auf Anfrage</p>
             <p class="plan-for">Für Onlineshops, Buchungssysteme oder mehrsprachige Seiten.</p>
@@ -341,7 +341,7 @@
         </p>
 
         <!-- Paket-Berater -->
-        <div class="advisor reveal" id="advisor">
+        <div class="advisor spotlight reveal" id="advisor">
           <div class="advisor-head">
             <h3>Unsicher, welches Paket passt?</h3>
             <p>Zwei Fragen, eine Empfehlung.</p>
@@ -451,7 +451,7 @@
           </address>
         </div>
 
-        <form class="contact-form reveal reveal-right" id="contact-form" action="https://formsubmit.co/constantinloggen@icloud.com" method="post" novalidate>
+        <form class="contact-form spotlight reveal reveal-right" id="contact-form" action="https://formsubmit.co/constantinloggen@icloud.com" method="post" novalidate>
           <input type="hidden" name="_subject" value="Neue Anfrage über loggx.de">
           <input type="hidden" name="_template" value="table">
           <input type="hidden" name="_captcha" value="false">
@@ -526,7 +526,7 @@
         <div class="device">
           <div class="device-loader" id="preview-loader"><span></span></div>
           <iframe id="preview-frame" title="Live-Vorschau der Webseite" loading="lazy" referrerpolicy="no-referrer"></iframe>
-          <div class="device-shot" id="preview-shot" hidden>
+          <div class="device-shot" id="preview-shot" data-lenis-prevent hidden>
             <img id="preview-shot-img" alt="Screenshot der Webseite">
             <p class="device-shot-error" id="preview-shot-error" hidden>Screenshot konnte nicht geladen werden – bitte „Neuer Tab“ nutzen.</p>
           </div>
@@ -585,6 +585,11 @@
     </div>
   </footer>
 
-  <script src="js/main.js"></script>
+  <script src="js/vendor/gsap.min.js" defer></script>
+  <script src="js/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="js/vendor/SplitText.min.js" defer></script>
+  <script src="js/vendor/lenis.min.js" defer></script>
+  <script src="js/effects.js" defer></script>
+  <script src="js/main.js" defer></script>
 </body>
 </html>
