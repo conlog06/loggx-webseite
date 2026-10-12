@@ -101,7 +101,7 @@
             <a href="#beispiele" class="btn btn-ghost"><span>Beispiele ansehen</span></a>
           </div>
           <dl class="hero-facts" data-hero-in>
-            <div><dt>Online in</dt><dd><span class="count" data-to="14">14</span> Tagen</dd></div>
+            <div><dt>Antwort in</dt><dd>&lt; <span class="count" data-to="24">24</span> Std.</dd></div>
             <div><dt>Ladezeit</dt><dd>&lt; <span class="count" data-to="2">2</span> Sek.</dd></div>
             <div><dt>Festpreis ab</dt><dd><span class="count" data-to="790">790</span> €</dd></div>
           </dl>
@@ -164,26 +164,25 @@
           <li class="service reveal" data-img="img/work/physio.webp">
             <h3>Neue Webseite</h3>
             <p>Design und Umsetzung von Grund auf. Startseite, Leistungen, Über uns, Kontakt – abgestimmt auf Ihre Branche, mobil optimiert, DSGVO-konform mit Impressum und Datenschutz.</p>
-            <span class="service-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <a class="service-arrow" href="#kontakt" data-plan="Neue Webseite" aria-label="Neue Webseite anfragen" title="Jetzt anfragen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
           </li>
           <li class="service reveal" data-img="img/work/wood.webp">
             <h3>Relaunch</h3>
             <p>Ihre Seite ist da, sieht aber aus wie 2014? Ich übernehme Inhalte, modernisiere Design und Technik und sorge dafür, dass Ihre Google-Platzierung erhalten bleibt.</p>
-            <span class="service-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <a class="service-arrow" href="#kontakt" data-plan="Relaunch" aria-label="Relaunch anfragen" title="Jetzt anfragen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
           </li>
           <li class="service reveal" data-img="img/work/gym.webp">
             <h3>Landingpages</h3>
             <p>Eine Seite, ein Ziel: Anfragen für ein bestimmtes Angebot, eine Aktion oder eine Werbekampagne. Schnell gebaut, messbar im Ergebnis.</p>
-            <span class="service-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <a class="service-arrow" href="#kontakt" data-plan="Landingpage" aria-label="Landingpages anfragen" title="Jetzt anfragen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
           </li>
           <li class="service reveal" data-img="img/work/salon.webp">
             <h3>Pflege &amp; Hosting</h3>
             <p>Updates, kleine Textänderungen, Sicherheits-Checks und Erreichbarkeit – damit Sie sich nie wieder um Technik kümmern müssen. Monatlich, jederzeit kündbar.</p>
-            <span class="service-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <a class="service-arrow" href="#kontakt" data-plan="Pflege und Hosting" aria-label="Pflege &amp; Hosting anfragen" title="Jetzt anfragen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
           </li>
         </ul>
       </div>
-      <div class="service-float" id="service-float" aria-hidden="true"><img alt="" id="service-float-img"></div>
     </section>
 
     <!-- ============ REFERENZEN ============ -->
@@ -337,8 +336,41 @@
 
         <p class="pricing-note">
           Alle Preise sind Endpreise. Als Kleinunternehmer nach §&nbsp;19 UStG weise ich keine Umsatzsteuer aus.
-          Optional: Pflege und Hosting ab 29&nbsp;€ monatlich.
         </p>
+
+        <!-- Laufende Betreuung -->
+        <div class="care spotlight reveal" id="betreuung">
+          <div class="care-head">
+            <p class="care-kicker">Nach dem Livegang</p>
+            <h3>Hosting &amp; Pflege – damit Ihre Seite läuft, während Sie arbeiten.</h3>
+            <p>Monatlich, jederzeit kündbar. Sie wählen, wie viel ich Ihnen abnehme.</p>
+          </div>
+          <div class="care-options">
+            <article class="care-card">
+              <h4>Hosting</h4>
+              <p class="care-price">ab <strong>29&nbsp;€</strong><span>/ Monat</span></p>
+              <ul>
+                <li>Schneller Server in Deutschland</li>
+                <li>SSL-Zertifikat und tägliche Backups</li>
+                <li>Domain und E-Mail-Postfächer</li>
+                <li>Erreichbarkeit wird überwacht</li>
+              </ul>
+              <a href="#kontakt" class="btn btn-ghost btn-block" data-plan="Hosting"><span>Hosting anfragen</span></a>
+            </article>
+            <article class="care-card care-card-plus">
+              <span class="care-badge">Rundum-sorglos</span>
+              <h4>Hosting + Pflege</h4>
+              <p class="care-price"><strong>individuell</strong><span>nach Umfang</span></p>
+              <ul>
+                <li>Alles aus Hosting</li>
+                <li>Updates und Sicherheits-Checks</li>
+                <li>Text-, Bild- und Preisänderungen für Sie</li>
+                <li>Kleine Erweiterungen und fester Ansprechpartner</li>
+              </ul>
+              <a href="#kontakt" class="btn btn-yellow btn-block" data-plan="Pflege und Hosting"><span>Pflege anfragen</span></a>
+            </article>
+          </div>
+        </div>
 
         <!-- Paket-Berater -->
         <div class="advisor spotlight reveal" id="advisor">
@@ -477,7 +509,10 @@
               <option>Visitenkarte</option>
               <option>Firmenwebseite</option>
               <option>Individuell</option>
+              <option>Neue Webseite</option>
               <option>Relaunch</option>
+              <option>Landingpage</option>
+              <option>Hosting</option>
               <option>Pflege und Hosting</option>
             </select>
             <label for="plan">Interesse an</label>
