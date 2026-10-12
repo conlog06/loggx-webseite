@@ -446,7 +446,9 @@ a.service-arrow:focus-visible { outline: none; }
   width: 100%; padding: 1.55rem 1rem .55rem; border-radius: 12px; border: 1.5px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.04); color: var(--white); font: 500 1rem/1.4 var(--font-body); transition: border-color .3s, background .3s; }
 .field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23A9B8CC' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-size: 18px; }
-.field select option { color: var(--ink); }
+.field select { color-scheme: light; }
+.field select option { background: #FFFFFF; color: var(--ink); font-weight: 500; }
+.field select option:checked { background: #FFF1C2; color: var(--ink); }
 .field textarea { resize: vertical; min-height: 120px; }
 .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--sun); background: rgba(255,255,255,.07); }
 .field > label { position: absolute; left: 1rem; top: 1.05rem; color: var(--muted-ink); font-weight: 500; pointer-events: none; transform-origin: 0 0; transition: transform .3s var(--ease), color .3s; }

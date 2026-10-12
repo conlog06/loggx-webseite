@@ -59,20 +59,23 @@
     var header = document.getElementById("site-header");
     var offset = header ? -header.offsetHeight + 1 : 0;
     if (target.id === "top") offset = 0;
-    if (FX && FX.lenis) { FX.lenis.scrollTo(target, { offset: offset, duration: 1.3 }); return; }
+    if (FX && FX.lenis) { FX.lenis.start(); FX.lenis.scrollTo(target, { offset: 0, duration: 1.3, force: true }); return; } // Lenis berücksichtigt scroll-padding-top bereits
     window.scrollTo({ top: target.getBoundingClientRect().top + window.pageYOffset + offset, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
-  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
-    a.addEventListener("click", function (e) {
-      var id = a.getAttribute("href");
-      if (id.length < 2) return;
-      var target = document.querySelector(id);
-      if (!target) return;
-      e.preventDefault();
-      scrollToTarget(target);
-      history.replaceState(null, "", id);
-    });
+  /* Alle internen Links (auch nachträglich erzeugte, z. B. in der Großansicht) */
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest('a[href^="#"]');
+    if (!a || e.defaultPrevented) return;
+    var id = a.getAttribute("href");
+    if (id.length < 2) return;
+    var target = document.querySelector(id);
+    if (!target) return;
+    e.preventDefault();
+    // offenes Handy-Menü zuerst schließen, sonst ist das Scrollen gesperrt
+    if (body.classList.contains("nav-open")) setNav(false);
+    scrollToTarget(target);
+    history.replaceState(null, "", id);
   });
 
   /* ---------- Mobile Navigation ---------- */
@@ -89,7 +92,6 @@
   }
   if (toggle && nav) {
     toggle.addEventListener("click", function () { setNav(!nav.classList.contains("is-open")); });
-    nav.querySelectorAll("a").forEach(function (link) { link.addEventListener("click", function () { setNav(false); }); });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && nav.classList.contains("is-open")) { setNav(false); toggle.focus(); }
     });
