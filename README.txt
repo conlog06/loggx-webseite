@@ -92,3 +92,9 @@ Testen auf dem eigenen Rechner
   PHP installieren (Windows: https://windows.php.net/download oder XAMPP), dann im
   Ordner der Webseite:  php -S localhost:8000 _launch/testserver.php
   Browser: http://localhost:8000 (Seite) und http://localhost:8000/admin/ (Admin)
+
+Werbe-Landingpage: /angebot/
+  angebot/index.html – fokussierte Seite für Anzeigen, Flyer, QR-Codes (ein Ziel: Anfrage).
+  Aufruf: https://deine-domain.de/angebot/  ·  Anfragen kommen mit dem Betreff
+  "Neue Anfrage über die Landingpage" an, so siehst du, woher sie stammen.
+  Vor dem Launch / in der Wartung ist sie wie die übrige Seite gesperrt.
