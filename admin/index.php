@@ -313,6 +313,9 @@ function render_auth(string $type, ?string $error): void {
     <?php if ($type === 'setup'): ?>
       <h1>Admin einrichten</h1>
       <p class="hint">Den Einrichtungscode findest du auf deinem Webspace in der Datei <code>_launch/data/einrichtungscode.php</code> (z. B. über den IONOS Webspace-Explorer oder per FTP öffnen).</p>
+      <?php if (PHP_SAPI === 'cli-server'): /* nur beim lokalen Testserver */ ?>
+      <p class="flash warn">Lokaler Test – dein Einrichtungscode: <strong><?= e(setup_code()) ?></strong></p>
+      <?php endif; ?>
       <input type="hidden" name="action" value="setup">
       <label>Einrichtungscode<input type="text" name="setup_code" required autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX"></label>
       <label>Admin-Passwort <small>(mind. 10 Zeichen)</small><input type="password" name="password" required minlength="10" autocomplete="new-password"></label>
