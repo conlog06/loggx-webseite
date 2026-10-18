@@ -87,3 +87,8 @@ Hinweis
   Bilder, CSS und JavaScript bleiben direkt abrufbar (nur die HTML-Seiten sind gesperrt).
   Läuft die Seite ohne PHP (z. B. GitHub Pages), ist das Launch-System wirkungslos
   und die Webseite einfach öffentlich.
+
+Testen auf dem eigenen Rechner
+  PHP installieren (Windows: https://windows.php.net/download oder XAMPP), dann im
+  Ordner der Webseite:  php -S localhost:8000 _launch/testserver.php
+  Browser: http://localhost:8000 (Seite) und http://localhost:8000/admin/ (Admin)
