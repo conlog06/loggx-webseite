@@ -105,7 +105,7 @@ if ($post) {
             $name = trim((string)($_POST['name'] ?? ''));
             if ($name === '') { flash('Bitte einen Namen für den Zugang angeben.', 'error'); break; }
             $exp = trim((string)($_POST['expires'] ?? ''));
-            $code = ['id' => bin2hex(random_bytes(6)), 'name' => mb_substr($name, 0, 80), 'code' => lx_new_code(),
+            $code = ['id' => bin2hex(random_bytes(6)), 'name' => (function_exists('mb_substr') ? mb_substr($name, 0, 80) : substr($name, 0, 80)), 'code' => lx_new_code(),
                      'created' => date('Y-m-d H:i'), 'expires' => $exp !== '' ? $exp . 'T23:59' : '', 'active' => true, 'uses' => 0, 'last_used' => ''];
             $codes[] = $code; lx_save_codes($codes);
             $_SESSION['lx_new_code'] = $code['id'];
