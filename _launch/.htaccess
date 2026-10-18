@@ -1,0 +1,7 @@
+# Nur der Torwächter darf direkt aufgerufen werden
+<FilesMatch "\.php$">
+  Require all denied
+</FilesMatch>
+<Files "gate.php">
+  Require all granted
+</Files>

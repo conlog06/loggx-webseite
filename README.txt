@@ -47,3 +47,43 @@ und datenschutz.html eintragen. Telefonnummer auch in index.html (Kontakt).
 Hochladen
   Alle Dateien und Ordner unverändert in das Web-Verzeichnis des Hosters kopieren.
   Keine Datenbank, kein Build-Schritt nötig.
+
+==========================================================================
+Launch-System: Landingpage, Wartungsseite, Zugänge (PHP, z. B. IONOS)
+==========================================================================
+Dateien
+  .htaccess              leitet alle HTML-Seiten über _launch/gate.php
+  _launch/gate.php       entscheidet: echte Seite, Landingpage oder Wartungsseite
+  _launch/templates/     Aussehen von Landingpage und Wartungsseite
+  _launch/data/          gespeicherte Einstellungen (wird automatisch angelegt,
+                         per .htaccess gesperrt, nicht im Git-Repo)
+  admin/                 Admin-Bereich: https://deine-domain.de/admin/
+
+Einrichtung (einmalig)
+  1. Alle Dateien per FTP/SFTP in das Web-Verzeichnis bei IONOS hochladen
+     (die Datei .htaccess ist versteckt – mit hochladen!).
+     PHP-Version im IONOS-Kundenbereich auf 8.1 oder neuer stellen.
+  2. https://deine-domain.de/admin/ öffnen. Die Seite legt einen Einrichtungscode an.
+  3. Den Code in der Datei _launch/data/einrichtungscode.php nachsehen
+     (IONOS Webspace-Explorer oder FTP-Programm), eintragen, Admin-Passwort festlegen.
+     Die Code-Datei wird danach automatisch gelöscht.
+
+Modi (im Admin umschaltbar)
+  Vor dem Launch     Landingpage mit Countdown und E-Mail-Benachrichtigung.
+                     Zum eingestellten Zeitpunkt geht die Seite automatisch online.
+  Wartungsarbeiten   Wartungsseite (HTTP 503, Suchmaschinen behalten den Eintrag),
+                     optional mit "voraussichtlich bis".
+  Öffentlich         normale Webseite.
+  Impressum, Datenschutz und Danke-Seite sind immer erreichbar.
+
+Zugriff vor dem Launch / während der Wartung
+  - Du als Admin (eingeloggt) siehst immer die echte Seite, mit Hinweis-Leiste unten.
+  - Persönliche Zugänge: im Admin Namen eintragen → Link kopieren und verschicken
+    (https://deine-domain.de/?zugang=ABCD-EFGH). Sperren/Löschen wirkt sofort.
+    Der Code kann auch auf der Landingpage unter "Sie haben einen Zugangscode?" eingegeben werden.
+  - Optional ein gemeinsames Vorschau-Passwort für alle.
+
+Hinweis
+  Bilder, CSS und JavaScript bleiben direkt abrufbar (nur die HTML-Seiten sind gesperrt).
+  Läuft die Seite ohne PHP (z. B. GitHub Pages), ist das Launch-System wirkungslos
+  und die Webseite einfach öffentlich.
