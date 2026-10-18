@@ -1,0 +1,20 @@
+# ==========================================================================
+# LoggX – Launch-System (Landingpage, Wartungsseite, Zugangscodes)
+# Alle HTML-Seiten laufen über _launch/gate.php. Admin-Bereich: /admin/
+# Liegt die Seite in einem Unterordner, RewriteBase entsprechend anpassen.
+# ==========================================================================
+DirectoryIndex index.html
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Admin-Bereich und Launch-System selbst nicht umleiten
+  RewriteRule ^(admin|_launch)(/|$) - [L]
+
+  # Startseite, Ordner und alle .html-Seiten über den Torwächter
+  RewriteRule ^$ _launch/gate.php [L,QSA]
+  RewriteRule ^(.*/)$ _launch/gate.php [L,QSA]
+  RewriteRule \.html?$ _launch/gate.php [L,QSA]
+</IfModule>
