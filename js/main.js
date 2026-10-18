@@ -152,6 +152,15 @@
     }, 2400);
   }
 
+  /* ---------- Landingpage: fester Handy-Button verschwindet beim Formular ---------- */
+  var sticky = document.getElementById("lp-sticky");
+  var anfrage = document.getElementById("anfrage");
+  if (sticky && anfrage && "IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) {
+      sticky.classList.toggle("is-hidden", entries[0].isIntersecting);
+    }, { rootMargin: "0px 0px -20% 0px" }).observe(anfrage);
+  }
+
   /* ---------- Referenz-Screenshots: lokales Bild, sonst automatischer Screenshot ---------- */
   document.querySelectorAll(".frame-shot").forEach(function (img) {
     img.addEventListener("error", function () {
@@ -319,13 +328,13 @@
         var on = b.getAttribute("data-lb-device") === dev;
         b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", String(on));
       });
-      lbImg.src = "img/work/full/" + current + (dev === "phone" ? "-m" : "") + ".webp";
+      lbImg.src = current + (dev === "phone" ? "-m" : "") + ".webp";
       lbScroll.scrollTop = 0;
       cue.classList.remove("is-gone");
     };
     var openLb = function (shot) {
       lbFocus = shot;
-      current = shot.getAttribute("data-id");
+      current = (shot.querySelector(".shot-img img") || shot.querySelector("img")).getAttribute("src").replace(/\.webp$/, ""); // z. B. img/work/full/dental
       lb.querySelector("#lb-title").textContent = shot.querySelector("strong").textContent;
       lb.querySelector(".lb-url").textContent = shot.getAttribute("data-url");
       lb.querySelector(".lb-desc").textContent = shot.getAttribute("data-desc");
@@ -493,7 +502,7 @@
       };
       var nativeSubmit = function () {
         var next = document.getElementById("form-next");
-        if (next && /^https?:/.test(location.protocol)) next.value = location.href.replace(/#.*$/, "").replace(/[^\/]*$/, "") + "danke.html";
+        if (next && /^https?:/.test(location.protocol)) next.value = new URL(form.getAttribute("data-thanks") || "danke.html", location.href).href;
         else if (next) next.remove();
         form.submit();
       };
