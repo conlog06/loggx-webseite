@@ -101,6 +101,9 @@ if ($post) {
             $mail = trim((string)($_POST['email'] ?? ''));
             if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) { flash('Bitte eine gültige E-Mail-Adresse eintragen.', 'error'); break; }
             $S['email'] = $mail;
+            foreach (['tax_number' => 40, 'tax_office' => 60, 'hoster' => 160] as $k => $max) $S[$k] = $str($k, $max);
+            $S['stats_text'] = $str('stats_text', 800);
+            $S['thumio'] = !empty($_POST['thumio']);
             foreach (['phone' => 40, 'street' => 80, 'city' => 80, 'time_visit' => 30, 'time_firm' => 30, 'kicker_home' => 90, 'kicker_angebot' => 90, 'bar_text' => 160, 'bar_link_text' => 40] as $k => $max) $S[$k] = $str($k, $max);
             $S['price_visit'] = $num('price_visit', 0, 99999, (int)$S['price_visit']);
             $S['price_firm'] = $num('price_firm', 0, 99999, (int)$S['price_firm']);
@@ -311,6 +314,17 @@ head('Admin – LoggX');
             <label>Link-Text <small>(optional)</small><input type="text" name="bar_link_text" maxlength="40" value="<?= e($S['bar_link_text']) ?>" placeholder="Jetzt anfragen"></label>
             <label>Link-Ziel<input type="text" name="bar_link" maxlength="300" value="<?= e($S['bar_link']) ?>" placeholder="#kontakt oder /angebot/"></label>
           </div>
+        </fieldset>
+        <fieldset><legend>Impressum &amp; Datenschutz</legend>
+          <p class="hint">Ersetzt die gelb markierten Stellen. Leere Felder blenden den jeweiligen Abschnitt aus.</p>
+          <div class="cols">
+            <label>Steuernummer <small>(optional – leer = nicht im Impressum)</small><input type="text" name="tax_number" maxlength="40" value="<?= e($S['tax_number']) ?>" placeholder="z. B. 66/123/45678"></label>
+            <label>Zuständiges Finanzamt<input type="text" name="tax_office" maxlength="60" value="<?= e($S['tax_office']) ?>"></label>
+            <label class="span2">Hosting-Anbieter (Name und Anschrift)<input type="text" name="hoster" maxlength="160" value="<?= e($S['hoster']) ?>" placeholder="IONOS SE, Elgendorfer Str. 57, 56410 Montabaur"></label>
+            <label class="span2">Statistik-Tool <small>(nur ausfüllen, wenn eins eingebunden ist – Anbieter, Zweck, Speicherdauer)</small><textarea name="stats_text" rows="2" maxlength="800"><?= e($S['stats_text']) ?></textarea></label>
+          </div>
+          <label class="check"><input type="checkbox" name="thumio" value="1"<?= !empty($S['thumio']) ? ' checked' : '' ?>> Referenz-Screenshots werden über image.thum.io geladen <small style="font-weight:500;color:var(--muted)">(ausschalten, sobald eigene Screenshots in img/ liegen)</small></label>
+          <?php if (trim((string)$S['hoster']) === ''): ?><p class="flash warn" style="margin:0">Der Hosting-Anbieter fehlt noch in der Datenschutzerklärung.</p><?php endif; ?>
         </fieldset>
         <button class="btn">Webseite speichern</button>
       </form>

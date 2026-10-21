@@ -722,3 +722,10 @@ body.preview-open { overflow: hidden; }
 .has-bar .site-header { top: var(--bar-h, 44px); transition: transform .5s var(--ease), background .4s, box-shadow .4s, top .3s var(--ease); }
 .has-bar .site-header.is-scrolled { top: 0; }
 @media (max-width: 720px) { .lx-bar { padding: 8px 46px 8px 16px; text-align: left; justify-content: flex-start; font-size: .86rem; } }
+
+/* Eingesetzte Werte (data-cms) erben das Aussehen ihres Elternelements */
+.contact-details a > [data-cms], .contact-details > span > [data-cms], .about-facts strong > [data-cms],
+.care-price strong > [data-cms], .lp-checks strong > [data-cms], .plan-list [data-cms], .faq-body [data-cms],
+.lp-phone > [data-cms], .footer-brand [data-cms] { color: inherit; font: inherit; letter-spacing: inherit; }
+/* Checkbox-Text im Formular: klickbar (Link zur Datenschutzerklärung), nicht schwebend */
+.field-check > label { position: static; pointer-events: auto; transform: none; top: auto; left: auto; }
