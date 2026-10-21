@@ -16,6 +16,11 @@ if (preg_match('#^/admin(/|$)#', $path)) {
 }
 if ($path !== '/' && substr($path, -1) !== '/' && is_dir($root . $path)) { header('Location: ' . $path . '/', true, 301); return true; }
 if (preg_match('#^/_launch/#', $path)) { http_response_code(403); echo 'Gesperrt'; return true; }
+// Wie die .htaccess: .html-Adressen auf saubere Adressen umleiten
+if (preg_match('~^(.*/)index\.html?$~i', $path, $m)) { header('Location: ' . $m[1], true, 301); return true; }
+if (preg_match('~^(/.+)\.html?$~i', $path, $m)) { header('Location: ' . $m[1], true, 301); return true; }
+if ($path === '/startseite' || $path === '/startseite/') { header('Location: /', true, 301); return true; }
+if (!preg_match('~\.[a-z0-9]+$~i', $path) && is_file($root . $path . '.html')) $path .= '.html';
 if ($path === '/' || substr($path, -1) === '/' || preg_match('/\.html?$/', $path)) {
     $_SERVER['SCRIPT_NAME'] = '/_launch/gate.php';
     require $root . '/_launch/gate.php'; return true;

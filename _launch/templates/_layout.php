@@ -94,7 +94,7 @@ function lx_access_form(?string $msg, string $type, bool $open): void { ?>
 function lx_foot(array $c): void { ?>
     <footer class="in d4">
       <span>© <?= date('Y') ?> LoggX · <a href="mailto:<?= e($c['contact_email']) ?>"><?= e($c['contact_email']) ?></a></span>
-      <nav aria-label="Rechtliches"><a href="<?= e(lx_url('impressum.html')) ?>">Impressum</a><a href="<?= e(lx_url('datenschutz.html')) ?>">Datenschutz</a></nav>
+      <nav aria-label="Rechtliches"><a href="<?= e(lx_url('impressum')) ?>">Impressum</a><a href="<?= e(lx_url('datenschutz')) ?>">Datenschutz</a></nav>
     </footer>
   </div>
 </body>
