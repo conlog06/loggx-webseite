@@ -52,7 +52,7 @@
       <h2>2. Hosting und Server-Logfiles</h2>
       <p>
         Beim Aufruf dieser Webseite verarbeitet der Hosting-Anbieter
-        <span class="placeholder">Name und Anschrift des Hosters</span> automatisch Informationen wie
+        <span class="placeholder" data-cms="hoster">Name und Anschrift des Hosters</span> automatisch Informationen wie
         IP-Adresse, Datum und Uhrzeit des Zugriffs, aufgerufene Seite und Browsertyp. Die Verarbeitung
         erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO zur sicheren und stabilen Bereitstellung der Webseite.
       </p>
@@ -90,13 +90,15 @@
         können Sie jederzeit über den Link „Cookie-Einstellungen“ im Fußbereich ändern oder durch Löschen
         der Cookies in Ihrem Browser widerrufen.
       </p>
-      <p><span class="placeholder">Falls ein Statistik-Tool (z. B. Google Analytics, Matomo) eingesetzt wird, hier Anbieter, Zweck und Speicherdauer ergänzen.</span></p>
+      <div data-cms-if="stats_text"><p data-cms="stats_text"><span class="placeholder">Falls ein Statistik-Tool (z. B. Google Analytics, Matomo) eingesetzt wird, hier Anbieter, Zweck und Speicherdauer ergänzen.</span></p></div>
 
+      <div data-cms-if="thumio">
       <h2>7. Screenshot-Vorschau (Referenzen)</h2>
       <p>
         Zur Darstellung von Vorschaubildern der Referenzprojekte wird der Dienst image.thum.io genutzt; dabei wird
-        Ihre IP-Adresse an diesen Anbieter übermittelt. <span class="placeholder">Entfällt, sobald eigene Screenshots im Ordner img/ liegen.</span>
+        Ihre IP-Adresse an diesen Anbieter übermittelt.
       </p>
+      </div>
 
       <h2>8. Benachrichtigung zum Launch</h2>
       <p>

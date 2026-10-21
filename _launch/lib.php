@@ -21,8 +21,9 @@ function lx_base(): string {
     if ($base !== null) return $base;
     $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
     // Skript liegt in /_launch/ oder /admin/ → eine Ebene höher ist die Seite
-    $base = rtrim(dirname(dirname($script)), '/');
-    if ($base === '.' || $base === '/') $base = '';
+    // ohne dirname(): unter Windows liefert dirname("/x") ein "\\" und Links würden zu "\/seite.html"
+    $base = (string)preg_replace('~/(_launch|admin)/[^/]*$~', '', $script);
+    $base = rtrim($base, '/');
     return $base;
 }
 function lx_url(string $path = ''): string { return lx_base() . '/' . ltrim($path, '/'); }
@@ -83,6 +84,11 @@ function lx_defaults(): array {
             'response_hours' => 24,
             'kicker_home' => 'Webdesign aus Osnabrück',
             'kicker_angebot' => 'Für Betriebe aus Osnabrück und Umgebung',
+            'tax_number' => '',            // leer = Abschnitt im Impressum ausgeblendet
+            'tax_office' => 'Osnabrück',
+            'hoster' => '',                // z. B. "IONOS SE, Elgendorfer Str. 57, 56410 Montabaur"
+            'stats_text' => '',            // leer = kein Statistik-Tool, Absatz ausgeblendet
+            'thumio' => true,              // Referenz-Screenshots über image.thum.io
             'bar_on' => false,
             'bar_text' => '',
             'bar_link_text' => '',
@@ -255,8 +261,15 @@ function lx_apply_site(string $html, array $s): string {
         $val = lx_site_value($s, $key, $de);
         if ($val === null || $val === '') return $all;
         if (preg_match('/data-to="/', $attrs) && is_numeric($s[$key])) $attrs = preg_replace('/data-to="[^"]*"/', 'data-to="' . (int)$s[$key] . '"', $attrs);
-        if ($key === 'phone' && $val !== lx_defaults()['site']['phone']) $attrs = preg_replace('/\s*class="placeholder"/', '', $attrs);
+        $def = lx_defaults()['site'][$key] ?? null;
+        if ($def === null || (string)$def === '' || $val !== (string)$def) $attrs = preg_replace('/\s*class="placeholder"/', '', $attrs);
         return '<' . $tag . $attrs . '>' . e($val) . '</' . $tag . '>';
+    }, $html) ?? $html;
+    // Bereiche ein-/ausblenden: <div data-cms-if="schlüssel">…</div> verschwindet, wenn der Wert leer/aus ist
+    $html = preg_replace_callback('~<div data-cms-if="(!?)([a-z_]+)">(.*?)</div>~is', function ($m) use ($s) {
+        $on = !empty($s[$m[2]]) && trim((string)$s[$m[2]]) !== '';
+        if ($m[1] === '!') $on = !$on;
+        return $on ? $m[3] : '';
     }, $html) ?? $html;
     // Links und Formular-Ziel
     $tel = lx_tel((string)$s['phone']);

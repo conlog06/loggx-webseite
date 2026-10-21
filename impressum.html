@@ -56,9 +56,11 @@
         E-Mail: <span data-cms="email">constantinloggen@icloud.com</span>
       </p>
 
+      <div data-cms-if="tax_number">
       <h2>Steuernummer</h2>
-      <p>Steuernummer: <span class="placeholder">00/000/00000</span><br>
-      Zuständiges Finanzamt: Osnabrück</p>
+      <p>Steuernummer: <span class="placeholder" data-cms="tax_number">00/000/00000</span><br>
+      Zuständiges Finanzamt: <span data-cms="tax_office">Osnabrück</span></p>
+      </div>
 
       <h2>Umsatzsteuer</h2>
       <p>Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).</p>
