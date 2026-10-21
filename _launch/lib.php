@@ -79,6 +79,7 @@ function lx_defaults(): array {
             'price_visit' => 790,
             'price_firm' => 1890,
             'price_hosting' => 29,
+            'price_hourly' => 50,          // Änderungen nach Aufwand (€/Stunde)
             'lp_price_visit' => 0,         // Werbe-Landingpage (/angebot/): 0 = gleicher Preis wie Hauptseite
             'lp_price_firm' => 0,
             'lp_strike' => true,           // Normalpreis durchgestrichen daneben zeigen, wenn der Landingpage-Preis günstiger ist
