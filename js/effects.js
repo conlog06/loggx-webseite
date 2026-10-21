@@ -68,9 +68,11 @@
     });
   }
 
+  var $ = function (sel) { return document.querySelector(sel); };
   /* ---------- Unterseiten: nur Lenis + Magnet + kurzer Einstieg ---------- */
   if (!document.getElementById("top")) {
-    gsap.from(".legal h1, .legal .check, .legal-back", { y: 30, autoAlpha: 0, duration: 0.9, stagger: 0.08, ease: "power3.out" });
+    var intro = document.querySelectorAll(".legal h1, .legal .check, .legal-back");
+    if (intro.length) gsap.from(intro, { y: 30, autoAlpha: 0, duration: 0.9, stagger: 0.08, ease: "power3.out" });
     return;
   }
   if (!hasST) return;
@@ -87,7 +89,7 @@
     });
   }
   document.querySelectorAll(".hero-facts .count").forEach(function (el, i) { countUp(el, 0.6 + i * 0.12); });
-  ST.create({
+  if ($(".pricing")) ST.create({
     trigger: ".pricing", start: "top 75%", once: true,
     onEnter: function () { document.querySelectorAll(".pricing .count").forEach(function (el, i) { countUp(el, 0.2 + i * 0.1); }); }
   });
@@ -119,10 +121,9 @@
 
   /* ---------- Hero: Parallaxe beim Scrollen ---------- */
   var heroScrub = { trigger: ".hero", start: "top top", end: "bottom top", scrub: true };
-  gsap.to(".phone-1", { yPercent: -10, ease: "none", scrollTrigger: heroScrub });
-  gsap.to(".phone-2", { yPercent: -22, ease: "none", scrollTrigger: heroScrub });
-  gsap.to(".phone-3", { yPercent: -4, ease: "none", scrollTrigger: heroScrub });
-  gsap.to(".hero-x", { rotate: 30, ease: "none", scrollTrigger: heroScrub });
+  if ($(".hero")) [[".phone-1", { yPercent: -10 }], [".phone-2", { yPercent: -22 }], [".phone-3", { yPercent: -4 }], [".hero-x", { rotate: 30 }]].forEach(function (a) {
+    if ($(a[0])) gsap.to(a[0], Object.assign({ ease: "none", scrollTrigger: heroScrub }, a[1]));
+  });
 
   /* ---------- Einblenden: ScrollTrigger.batch (ein Observer für alles) ---------- */
   var fromVars = function (el) {
@@ -180,7 +181,8 @@
   }
 
   /* ---------- Portrait: leichter Zoom beim Scrollen ---------- */
-  gsap.fromTo(".portrait-frame > .portrait-initials, .portrait-frame > .portrait-img", { scale: 1.15 },
+  var pics = document.querySelectorAll(".portrait-frame > .portrait-initials, .portrait-frame > .portrait-img");
+  if (pics.length && $(".about-portrait")) gsap.fromTo(pics, { scale: 1.15 },
     { scale: 1, ease: "none", scrollTrigger: { trigger: ".about-portrait", start: "top bottom", end: "bottom 40%", scrub: true } });
 
   /* Positionen neu berechnen, sobald Bilder & Schriften geladen sind */
