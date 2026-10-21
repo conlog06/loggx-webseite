@@ -264,7 +264,7 @@ p { margin: 0 0 1em; }
 @keyframes float { 50% { translate: 0 -14px; } }
 
 /* ---------- Designbeispiele ---------- */
-.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px 24px; }
+.shots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 32px; }
 .shot { margin: 0; cursor: pointer; }
 .shot-frame { border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 24px 50px -28px rgba(0,0,0,.7); transition: transform .4s var(--ease); }
 .shot:hover .shot-frame, .shot:focus-visible .shot-frame { transform: translateY(-6px); }
@@ -552,8 +552,13 @@ body.page-sub { padding-bottom: 0; }
 .legal-numbered h2::before { content: counter(lg); flex: 0 0 auto; display: inline-grid; place-items: center; min-width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--bg-alt); color: var(--text); font-size: .85rem; font-weight: 800; box-shadow: inset 0 0 0 1px var(--border); }
 @media (max-width: 900px) {
   .legal-grid { grid-template-columns: 1fr; gap: 28px; }
-  .legal-side { position: static; }
+  .legal-side { position: static; text-align: center; }
   .legal-kicker { margin-top: 1.4rem; }
+  .legal-side h1::after { margin-left: auto; margin-right: auto; }
+  .legal-lead { margin-left: auto; margin-right: auto; }
+  .legal-switch { display: flex; width: fit-content; margin: 0 auto; }
+  .legal-switch a { padding: .6rem 1.3rem; }
+  .legal-card { margin: 0 auto; }
 }
 .placeholder { background: #FFF1C2; color: var(--ink); padding: 0 4px; border-radius: 4px; }
 .thanks { text-align: center; display: grid; justify-items: center; }
@@ -632,7 +637,8 @@ body.page-sub { padding-bottom: 0; }
 .lightbox-view { position: relative; display: flex; flex-direction: column; min-height: 0; background: var(--bg-alt); padding: 16px; }
 .lightbox-browser { flex: 1; min-height: 0; margin: 0 auto; width: 100%; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 20px 50px -30px rgba(0,0,0,.6); transition: width .5s var(--ease); }
 .lightbox-view[data-device="phone"] .lightbox-browser { width: 360px; max-width: 100%; border-radius: 34px; border: 8px solid #0F2540; }
-.lightbox-view[data-device="phone"] .shot-bar { display: none; }
+.lightbox-view[data-device="tablet"] .lightbox-browser { width: 560px; max-width: 100%; border-radius: 26px; border: 10px solid #0F2540; }
+.lightbox-view[data-device="phone"] .shot-bar, .lightbox-view[data-device="tablet"] .shot-bar { display: none; }
 .lightbox-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .lightbox-scroll img { width: 100%; height: auto; }
 .lightbox-side { display: flex; flex-direction: column; gap: 18px; padding: 26px 24px; overflow-y: auto; }
@@ -642,7 +648,9 @@ body.page-sub { padding-bottom: 0; }
 .lightbox-side li { position: relative; padding-left: 28px; font-weight: 600; font-size: .95rem; animation: fadeUp .5s var(--ease) both; }
 .lightbox-side li:nth-child(2) { animation-delay: .08s; } .lightbox-side li:nth-child(3) { animation-delay: .16s; } .lightbox-side li:nth-child(4) { animation-delay: .24s; }
 .lightbox-side li::before { content: ""; position: absolute; left: 0; top: .2em; width: 18px; height: 18px; border-radius: 50%; background: var(--sun) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' stroke='%230F2540' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/12px no-repeat; }
-.lightbox-side .preview-devices { align-self: flex-start; }
+.lightbox-side .preview-devices { align-self: stretch; flex-wrap: wrap; }
+.lightbox-side .device-btn { flex: 1; justify-content: center; padding: .45rem .55rem; font-size: .84rem; gap: 5px; }
+.lightbox-side .device-btn svg { width: 15px; height: 15px; }
 .lightbox-note { font-size: .82rem; }
 .lightbox-side .btn { margin-top: auto; }
 .lightbox-close { position: absolute; top: 14px; right: 14px; z-index: 3; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--sun); color: var(--ink); cursor: pointer; display: grid; place-items: center; transition: transform .4s var(--ease); }

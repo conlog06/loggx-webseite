@@ -117,6 +117,7 @@ if ($mode === 'live' || $isAlways || $bypass) {
         $html = preg_replace('~</body>~i', $badge . '</body>', $html, 1) ?? $html;
     }
     echo $html;
+    if (!$admin && !empty($c['site']['stats_on'])) { if (function_exists('fastcgi_finish_request')) fastcgi_finish_request(); lx_stats_track($rel); }
     exit;
 }
 
@@ -132,3 +133,4 @@ if ($mode === 'maintenance') {
 } else {
     require __DIR__ . '/templates/landing.php';
 }
+if (!empty($c['site']['stats_on'])) { if (function_exists('fastcgi_finish_request')) fastcgi_finish_request(); lx_stats_track($mode === 'maintenance' ? '(wartung)' : '(launch)'); }

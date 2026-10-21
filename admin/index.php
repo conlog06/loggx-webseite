@@ -187,6 +187,13 @@ if ($post) {
             $c['site']['img_' . $slot] = $rel . '?v=' . time(); lx_save_config($c);
             flash($slots[$slot][0] . ' aktualisiert.');
             break;
+        case 'stats':
+            $c['site']['stats_on'] = !empty($_POST['stats_on']); lx_save_config($c);
+            flash($c['site']['stats_on'] ? 'Statistik ist eingeschaltet.' : 'Statistik ist ausgeschaltet – es wird nichts mehr gezählt.');
+            break;
+        case 'stats_reset':
+            lx_stats_reset(); flash('Statistik wurde zurückgesetzt.');
+            break;
         case 'delete_signup':
             $list = lx_read('signups', []);
             $list = array_values(array_filter($list, fn($s) => $s['email'] !== ($_POST['email'] ?? '')));
@@ -231,6 +238,61 @@ head('Admin – LoggX');
     <form method="post"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="launch_now">
       <button class="btn btn-sun" onclick="return confirm('Seite jetzt für alle freischalten?')">Jetzt veröffentlichen</button></form>
     <?php endif; ?>
+  </section>
+
+  <!-- Statistik -->
+  <?php
+    $range = in_array((int)($_GET['tage'] ?? 30), [7, 30, 90, 365], true) ? (int)($_GET['tage'] ?? 30) : 30;
+    $st = lx_stats_summary($range);
+    $pages = lx_stats_pages();
+    $trend = function (int $now, int $prev): string {
+        if ($prev <= 0) return $now > 0 ? '<span class="trend up">neu</span>' : '';
+        $p = (int)round(($now - $prev) / $prev * 100);
+        return '<span class="trend ' . ($p >= 0 ? 'up' : 'down') . '">' . ($p >= 0 ? '+' : '') . $p . ' %</span>';
+    };
+    $maxDay = max(1, ...array_map(fn($d) => $d['u'], $st['days']));
+    $gTotal = max(1, array_sum($st['g']));
+    $srcName = fn(string $k) => $k === 'direkt' ? 'Direkt / Lesezeichen' : $k;
+  ?>
+  <section class="card stats-card" id="statistik">
+    <div class="stats-head">
+      <div><h2>Statistik</h2><p class="hint">Ohne Cookies, keine IP-Adressen gespeichert. Du selbst wirst nicht mitgezählt.</p></div>
+      <nav class="range" aria-label="Zeitraum"><?php foreach ([7 => '7 Tage', 30 => '30 Tage', 90 => '90 Tage', 365 => '1 Jahr'] as $k => $t): ?><a href="?tage=<?= $k ?>#statistik"<?= $range === $k ? ' aria-current="true"' : '' ?>><?= $t ?></a><?php endforeach; ?></nav>
+    </div>
+    <?php if (empty($S_stats_on = !empty($c['site']['stats_on']))): ?><p class="flash warn">Die Statistik ist ausgeschaltet – unten kannst du sie wieder einschalten.</p><?php endif; ?>
+    <div class="kpis">
+      <div><span>Besucher</span><b><?= number_format($st['u'], 0, ',', '.') ?></b><?= $trend($st['u'], $st['prev_u']) ?></div>
+      <div><span>Seitenaufrufe</span><b><?= number_format($st['v'], 0, ',', '.') ?></b><?= $trend($st['v'], $st['prev_v']) ?></div>
+      <div><span>Anfragen</span><b><?= number_format($st['a'], 0, ',', '.') ?></b><small>über das Formular</small></div>
+      <div><span>Seiten pro Besuch</span><b><?= $st['u'] ? number_format($st['v'] / $st['u'], 1, ',', '.') : '–' ?></b></div>
+    </div>
+    <div class="chart" role="img" aria-label="Besucher pro Tag">
+      <?php foreach ($st['days'] as $i => $d): $h = $d['u'] ? max(3, round($d['u'] / $maxDay * 100)) : 0; ?>
+        <span class="cbar<?= $d['a'] ? ' has-a' : '' ?>" style="--h:<?= $h ?>%" title="<?= e(date('d.m.', strtotime($d['day']))) ?>: <?= $d['u'] ?> Besucher, <?= $d['v'] ?> Aufrufe<?= $d['a'] ? ', ' . $d['a'] . ' Anfrage(n)' : '' ?>"><i></i></span>
+      <?php endforeach; ?>
+    </div>
+    <div class="chart-axis"><span><?= e(date('d.m.', strtotime($st['days'][0]['day']))) ?></span><span>heute</span></div>
+    <div class="stats-lists">
+      <div><h3>Beliebteste Seiten</h3>
+        <?php if (!$st['p']): ?><p class="hint">Noch keine Daten.</p><?php endif; ?>
+        <?php $pm = max(1, ...array_values($st['p'] ?: [1])); foreach (array_slice($st['p'], 0, 7, true) as $k => $n): ?>
+        <div class="row"><span class="fill" style="--w:<?= round($n / $pm * 100) ?>%"></span><span><?= e($pages[$k] ?? $k) ?></span><b><?= $n ?></b></div>
+        <?php endforeach; ?></div>
+      <div><h3>Herkunft</h3>
+        <?php if (!$st['r']): ?><p class="hint">Noch keine Daten.</p><?php endif; ?>
+        <?php $rm = max(1, ...array_values($st['r'] ?: [1])); foreach (array_slice($st['r'], 0, 7, true) as $k => $n): ?>
+        <div class="row"><span class="fill" style="--w:<?= round($n / $rm * 100) ?>%"></span><span><?= e($srcName((string)$k)) ?></span><b><?= $n ?></b></div>
+        <?php endforeach; ?></div>
+      <div><h3>Geräte</h3>
+        <?php foreach (['m' => 'Handy', 'd' => 'Computer', 't' => 'Tablet'] as $k => $t): $pc = round(($st['g'][$k] ?? 0) / $gTotal * 100); ?>
+        <div class="row"><span class="fill" style="--w:<?= $pc ?>%"></span><span><?= $t ?></span><b><?= array_sum($st['g']) ? $pc . ' %' : '–' ?></b></div>
+        <?php endforeach; ?></div>
+    </div>
+    <div class="stats-foot">
+      <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="stats">
+        <label class="check"><input type="checkbox" name="stats_on" value="1"<?= $S_stats_on ? ' checked' : '' ?> onchange="this.form.submit()"> Statistik eingeschaltet</label></form>
+      <form method="post" class="inline" onsubmit="return confirm('Alle Statistikdaten löschen?')"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="stats_reset"><button class="btn btn-small btn-danger">Zurücksetzen</button></form>
+    </div>
   </section>
 
   <div class="grid">
@@ -530,6 +592,34 @@ function head(string $title): void { ?>
   .eyebrow { margin: 0 0 4px; color: #A9B8CC; font-weight: 600; font-size: .88rem; }
   .hero-status h1 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
   .sub { margin: 6px 0 0; color: #C3CFDE; max-width: 70ch; } .sub strong { color: var(--sun); }
+
+  .stats-card { margin-bottom: 20px; }
+  .stats-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .stats-head h2 { margin: 0 0 4px; }
+  .range { display: inline-flex; padding: 4px; background: var(--paper); border-radius: 999px; }
+  .range a { padding: .4rem .85rem; border-radius: 999px; font-weight: 700; font-size: .85rem; color: var(--muted); text-decoration: none; }
+  .range a[aria-current] { background: var(--ink); color: #fff; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+  .kpis > div { background: var(--paper); border-radius: 14px; padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+  .kpis span { flex-basis: 100%; font-size: .8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .kpis b { font: 800 1.9rem/1.1 "Bricolage", sans-serif; letter-spacing: -.02em; }
+  .kpis small { color: var(--muted); font-size: .8rem; }
+  .trend { flex-basis: auto !important; font-size: .78rem !important; text-transform: none !important; letter-spacing: 0 !important; padding: 2px 8px; border-radius: 999px; }
+  .trend.up { background: #E3F6EE; color: #127A55 !important; } .trend.down { background: #FDECEC; color: #B4262B !important; }
+  .chart { display: flex; align-items: flex-end; gap: 3px; height: 150px; padding: 10px 0 0; border-bottom: 1.5px solid var(--line); }
+  .chart .cbar { flex: 1; height: 100%; display: flex; align-items: flex-end; cursor: default; }
+  .chart .cbar i { display: block; width: 100%; height: var(--h); min-height: 0; border-radius: 4px 4px 0 0; background: var(--ink); opacity: .85; transition: opacity .15s; }
+  .chart .cbar.has-a i { background: linear-gradient(var(--sun) 0 6px, var(--ink) 6px); }
+  .chart .cbar:hover i { opacity: 1; background: var(--cobalt); }
+  .chart-axis { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin: 6px 0 20px; }
+  .stats-lists { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .stats-lists h3 { font-size: .95rem; margin: 0 0 10px; }
+  .stats-lists .row { position: relative; display: flex; justify-content: space-between; gap: 10px; padding: 7px 10px; border-radius: 8px; font-size: .9rem; margin-bottom: 4px; overflow: hidden; }
+  .stats-lists .row .fill { position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--paper); border-radius: 8px; z-index: 0; }
+  .stats-lists .row span:not(.fill), .stats-lists .row b { position: relative; z-index: 1; }
+  .stats-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .stats-foot form.inline { margin: 0; }
+  @media (max-width: 900px) { .kpis { grid-template-columns: 1fr 1fr; } .stats-lists { grid-template-columns: 1fr; } .chart { gap: 1px; } }
   .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
   .card { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 24px; }
   .card h2 { font-size: 1.35rem; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }

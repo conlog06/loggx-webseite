@@ -93,6 +93,7 @@ function lx_defaults(): array {
             'hoster' => '',                // z. B. "IONOS SE, Elgendorfer Str. 57, 56410 Montabaur"
             'stats_text' => '',            // leer = kein Statistik-Tool, Absatz ausgeblendet
             'thumio' => true,              // Referenz-Screenshots über image.thum.io
+            'stats_on' => true,            // eigene Besucherstatistik ohne Cookies (Admin → Statistik)
             'bar_on' => false,
             'bar_text' => '',
             'bar_link_text' => '',
@@ -371,3 +372,5 @@ function lx_bar_html(array $s): string {
            . 'b.querySelector(".lx-bar-close").addEventListener("click",function(e){e.preventDefault();e.stopPropagation();hide()})})()</script>';
     return $html;
 }
+
+require_once __DIR__ . '/stats.php';
