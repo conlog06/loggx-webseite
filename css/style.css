@@ -185,7 +185,7 @@ p { margin: 0 0 1em; }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
 .brand-mark { display: inline-flex; color: var(--mark); transition: transform .6s var(--ease); }
-.brand:hover .brand-mark { transform: rotate(90deg); }
+.brand:hover .brand-mark { transform: rotate(-8deg) scale(1.06); }
 .brand-name { font: 800 1.45rem/1 var(--font-display); letter-spacing: -0.03em; }
 .site-nav ul { list-style: none; display: flex; align-items: center; gap: 4px; margin: 0; padding: 0; }
 .site-nav a { position: relative; display: block; padding: .55rem .8rem; font-weight: 600; font-size: .95rem; text-decoration: none; border-radius: 999px; }
@@ -545,7 +545,7 @@ body.preview-open { overflow: hidden; }
   .nav-cta { margin: 20px 0 0; background: var(--sun) !important; color: var(--ink) !important; font-size: 1.2rem !important; }
   .nav-toggle { display: block; }
   .nav-open .brand { color: var(--white); position: relative; z-index: 2; }
-  .nav-open .brand-mark { color: var(--white); }
+  .nav-open .brand-mark { color: rgba(255,255,255,.1); }
   .nav-open .nav-toggle { background: var(--sun); } .nav-open .nav-toggle span { background: var(--ink); }
   .nav-open .site-header { background: transparent; box-shadow: none; backdrop-filter: none; }
 }
