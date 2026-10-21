@@ -108,6 +108,9 @@ if ($post) {
             $S['price_visit'] = $num('price_visit', 0, 99999, (int)$S['price_visit']);
             $S['price_firm'] = $num('price_firm', 0, 99999, (int)$S['price_firm']);
             $S['price_hosting'] = $num('price_hosting', 0, 9999, (int)$S['price_hosting']);
+            $S['lp_price_visit'] = $num('lp_price_visit', 0, 99999, 0);
+            $S['lp_price_firm'] = $num('lp_price_firm', 0, 99999, 0);
+            $S['lp_strike'] = !empty($_POST['lp_strike']);
             $S['response_hours'] = $num('response_hours', 1, 168, (int)$S['response_hours']);
             $link = trim((string)($_POST['bar_link'] ?? ''));
             $S['bar_link'] = preg_match('~^(#|/|https?://)~i', $link) ? substr($link, 0, 300) : '';
@@ -283,6 +286,14 @@ head('Admin – LoggX');
             <label>Firmenwebseite ab <span class="unit-in"><input type="number" name="price_firm" min="0" max="99999" value="<?= (int)$S['price_firm'] ?>"><i>€</i></span></label>
             <label>Hosting ab <span class="unit-in"><input type="number" name="price_hosting" min="0" max="9999" value="<?= (int)$S['price_hosting'] ?>"><i>€/Monat</i></span></label>
           </div>
+        </fieldset>
+        <fieldset><legend>Preise auf der Werbe-Landingpage <small style="font:600 .8rem 'Jakarta',sans-serif;color:var(--muted)">/angebot/</small></legend>
+          <p class="hint">Eigene Aktionspreise nur für die Werbe-Landingpage. Leer lassen = gleiche Preise wie oben. <a href="<?= e(lx_url('angebot/')) ?>" target="_blank" rel="noopener">Landingpage ansehen ↗</a></p>
+          <div class="cols">
+            <label>Visitenkarte ab <span class="unit-in"><input type="number" name="lp_price_visit" min="0" max="99999" value="<?= (int)$S['lp_price_visit'] ?: '' ?>" placeholder="<?= (int)$S['price_visit'] ?>"><i>€</i></span></label>
+            <label>Firmenwebseite ab <span class="unit-in"><input type="number" name="lp_price_firm" min="0" max="99999" value="<?= (int)$S['lp_price_firm'] ?: '' ?>" placeholder="<?= (int)$S['price_firm'] ?>"><i>€</i></span></label>
+          </div>
+          <label class="check"><input type="checkbox" name="lp_strike" value="1"<?= !empty($S['lp_strike']) ? ' checked' : '' ?>> Normalpreis durchgestrichen daneben zeigen (wenn günstiger)</label>
         </fieldset>
         <fieldset><legend>Lieferzeit &amp; Antwortzeit</legend>
           <div class="cols">
