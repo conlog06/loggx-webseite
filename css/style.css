@@ -712,3 +712,13 @@ body.preview-open { overflow: hidden; }
   .lp-sticky { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 450; display: flex; justify-content: center; padding: 16px; border-radius: 16px; background: var(--sun); color: var(--ink); font-weight: 800; text-decoration: none; box-shadow: 0 18px 40px -14px rgba(15,37,64,.6); transition: transform .4s var(--ease), opacity .3s; }
   .lp-sticky.is-hidden { transform: translateY(140%); opacity: 0; }
 }
+
+/* ---------- Ankündigungsleiste (im Admin-Bereich einstellbar) ---------- */
+.lx-bar { position: relative; z-index: 510; display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 8px 52px; background: var(--sun); color: var(--ink); text-align: center; font-weight: 700; font-size: .93rem; line-height: 1.35; }
+.lx-bar p { margin: 0; }
+.lx-bar a { color: var(--ink); text-underline-offset: 3px; white-space: nowrap; }
+.lx-bar button { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: var(--ink); font-size: 1rem; cursor: pointer; }
+.lx-bar button:hover { background: rgba(15,37,64,.1); }
+.has-bar .site-header { top: var(--bar-h, 44px); transition: transform .5s var(--ease), background .4s, box-shadow .4s, top .3s var(--ease); }
+.has-bar .site-header.is-scrolled { top: 0; }
+@media (max-width: 720px) { .lx-bar { padding: 8px 46px 8px 16px; text-align: left; justify-content: flex-start; font-size: .86rem; } }

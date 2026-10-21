@@ -98,3 +98,11 @@ Werbe-Landingpage: /angebot/
   Aufruf: https://deine-domain.de/angebot/  ·  Anfragen kommen mit dem Betreff
   "Neue Anfrage über die Landingpage" an, so siehst du, woher sie stammen.
   Vor dem Launch / in der Wartung ist sie wie die übrige Seite gesperrt.
+
+Inhalte im Admin ändern (Karte "Webseite: Preise, Kontakt & Hinweise")
+  Preise (Visitenkarte, Firmenwebseite, Hosting), Lieferzeiten, Antwortzeit,
+  Telefon, E-Mail (auch Empfänger des Kontaktformulars), Adresse,
+  Hinweis über der Überschrift (z. B. "Noch 2 Projektplätze frei") und eine
+  gelbe Ankündigungsleiste mit Link. Technik: Elemente mit data-cms="…" in den
+  HTML-Dateien werden beim Ausliefern durch gate.php ersetzt. Ohne PHP bleiben
+  die Werte aus den HTML-Dateien stehen.

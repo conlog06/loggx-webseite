@@ -99,6 +99,11 @@ if ($mode === 'live' || $isAlways || $bypass) {
     }
     header('Content-Type: text/html; charset=utf-8');
     $html = (string)file_get_contents($file);
+    $html = lx_apply_site($html, $c['site']);
+    if (in_array(strtolower($rel), ['index.html', 'angebot/index.html'], true)) {
+        $bar = lx_bar_html($c['site']);
+        if ($bar !== '') $html = preg_replace('~(<body\b[^>]*>)~i', '$1' . $bar, $html, 1) ?? $html;
+    }
     if ($mode !== 'live' && $bypass && !$isAlways) {
         header('X-Robots-Tag: noindex');
         header('Cache-Control: no-store');

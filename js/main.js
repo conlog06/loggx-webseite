@@ -17,6 +17,10 @@
     contactEmail: "constantinloggen@icloud.com",
     formEndpoint: null   // null = automatisch formsubmit.co
   };
+  // Empfänger-Adresse kommt aus dem Formular (im Admin-Bereich änderbar), sonst aus CONFIG
+  var formTarget = document.getElementById("contact-form");
+  var formAction = formTarget ? formTarget.getAttribute("action") || "" : "";
+  if (/formsubmit\.co\/[^/]+@/.test(formAction)) CONFIG.contactEmail = formAction.split("/").pop();
   if (!CONFIG.formEndpoint) CONFIG.formEndpoint = "https://formsubmit.co/ajax/" + CONFIG.contactEmail;
 
   var root = document.documentElement;
