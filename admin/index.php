@@ -108,6 +108,7 @@ if ($post) {
             $S['price_visit'] = $num('price_visit', 0, 99999, (int)$S['price_visit']);
             $S['price_firm'] = $num('price_firm', 0, 99999, (int)$S['price_firm']);
             $S['price_hosting'] = $num('price_hosting', 0, 9999, (int)$S['price_hosting']);
+            $S['price_hourly'] = $num('price_hourly', 0, 999, (int)($S['price_hourly'] ?? 50));
             $S['lp_price_visit'] = $num('lp_price_visit', 0, 99999, 0);
             $S['lp_price_firm'] = $num('lp_price_firm', 0, 99999, 0);
             $S['lp_strike'] = !empty($_POST['lp_strike']);
@@ -305,6 +306,7 @@ head('Admin – LoggX');
             <label>Visitenkarte ab <span class="unit-in"><input type="number" name="price_visit" min="0" max="99999" value="<?= (int)$S['price_visit'] ?>"><i>€</i></span></label>
             <label>Firmenwebseite ab <span class="unit-in"><input type="number" name="price_firm" min="0" max="99999" value="<?= (int)$S['price_firm'] ?>"><i>€</i></span></label>
             <label>Hosting ab <span class="unit-in"><input type="number" name="price_hosting" min="0" max="9999" value="<?= (int)$S['price_hosting'] ?>"><i>€/Monat</i></span></label>
+            <label>Änderungen <span class="unit-in"><input type="number" name="price_hourly" min="0" max="999" value="<?= (int)$S['price_hourly'] ?>"><i>€/Std.</i></span></label>
           </div>
         </fieldset>
         <fieldset><legend>Preise auf der Werbe-Landingpage <small style="font:600 .8rem 'Jakarta',sans-serif;color:var(--muted)">/angebot/</small></legend>
