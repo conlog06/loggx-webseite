@@ -93,6 +93,7 @@ function lx_defaults(): array {
             'bar_text' => '',
             'bar_link_text' => '',
             'bar_link' => '',
+            'bar_badge' => 'Aktion',
             'bar_id' => '',
         ],
         'shared_password' => '',          // Hash; leer = aus
@@ -287,11 +288,27 @@ function lx_apply_site(string $html, array $s): string {
 /** Ankündigungsleiste oben auf der Seite (nur Startseite & Landingpage) */
 function lx_bar_html(array $s): string {
     if (empty($s['bar_on']) || trim((string)$s['bar_text']) === '') return '';
-    $id = e((string)$s['bar_id']);
-    $link = '';
-    if ($s['bar_link'] !== '' && $s['bar_link_text'] !== '') $link = ' <a href="' . e($s['bar_link']) . '">' . e($s['bar_link_text']) . ' →</a>';
-    return '<div class="lx-bar" id="lx-bar" data-id="' . $id . '" role="region" aria-label="Hinweis"><p>' . e($s['bar_text']) . $link . '</p>'
-        . '<button type="button" aria-label="Hinweis schließen" onclick="try{localStorage.setItem(\'lx-bar\',this.parentNode.getAttribute(\'data-id\'))}catch(e){}this.parentNode.remove();document.documentElement.classList.remove(\'has-bar\')">✕</button></div>'
-        . '<script>(function(){var b=document.getElementById("lx-bar");try{if(localStorage.getItem("lx-bar")==="' . $id . '"){b.remove();return}}catch(e){}'
-        . 'var r=document.documentElement;r.classList.add("has-bar");var f=function(){r.style.setProperty("--bar-h",b.offsetHeight+"px")};f();addEventListener("resize",f)})()</script>';
+    $rawId = preg_replace('/[^a-f0-9]/', '', (string)$s['bar_id']) ?: 'x';
+    // Schon geschlossen? Dann gar nicht erst ausliefern (kein Aufblitzen)
+    if (($_COOKIE['lx_bar'] ?? '') === $rawId) return '';
+    $id = e($rawId);
+    $badge = trim((string)($s['bar_badge'] ?? ''));
+    $html = '<div class="lx-bar" id="lx-bar" data-id="' . $id . '" role="region" aria-label="Ankündigung"><div class="lx-bar-in">';
+    if ($badge !== '') $html .= '<span class="lx-bar-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>' . e($badge) . '</span>';
+    $html .= '<p class="lx-bar-text">' . e($s['bar_text']) . '</p>';
+    if ($s['bar_link'] !== '' && $s['bar_link_text'] !== '') {
+        $html .= '<a class="lx-bar-link" href="' . e($s['bar_link']) . '">' . e($s['bar_link_text'])
+               . '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>';
+    }
+    $html .= '</div><button type="button" class="lx-bar-close" aria-label="Ankündigung schließen" title="Schließen">'
+           . '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+    $html .= '<script>(function(){var b=document.getElementById("lx-bar");if(!b)return;var id=b.getAttribute("data-id"),r=document.documentElement;'
+           . 'try{if(localStorage.getItem("lx-bar")===id){b.parentNode.removeChild(b);return}}catch(e){}'
+           . 'r.classList.add("has-bar");var h=0,o=function(){r.style.setProperty("--bar-off",Math.max(0,h-(window.scrollY||0))+"px")},f=function(){h=b.offsetHeight;r.style.setProperty("--bar-h",h+"px");o()};f();addEventListener("resize",f);addEventListener("scroll",o,{passive:true});'
+           . 'function hide(){try{localStorage.setItem("lx-bar",id)}catch(e){}'
+           . 'document.cookie="lx_bar="+id+";path=/;max-age=31536000;SameSite=Lax";'
+           . 'removeEventListener("resize",f);removeEventListener("scroll",o);b.style.height=b.offsetHeight+"px";b.offsetHeight;b.classList.add("is-closing");'
+           . 'r.classList.add("bar-closing");r.style.setProperty("--bar-off","0px");setTimeout(function(){if(b.parentNode)b.parentNode.removeChild(b);r.classList.remove("has-bar","bar-closing")},450)}'
+           . 'b.querySelector(".lx-bar-close").addEventListener("click",function(e){e.preventDefault();e.stopPropagation();hide()})})()</script>';
+    return $html;
 }

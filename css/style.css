@@ -714,14 +714,38 @@ body.preview-open { overflow: hidden; }
 }
 
 /* ---------- Ankündigungsleiste (im Admin-Bereich einstellbar) ---------- */
-.lx-bar { position: relative; z-index: 510; display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 8px 52px; background: var(--sun); color: var(--ink); text-align: center; font-weight: 700; font-size: .93rem; line-height: 1.35; }
-.lx-bar p { margin: 0; }
-.lx-bar a { color: var(--ink); text-underline-offset: 3px; white-space: nowrap; }
-.lx-bar button { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: var(--ink); font-size: 1rem; cursor: pointer; }
-.lx-bar button:hover { background: rgba(15,37,64,.1); }
-.has-bar .site-header { top: var(--bar-h, 44px); transition: transform .5s var(--ease), background .4s, box-shadow .4s, top .3s var(--ease); }
-.has-bar .site-header.is-scrolled { top: 0; }
-@media (max-width: 720px) { .lx-bar { padding: 8px 46px 8px 16px; text-align: left; justify-content: flex-start; font-size: .86rem; } }
+.lx-bar { position: relative; z-index: 510; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: 7px 56px; color: var(--ink); font-size: .9rem; line-height: 1.35;
+  background: linear-gradient(100deg, #FFC94D 0%, #FFD166 30%, #FFE4A0 55%, #FFD166 80%, #FFC94D 100%);
+  box-shadow: inset 0 -1px 0 rgba(15,37,64,.12); transition: height .4s var(--ease), min-height .4s var(--ease), padding .4s var(--ease), opacity .3s; }
+.lx-bar::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%); transform: translateX(-100%);
+  animation: lx-bar-shine 6s 1.2s var(--ease) infinite; }
+@keyframes lx-bar-shine { 0% { transform: translateX(-100%); } 30%, 100% { transform: translateX(100%); } }
+.lx-bar-in { position: relative; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 12px; max-width: 1100px; }
+.lx-bar-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px 4px 8px; border-radius: 999px; background: var(--ink); color: var(--sun);
+  font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; line-height: 1; white-space: nowrap; }
+.lx-bar-badge svg { width: 11px; height: 11px; fill: currentColor; }
+.lx-bar-text { margin: 0; font-weight: 600; }
+.lx-bar-link { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(15,37,64,.1);
+  color: var(--ink); font-weight: 700; text-decoration: none; white-space: nowrap; transition: background .25s, color .25s; }
+.lx-bar-link svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s var(--ease); }
+.lx-bar-link:hover { background: var(--ink); color: var(--sun); }
+.lx-bar-link:hover svg { transform: translateX(3px); }
+.lx-bar-close { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 2; display: grid; place-items: center;
+  width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: rgba(15,37,64,.08); color: var(--ink); cursor: pointer; transition: background .2s, transform .2s; }
+.lx-bar-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; pointer-events: none; }
+.lx-bar-close:hover { background: var(--ink); color: var(--sun); transform: translateY(-50%) rotate(90deg); }
+.lx-bar-close:focus-visible, .lx-bar-link:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.lx-bar.is-closing { height: 0 !important; min-height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; }
+/* Kopfzeile sitzt unter der Leiste und rückt beim Scrollen nahtlos nach oben */
+.has-bar .site-header { top: var(--bar-off, 0px); }
+.bar-closing .site-header { transition: transform .5s var(--ease), background .4s, box-shadow .4s, top .4s var(--ease); }
+@media (max-width: 720px) {
+  .lx-bar { padding: 8px 52px 8px 14px; justify-content: flex-start; font-size: .84rem; }
+  .lx-bar-in { justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) { .lx-bar::before { animation: none; } }
 
 /* Eingesetzte Werte (data-cms) erben das Aussehen ihres Elternelements */
 .contact-details a > [data-cms], .contact-details > span > [data-cms], .about-facts strong > [data-cms],

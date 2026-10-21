@@ -104,7 +104,7 @@ if ($post) {
             foreach (['tax_number' => 40, 'tax_office' => 60, 'hoster' => 160] as $k => $max) $S[$k] = $str($k, $max);
             $S['stats_text'] = $str('stats_text', 800);
             $S['thumio'] = !empty($_POST['thumio']);
-            foreach (['phone' => 40, 'street' => 80, 'city' => 80, 'time_visit' => 30, 'time_firm' => 30, 'kicker_home' => 90, 'kicker_angebot' => 90, 'bar_text' => 160, 'bar_link_text' => 40] as $k => $max) $S[$k] = $str($k, $max);
+            foreach (['phone' => 40, 'street' => 80, 'city' => 80, 'time_visit' => 30, 'time_firm' => 30, 'kicker_home' => 90, 'kicker_angebot' => 90, 'bar_text' => 160, 'bar_link_text' => 40, 'bar_badge' => 20] as $k => $max) $S[$k] = $str($k, $max);
             $S['price_visit'] = $num('price_visit', 0, 99999, (int)$S['price_visit']);
             $S['price_firm'] = $num('price_firm', 0, 99999, (int)$S['price_firm']);
             $S['price_hosting'] = $num('price_hosting', 0, 9999, (int)$S['price_hosting']);
@@ -113,6 +113,7 @@ if ($post) {
             $S['bar_link'] = preg_match('~^(#|/|https?://)~i', $link) ? substr($link, 0, 300) : '';
             $wasOn = !empty($c['site']['bar_on']);
             $S['bar_on'] = !empty($_POST['bar_on']);
+            if (!empty($_POST['bar_remove'])) { $S['bar_on'] = false; $S['bar_text'] = $S['bar_link_text'] = $S['bar_link'] = ''; }
             // Neue Ankündigung → wird auch Besuchern wieder angezeigt, die die alte geschlossen haben
             if ($S['bar_text'] !== ($c['site']['bar_text'] ?? '') || ($S['bar_on'] && !$wasOn)) $S['bar_id'] = bin2hex(random_bytes(4));
             $c['site'] = $S; $c['contact_email'] = $mail;
@@ -306,14 +307,24 @@ head('Admin – LoggX');
             <label>Werbe-Landingpage<input type="text" name="kicker_angebot" maxlength="90" value="<?= e($S['kicker_angebot']) ?>"></label>
           </div>
         </fieldset>
-        <fieldset><legend>Ankündigungsleiste <?= !empty($S['bar_on']) && $S['bar_text'] !== '' ? '<span class="tag on">sichtbar</span>' : '<span class="tag no">aus</span>' ?></legend>
-          <p class="hint">Gelbe Leiste ganz oben auf Startseite und Landingpage – z. B. für Aktionen. Besucher können sie schließen; eine neue Ankündigung erscheint wieder.</p>
+        <fieldset class="bar-fs"><legend>Ankündigungsleiste <?= !empty($S['bar_on']) && $S['bar_text'] !== '' ? '<span class="tag on">sichtbar</span>' : '<span class="tag no">aus</span>' ?></legend>
+          <p class="hint">Leiste ganz oben auf Startseite und Landingpage – z. B. für Aktionen. Besucher können sie mit ✕ schließen; eine neue Ankündigung erscheint wieder.</p>
+          <div class="bar-preview" aria-hidden="true">
+            <span class="bp-badge"<?= trim((string)$S['bar_badge']) === '' ? ' hidden' : '' ?>>✦ <span data-bp="bar_badge"><?= e($S['bar_badge']) ?></span></span>
+            <span class="bp-text" data-bp="bar_text"><?= e($S['bar_text'] !== '' ? $S['bar_text'] : 'Ihr Ankündigungstext erscheint hier') ?></span>
+            <span class="bp-link"<?= $S['bar_link_text'] === '' ? ' hidden' : '' ?>><span data-bp="bar_link_text"><?= e($S['bar_link_text']) ?></span> →</span>
+            <span class="bp-x">✕</span>
+          </div>
           <label class="check"><input type="checkbox" name="bar_on" value="1"<?= !empty($S['bar_on']) ? ' checked' : '' ?>> Leiste anzeigen</label>
           <div class="cols">
             <label class="span2">Text<input type="text" name="bar_text" maxlength="160" value="<?= e($S['bar_text']) ?>" placeholder="Herbstaktion: Kostenloser Google-Eintrag zu jeder Webseite"></label>
+            <label>Etikett <small>(optional, z. B. „Aktion“, „Neu“)</small><input type="text" name="bar_badge" maxlength="20" value="<?= e($S['bar_badge']) ?>"></label>
             <label>Link-Text <small>(optional)</small><input type="text" name="bar_link_text" maxlength="40" value="<?= e($S['bar_link_text']) ?>" placeholder="Jetzt anfragen"></label>
-            <label>Link-Ziel<input type="text" name="bar_link" maxlength="300" value="<?= e($S['bar_link']) ?>" placeholder="#kontakt oder /angebot/"></label>
+            <label class="span2">Link-Ziel<input type="text" name="bar_link" maxlength="300" value="<?= e($S['bar_link']) ?>" placeholder="#kontakt oder /angebot/"></label>
           </div>
+          <?php if (!empty($S['bar_on']) || $S['bar_text'] !== ''): ?>
+          <input type="hidden" name="bar_remove" value="" id="bar-remove"><button type="button" class="btn btn-small btn-danger" id="bar-remove-btn">Leiste entfernen</button>
+          <?php endif; ?>
         </fieldset>
         <fieldset><legend>Impressum &amp; Datenschutz</legend>
           <p class="hint">Ersetzt die gelb markierten Stellen. Leere Felder blenden den jeweiligen Abschnitt aus.</p>
@@ -382,6 +393,24 @@ head('Admin – LoggX');
       else prompt("Link kopieren:", t);
     });
   });
+  /* Ankündigungsleiste: Live-Vorschau + Entfernen */
+  (function () {
+    var fs = document.querySelector(".bar-fs"); if (!fs) return;
+    var pv = fs.querySelector(".bar-preview");
+    var sync = function () {
+      var v = function (n) { var i = fs.querySelector('[name="' + n + '"]'); return i ? i.value.trim() : ""; };
+      pv.querySelector('[data-bp="bar_text"]').textContent = v("bar_text") || "Ihr Ankündigungstext erscheint hier";
+      pv.querySelector('[data-bp="bar_badge"]').textContent = v("bar_badge"); pv.querySelector(".bp-badge").hidden = !v("bar_badge");
+      pv.querySelector('[data-bp="bar_link_text"]').textContent = v("bar_link_text"); pv.querySelector(".bp-link").hidden = !v("bar_link_text");
+      pv.classList.toggle("is-off", !fs.querySelector('[name="bar_on"]').checked);
+    };
+    fs.addEventListener("input", sync); fs.addEventListener("change", sync); sync();
+    var rb = document.getElementById("bar-remove-btn");
+    if (rb) rb.addEventListener("click", function () {
+      if (!confirm("Ankündigungsleiste entfernen und Text löschen?")) return;
+      document.getElementById("bar-remove").value = "1"; rb.form.requestSubmit ? rb.form.requestSubmit() : rb.form.submit();
+    });
+  })();
 </script>
 <?php foot();
 
@@ -491,6 +520,12 @@ function head(string $title): void { ?>
   .site-form fieldset { border: 1.5px solid var(--line); border-radius: 16px; padding: 16px 18px 18px; margin: 0; display: grid; gap: 12px; }
   .site-form legend { font: 700 1rem/1 "Bricolage", sans-serif; padding: 0 6px; display: flex; gap: 8px; align-items: center; }
   .site-form .hint { margin: 0; }
+  .bar-preview { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 44px 10px 14px; position: relative; border-radius: 12px; background: linear-gradient(100deg, #FFD166, #FFE4A0 55%, #FFD166); color: var(--ink); font-size: .88rem; font-weight: 600; transition: opacity .2s, filter .2s; }
+  .bar-preview.is-off { opacity: .45; filter: grayscale(1); }
+  .bar-preview .bp-badge { padding: 3px 9px; border-radius: 999px; background: var(--ink); color: var(--sun); font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+  .bar-preview .bp-link { padding: 4px 11px; border-radius: 999px; background: rgba(15,37,64,.1); font-weight: 700; }
+  .bar-preview .bp-x { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); opacity: .6; }
+  .bar-preview [hidden] { display: none; }
   .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 14px; }
   .cols .span2 { grid-column: span 2; }
   .unit-in { display: flex; align-items: center; gap: 8px; } .unit-in input { flex: 1; } .unit-in i { font-style: normal; color: var(--muted); font-weight: 600; white-space: nowrap; }
