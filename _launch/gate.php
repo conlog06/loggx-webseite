@@ -19,6 +19,7 @@ $uri = rawurldecode(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '
 $base = lx_base();
 if ($base !== '' && strpos($uri, $base) === 0) $uri = substr($uri, strlen($base));
 if ($uri === '' || substr($uri, -1) === '/') $uri .= 'index.html';
+elseif (!preg_match('~\.[a-z0-9]+$~i', $uri)) $uri .= '.html'; // saubere Adressen: /impressum → impressum.html
 $rel = ltrim($uri, '/');
 $file = realpath(lx_root() . '/' . $rel);
 $root = realpath(lx_root());

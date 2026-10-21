@@ -49,7 +49,7 @@ lx_top($launch ? 'Launch am ' . date('d.m.Y', $launch) : 'Launch in Vorbereitung
           <button class="btn" type="submit">Benachrichtigen</button>
         </div>
         <label class="consent"><input type="checkbox" name="consent" value="1" required>
-          <span>Ich möchte einmalig per E-Mail informiert werden, wenn die Seite online ist. Details in der <a href="<?= e(lx_url('datenschutz.html')) ?>" target="_blank" rel="noopener">Datenschutzerklärung</a>.</span></label>
+          <span>Ich möchte einmalig per E-Mail informiert werden, wenn die Seite online ist. Details in der <a href="<?= e(lx_url('datenschutz')) ?>" target="_blank" rel="noopener">Datenschutzerklärung</a>.</span></label>
       </form>
       <?php endif; ?>
 

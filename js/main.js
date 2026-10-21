@@ -546,7 +546,7 @@
       };
       var nativeSubmit = function () {
         var next = document.getElementById("form-next");
-        if (next && /^https?:/.test(location.protocol)) next.value = new URL(form.getAttribute("data-thanks") || "danke.html", location.href).href;
+        if (next && /^https?:/.test(location.protocol)) next.value = new URL(form.getAttribute("data-thanks") || "danke", location.href).href;
         else if (next) next.remove();
         form.submit();
       };

@@ -1,6 +1,7 @@
 # ==========================================================================
 # LoggX – Launch-System (Landingpage, Wartungsseite, Zugangscodes)
 # Alle HTML-Seiten laufen über _launch/gate.php. Admin-Bereich: /admin/
+# Saubere Adressen: loggx.de/impressum statt loggx.de/impressum.html
 # Liegt die Seite in einem Unterordner, RewriteBase entsprechend anpassen.
 # ==========================================================================
 DirectoryIndex index.html index.php
@@ -13,8 +14,19 @@ Options -Indexes
   # Admin-Bereich und Launch-System selbst nicht umleiten
   RewriteRule ^(admin|_launch)(/|$) - [L]
 
-  # Startseite, Ordner und alle .html-Seiten über den Torwächter
+  # Alte Adressen mit .html auf saubere Adressen umleiten (301)
+  #   /index.html → /    /angebot/index.html → /angebot/    /impressum.html → /impressum
+  RewriteCond %{THE_REQUEST} \s/+(.*?/)?index\.html?[\s?] [NC]
+  RewriteRule ^ /%1 [R=301,L,NE]
+  RewriteCond %{THE_REQUEST} \s/+([^?\s]+?)\.html?[\s?] [NC]
+  RewriteRule ^ /%1 [R=301,L,NE]
+  RewriteRule ^startseite/?$ / [R=301,L,NC]
+
+  # Startseite, Ordner und alle Seiten über den Torwächter
   RewriteRule ^$ _launch/gate.php [L,QSA]
   RewriteRule ^(.*/)$ _launch/gate.php [L,QSA]
   RewriteRule \.html?$ _launch/gate.php [L,QSA]
+  # Adressen ohne Endung (/impressum) → impressum.html über den Torwächter
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^([^.]+)$ _launch/gate.php [L,QSA]
 </IfModule>
