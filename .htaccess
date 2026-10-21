@@ -3,7 +3,7 @@
 # Alle HTML-Seiten laufen über _launch/gate.php. Admin-Bereich: /admin/
 # Liegt die Seite in einem Unterordner, RewriteBase entsprechend anpassen.
 # ==========================================================================
-DirectoryIndex index.html
+DirectoryIndex index.html index.php
 Options -Indexes
 
 <IfModule mod_rewrite.c>
