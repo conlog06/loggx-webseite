@@ -79,6 +79,9 @@ function lx_defaults(): array {
             'price_visit' => 790,
             'price_firm' => 1890,
             'price_hosting' => 29,
+            'lp_price_visit' => 0,         // Werbe-Landingpage (/angebot/): 0 = gleicher Preis wie Hauptseite
+            'lp_price_firm' => 0,
+            'lp_strike' => true,           // Normalpreis durchgestrichen daneben zeigen, wenn der Landingpage-Preis günstiger ist
             'time_visit' => '14 Tagen',
             'time_firm' => '3–4 Wochen',
             'response_hours' => 24,
@@ -255,6 +258,17 @@ function lx_site_value(array $s, string $key, bool $de = false): ?string {
     return (string)$v;
 }
 function lx_apply_site(string $html, array $s): string {
+    // Seitentitel/Beschreibung im <head> (dort gehen keine data-cms-Elemente)
+    $html = preg_replace_callback('~<head>.*?</head>~is', function ($m) use ($s) {
+        $h = str_replace(['ab 790 €', 'ab 790&nbsp;€'], 'ab ' . number_format((int)$s['price_visit'], 0, ',', '.') . ' €', $m[0]);
+        if (trim((string)$s['time_visit']) !== '') $h = str_replace('in 14 Tagen', 'in ' . e((string)$s['time_visit']), $h);
+        return $h;
+    }, $html, 1) ?? $html;
+    // Durchgestrichener Normalpreis (nur Landingpage): <!--cms-was:visit-->
+    $html = preg_replace_callback('~<!--cms-was:([a-z]+)-->~', function ($m) use ($s) {
+        $v = (string)($s['was_' . $m[1]] ?? '');
+        return $v === '' ? '' : '<s class="plan-was" aria-label="statt ' . e($v) . ' Euro">' . e($v) . '&nbsp;€</s>';
+    }, $html) ?? $html;
     // Text in Elementen mit data-cms="schlüssel" ersetzen
     $html = preg_replace_callback('~<([a-z0-9]+)(\b[^>]*?\bdata-cms="([a-z_]+)"[^>]*)>(.*?)</\1>~is', function ($m) use ($s) {
         [$all, $tag, $attrs, $key] = $m;
@@ -283,6 +297,19 @@ function lx_apply_site(string $html, array $s): string {
         return '<form' . preg_replace('/\baction="[^"]*"/', 'action="https://formsubmit.co/' . e($mail) . '"', $m[1]) . '>';
     }, $html) ?? $html;
     return $html;
+}
+
+/** Einstellungen für die Werbe-Landingpage: eigene Preise + durchgestrichener Normalpreis */
+function lx_site_for_lp(array $s): array {
+    foreach (['visit', 'firm'] as $k) {
+        $lp = (int)($s['lp_price_' . $k] ?? 0); $norm = (int)$s['price_' . $k];
+        $s['was_' . $k] = '';
+        if ($lp > 0) {
+            if (!empty($s['lp_strike']) && $lp < $norm) $s['was_' . $k] = number_format($norm, 0, ',', '.');
+            $s['price_' . $k] = $lp;
+        }
+    }
+    return $s;
 }
 
 /** Ankündigungsleiste oben auf der Seite (nur Startseite & Landingpage) */

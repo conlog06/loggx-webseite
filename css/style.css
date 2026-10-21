@@ -713,6 +713,10 @@ body.preview-open { overflow: hidden; }
   .lp-sticky.is-hidden { transform: translateY(140%); opacity: 0; }
 }
 
+/* Durchgestrichener Normalpreis auf der Werbe-Landingpage */
+.plan-was { display: inline-block; margin-left: .45em; font-size: .42em; font-weight: 700; letter-spacing: 0; color: var(--muted, #6B7A90); text-decoration-thickness: 2px; text-decoration-color: #E5484D; vertical-align: .55em; }
+.lp-checks .plan-was, li > .plan-was { font-size: .9em; vertical-align: 0; margin-left: .35em; }
+
 /* ---------- Ankündigungsleiste (im Admin-Bereich einstellbar) ---------- */
 .lx-bar { position: relative; z-index: 510; overflow: hidden; display: flex; align-items: center; justify-content: center;
   min-height: 48px; padding: 7px 56px; color: var(--ink); font-size: .9rem; line-height: 1.35;

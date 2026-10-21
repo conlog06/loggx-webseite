@@ -14,6 +14,7 @@ if (preg_match('#^/admin(/|$)#', $path)) {
     $_SERVER['SCRIPT_NAME'] = '/admin/index.php';
     require $root . '/admin/index.php'; return true;
 }
+if ($path !== '/' && substr($path, -1) !== '/' && is_dir($root . $path)) { header('Location: ' . $path . '/', true, 301); return true; }
 if (preg_match('#^/_launch/#', $path)) { http_response_code(403); echo 'Gesperrt'; return true; }
 if ($path === '/' || substr($path, -1) === '/' || preg_match('/\.html?$/', $path)) {
     $_SERVER['SCRIPT_NAME'] = '/_launch/gate.php';
