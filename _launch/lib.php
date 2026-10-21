@@ -69,6 +69,26 @@ function lx_defaults(): array {
             'text' => 'Die Webseite wird gerade überarbeitet. Bitte schauen Sie in Kürze wieder vorbei.',
             'until' => '',                // optional, "2026-11-01T20:00"
         ],
+        // Inhalte der Webseite, die im Admin-Bereich änderbar sind (Elemente mit data-cms="…")
+        'site' => [
+            'phone' => '+49 (0) 000 000 00 00',
+            'email' => 'constantinloggen@icloud.com',
+            'street' => 'Zum Himmelreich 5',
+            'city' => '49082 Osnabrück',
+            'price_visit' => 790,
+            'price_firm' => 1890,
+            'price_hosting' => 29,
+            'time_visit' => '14 Tagen',
+            'time_firm' => '3–4 Wochen',
+            'response_hours' => 24,
+            'kicker_home' => 'Webdesign aus Osnabrück',
+            'kicker_angebot' => 'Für Betriebe aus Osnabrück und Umgebung',
+            'bar_on' => false,
+            'bar_text' => '',
+            'bar_link_text' => '',
+            'bar_link' => '',
+            'bar_id' => '',
+        ],
         'shared_password' => '',          // Hash; leer = aus
         'contact_email' => 'constantinloggen@icloud.com',
         'admin_hash' => '',
@@ -82,6 +102,7 @@ function lx_config(): array {
         if (!array_key_exists($k, $c)) $c[$k] = $v;
         elseif (is_array($v)) $c[$k] = array_merge($v, is_array($c[$k]) ? $c[$k] : []);
     }
+    if (!empty($c['site']['email'])) $c['contact_email'] = $c['site']['email'];
     return $c;
 }
 function lx_save_config(array $c): void { lx_write('config', $c); }
@@ -211,4 +232,53 @@ function lx_date_de(int $ts, bool $withDay = true): string {
     $tage = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
     $monate = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
     return ($withDay ? $tage[(int)date('w', $ts)] . ', ' : '') . date('j', $ts) . '. ' . $monate[(int)date('n', $ts)] . ' ' . date('Y', $ts) . ', ' . date('H:i', $ts) . ' Uhr';
+}
+
+/* ---------- Inhalte der Webseite einsetzen (Preise, Kontaktdaten, Hinweise) ---------- */
+function lx_tel(string $phone): string {
+    $p = str_replace('(0)', '', $phone);
+    $plus = strpos(ltrim($p), '+') === 0;
+    $digits = preg_replace('/\D+/', '', $p);
+    return ($plus ? '+' : '') . $digits;
+}
+function lx_site_value(array $s, string $key, bool $de = false): ?string {
+    if (!array_key_exists($key, $s)) return null;
+    $v = $s[$key];
+    if (is_int($v) || is_float($v)) return $de ? number_format((float)$v, 0, ',', '.') : (string)$v;
+    return (string)$v;
+}
+function lx_apply_site(string $html, array $s): string {
+    // Text in Elementen mit data-cms="schlüssel" ersetzen
+    $html = preg_replace_callback('~<([a-z0-9]+)(\b[^>]*?\bdata-cms="([a-z_]+)"[^>]*)>(.*?)</\1>~is', function ($m) use ($s) {
+        [$all, $tag, $attrs, $key] = $m;
+        $de = strpos($attrs, 'data-format="de"') !== false || in_array($key, ['price_visit', 'price_firm'], true);
+        $val = lx_site_value($s, $key, $de);
+        if ($val === null || $val === '') return $all;
+        if (preg_match('/data-to="/', $attrs) && is_numeric($s[$key])) $attrs = preg_replace('/data-to="[^"]*"/', 'data-to="' . (int)$s[$key] . '"', $attrs);
+        if ($key === 'phone' && $val !== lx_defaults()['site']['phone']) $attrs = preg_replace('/\s*class="placeholder"/', '', $attrs);
+        return '<' . $tag . $attrs . '>' . e($val) . '</' . $tag . '>';
+    }, $html) ?? $html;
+    // Links und Formular-Ziel
+    $tel = lx_tel((string)$s['phone']);
+    $mail = (string)$s['email'];
+    $html = preg_replace_callback('~<a\b([^>]*\bdata-cms-href="(tel|mailto)"[^>]*)>~i', function ($m) use ($tel, $mail) {
+        $href = $m[2] === 'tel' ? 'tel:' . $tel : 'mailto:' . $mail;
+        return '<a' . preg_replace('/\bhref="[^"]*"/', 'href="' . e($href) . '"', $m[1]) . '>';
+    }, $html) ?? $html;
+    $html = preg_replace_callback('~<form\b([^>]*\bdata-cms-action="formsubmit"[^>]*)>~i', function ($m) use ($mail) {
+        return '<form' . preg_replace('/\baction="[^"]*"/', 'action="https://formsubmit.co/' . e($mail) . '"', $m[1]) . '>';
+    }, $html) ?? $html;
+    return $html;
+}
+
+/** Ankündigungsleiste oben auf der Seite (nur Startseite & Landingpage) */
+function lx_bar_html(array $s): string {
+    if (empty($s['bar_on']) || trim((string)$s['bar_text']) === '') return '';
+    $id = e((string)$s['bar_id']);
+    $link = '';
+    if ($s['bar_link'] !== '' && $s['bar_link_text'] !== '') $link = ' <a href="' . e($s['bar_link']) . '">' . e($s['bar_link_text']) . ' →</a>';
+    return '<div class="lx-bar" id="lx-bar" data-id="' . $id . '" role="region" aria-label="Hinweis"><p>' . e($s['bar_text']) . $link . '</p>'
+        . '<button type="button" aria-label="Hinweis schließen" onclick="try{localStorage.setItem(\'lx-bar\',this.parentNode.getAttribute(\'data-id\'))}catch(e){}this.parentNode.remove();document.documentElement.classList.remove(\'has-bar\')">✕</button></div>'
+        . '<script>(function(){var b=document.getElementById("lx-bar");try{if(localStorage.getItem("lx-bar")==="' . $id . '"){b.remove();return}}catch(e){}'
+        . 'var r=document.documentElement;r.classList.add("has-bar");var f=function(){r.style.setProperty("--bar-h",b.offsetHeight+"px")};f();addEventListener("resize",f)})()</script>';
 }

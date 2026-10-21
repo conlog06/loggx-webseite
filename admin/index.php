@@ -15,6 +15,7 @@ $c = lx_config();
 $self = strtok($_SERVER['REQUEST_URI'] ?? '', '?');
 $siteUrl = (lx_https() ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'localhost') . lx_base() . '/';
 
+function mb_like_substr(string $v, int $max): string { return function_exists('mb_substr') ? mb_substr($v, 0, $max) : substr($v, 0, $max); }
 function flash(string $text, string $type = 'ok'): void { $_SESSION['lx_flash'] = [$text, $type]; }
 function back(): void { global $self; header('Location: ' . $self, true, 303); exit; }
 function setup_code(): string {
@@ -93,12 +94,31 @@ if ($post) {
             break;
         case 'launch_now':
             $c['mode'] = 'live'; lx_save_config($c); flash('Die Seite ist jetzt öffentlich.'); break;
+        case 'site':
+            $S = $c['site'];
+            $str = function (string $k, int $max = 120) { return trim(mb_like_substr((string)($_POST[$k] ?? ''), $max)); };
+            $num = function (string $k, int $min, int $max, int $def) { $v = filter_var($_POST[$k] ?? '', FILTER_VALIDATE_INT); return ($v === false || $v < $min || $v > $max) ? $def : $v; };
+            $mail = trim((string)($_POST['email'] ?? ''));
+            if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) { flash('Bitte eine gültige E-Mail-Adresse eintragen.', 'error'); break; }
+            $S['email'] = $mail;
+            foreach (['phone' => 40, 'street' => 80, 'city' => 80, 'time_visit' => 30, 'time_firm' => 30, 'kicker_home' => 90, 'kicker_angebot' => 90, 'bar_text' => 160, 'bar_link_text' => 40] as $k => $max) $S[$k] = $str($k, $max);
+            $S['price_visit'] = $num('price_visit', 0, 99999, (int)$S['price_visit']);
+            $S['price_firm'] = $num('price_firm', 0, 99999, (int)$S['price_firm']);
+            $S['price_hosting'] = $num('price_hosting', 0, 9999, (int)$S['price_hosting']);
+            $S['response_hours'] = $num('response_hours', 1, 168, (int)$S['response_hours']);
+            $link = trim((string)($_POST['bar_link'] ?? ''));
+            $S['bar_link'] = preg_match('~^(#|/|https?://)~i', $link) ? substr($link, 0, 300) : '';
+            $wasOn = !empty($c['site']['bar_on']);
+            $S['bar_on'] = !empty($_POST['bar_on']);
+            // Neue Ankündigung → wird auch Besuchern wieder angezeigt, die die alte geschlossen haben
+            if ($S['bar_text'] !== ($c['site']['bar_text'] ?? '') || ($S['bar_on'] && !$wasOn)) $S['bar_id'] = bin2hex(random_bytes(4));
+            $c['site'] = $S; $c['contact_email'] = $mail;
+            lx_save_config($c); flash('Webseite aktualisiert – die Änderungen sind sofort sichtbar.');
+            break;
         case 'texts':
             foreach (['kicker', 'title', 'text'] as $k) $c['landing'][$k] = trim((string)($_POST['l_' . $k] ?? ''));
             $c['landing']['signup'] = !empty($_POST['l_signup']);
             foreach (['title', 'text'] as $k) $c['maintenance'][$k] = trim((string)($_POST['m_' . $k] ?? ''));
-            $mail = trim((string)($_POST['contact_email'] ?? ''));
-            if (filter_var($mail, FILTER_VALIDATE_EMAIL)) $c['contact_email'] = $mail;
             lx_save_config($c); flash('Texte gespeichert.');
             break;
         case 'add_code':
@@ -246,6 +266,56 @@ head('Admin – LoggX');
       </details>
     </section>
 
+    <!-- Webseite: Preise, Kontakt, Hinweise -->
+    <section class="card card-wide">
+      <h2>Webseite: Preise, Kontakt &amp; Hinweise</h2>
+      <p class="hint">Diese Werte erscheinen überall auf der Webseite, der Werbe-Landingpage, im Impressum und in der Datenschutzerklärung. Änderungen sind nach dem Speichern sofort sichtbar.</p>
+      <?php $S = $c['site']; ?>
+      <form method="post" class="site-form">
+        <input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="site">
+        <fieldset><legend>Preise</legend>
+          <div class="cols">
+            <label>Visitenkarte ab <span class="unit-in"><input type="number" name="price_visit" min="0" max="99999" value="<?= (int)$S['price_visit'] ?>"><i>€</i></span></label>
+            <label>Firmenwebseite ab <span class="unit-in"><input type="number" name="price_firm" min="0" max="99999" value="<?= (int)$S['price_firm'] ?>"><i>€</i></span></label>
+            <label>Hosting ab <span class="unit-in"><input type="number" name="price_hosting" min="0" max="9999" value="<?= (int)$S['price_hosting'] ?>"><i>€/Monat</i></span></label>
+          </div>
+        </fieldset>
+        <fieldset><legend>Lieferzeit &amp; Antwortzeit</legend>
+          <div class="cols">
+            <label>Visitenkarte online in<input type="text" name="time_visit" maxlength="30" value="<?= e($S['time_visit']) ?>" placeholder="14 Tagen"></label>
+            <label>Firmenwebseite online in<input type="text" name="time_firm" maxlength="30" value="<?= e($S['time_firm']) ?>" placeholder="3–4 Wochen"></label>
+            <label>Antwort innerhalb von <span class="unit-in"><input type="number" name="response_hours" min="1" max="168" value="<?= (int)$S['response_hours'] ?>"><i>Std.</i></span></label>
+          </div>
+        </fieldset>
+        <fieldset><legend>Kontaktdaten</legend>
+          <div class="cols">
+            <label>Telefon<input type="text" name="phone" maxlength="40" value="<?= e($S['phone']) ?>" placeholder="+49 (0) 541 123456"></label>
+            <label>E-Mail <small>(auch Empfänger der Anfragen)</small><input type="email" name="email" required value="<?= e($S['email']) ?>"></label>
+            <label>Straße<input type="text" name="street" maxlength="80" value="<?= e($S['street']) ?>"></label>
+            <label>PLZ und Ort<input type="text" name="city" maxlength="80" value="<?= e($S['city']) ?>"></label>
+          </div>
+          <?php if ($S['phone'] === lx_defaults()['site']['phone']): ?><p class="flash warn" style="margin:10px 0 0">Die Telefonnummer ist noch der Platzhalter – bitte vor dem Livegang eintragen.</p><?php endif; ?>
+        </fieldset>
+        <fieldset><legend>Hinweis über der Überschrift</legend>
+          <p class="hint">Kurzer Satz mit leuchtendem Punkt, z. B. „Noch 2 Projektplätze im November frei“.</p>
+          <div class="cols">
+            <label>Startseite<input type="text" name="kicker_home" maxlength="90" value="<?= e($S['kicker_home']) ?>"></label>
+            <label>Werbe-Landingpage<input type="text" name="kicker_angebot" maxlength="90" value="<?= e($S['kicker_angebot']) ?>"></label>
+          </div>
+        </fieldset>
+        <fieldset><legend>Ankündigungsleiste <?= !empty($S['bar_on']) && $S['bar_text'] !== '' ? '<span class="tag on">sichtbar</span>' : '<span class="tag no">aus</span>' ?></legend>
+          <p class="hint">Gelbe Leiste ganz oben auf Startseite und Landingpage – z. B. für Aktionen. Besucher können sie schließen; eine neue Ankündigung erscheint wieder.</p>
+          <label class="check"><input type="checkbox" name="bar_on" value="1"<?= !empty($S['bar_on']) ? ' checked' : '' ?>> Leiste anzeigen</label>
+          <div class="cols">
+            <label class="span2">Text<input type="text" name="bar_text" maxlength="160" value="<?= e($S['bar_text']) ?>" placeholder="Herbstaktion: Kostenloser Google-Eintrag zu jeder Webseite"></label>
+            <label>Link-Text <small>(optional)</small><input type="text" name="bar_link_text" maxlength="40" value="<?= e($S['bar_link_text']) ?>" placeholder="Jetzt anfragen"></label>
+            <label>Link-Ziel<input type="text" name="bar_link" maxlength="300" value="<?= e($S['bar_link']) ?>" placeholder="#kontakt oder /angebot/"></label>
+          </div>
+        </fieldset>
+        <button class="btn">Webseite speichern</button>
+      </form>
+    </section>
+
     <!-- Texte -->
     <section class="card">
       <h2>Texte</h2>
@@ -259,7 +329,6 @@ head('Admin – LoggX');
         <h3>Wartungsseite</h3>
         <label>Überschrift<input type="text" name="m_title" value="<?= e($c['maintenance']['title']) ?>"></label>
         <label>Text<textarea name="m_text" rows="3"><?= e($c['maintenance']['text']) ?></textarea></label>
-        <label>Kontakt-E-Mail<input type="email" name="contact_email" value="<?= e($c['contact_email']) ?>"></label>
         <button class="btn">Texte speichern</button>
       </form>
     </section>
@@ -403,7 +472,16 @@ function head(string $title): void { ?>
   .auth { min-height: 100svh; display: grid; place-items: center; padding: 20px; }
   .auth-card { width: min(420px, 100%); display: grid; gap: 14px; padding: 32px; } .auth-card h1 { font-size: 1.8rem; } .auth-logo { width: 46px; height: 46px; }
   .auth-card .hint { margin: 0; } .auth-card code { background: var(--paper); padding: 1px 6px; border-radius: 6px; font-size: .85em; } .auth-card .btn { justify-self: stretch; padding: .9rem; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.card-wide { grid-column: 1 / -1; }
+  .site-form { display: grid; gap: 18px; }
+  .site-form fieldset { border: 1.5px solid var(--line); border-radius: 16px; padding: 16px 18px 18px; margin: 0; display: grid; gap: 12px; }
+  .site-form legend { font: 700 1rem/1 "Bricolage", sans-serif; padding: 0 6px; display: flex; gap: 8px; align-items: center; }
+  .site-form .hint { margin: 0; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 14px; }
+  .cols .span2 { grid-column: span 2; }
+  .unit-in { display: flex; align-items: center; gap: 8px; } .unit-in input { flex: 1; } .unit-in i { font-style: normal; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  input[type=number] { width: 100%; padding: .7rem .85rem; border: 1.5px solid var(--line); border-radius: 12px; font: 500 .95rem/1.4 "Jakarta", sans-serif; color: var(--ink); }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .cols .span2 { grid-column: auto; } }
 </style>
 </head>
 <body>
