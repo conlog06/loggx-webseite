@@ -523,12 +523,38 @@ body.preview-open { overflow: hidden; }
 .footer-copy { margin: 0; font-size: .9rem; }
 
 /* ---------- Unterseiten (Impressum, Datenschutz, Danke) ---------- */
-.legal { padding: calc(var(--header-h) + 60px) 0 100px; background: var(--bg-alt); min-height: 70vh; }
-.legal .container { max-width: 820px; }
-.legal h1 { font-size: clamp(2.2rem, 4.5vw, 3.4rem); font-weight: 800; letter-spacing: -0.04em; margin: 1rem 0 2rem; }
-.legal h2 { font-size: 1.4rem; font-stretch: 100%; margin: 2.2rem 0 .7rem; letter-spacing: -0.01em; }
-.legal-back { font-weight: 700; text-decoration: none; }
-.legal-back:hover { color: var(--cobalt); }
+/* ---------- Unterseiten (Impressum, Datenschutz, Danke) ---------- */
+.page-sub { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+.page-sub main { flex: 1 0 auto; }
+body.page-sub { padding-bottom: 0; }
+.legal { padding: calc(var(--header-h) + clamp(36px, 6vw, 72px)) 0 clamp(64px, 8vw, 110px); background: var(--bg-alt); }
+.legal h1 { font-size: clamp(2.2rem, 4.5vw, 3.4rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.02; margin: .4rem 0 1rem; overflow-wrap: anywhere; hyphens: auto; }
+.legal-back { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: .95rem; text-decoration: none; color: var(--text-muted); transition: color .2s, gap .25s var(--ease); }
+.legal-back:hover { color: var(--text); gap: 10px; }
+.legal-grid { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: clamp(32px, 6vw, 88px); align-items: start; }
+.legal-side { position: sticky; top: calc(var(--header-h) + 32px); }
+.legal-kicker { margin: 2rem 0 0; color: var(--text-muted); font-weight: 700; font-size: .82rem; letter-spacing: .14em; text-transform: uppercase; }
+.legal-side h1::after { content: ""; display: block; width: 56px; height: 5px; border-radius: 3px; background: var(--sun); margin-top: 18px; }
+.legal-lead { color: var(--text-muted); margin: 0 0 1.6rem; max-width: 28ch; }
+.legal-switch { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.legal-switch a { padding: .5rem 1rem; border-radius: 999px; font-weight: 700; font-size: .9rem; text-decoration: none; color: var(--text-muted); transition: color .2s, background .2s; }
+.legal-switch a:hover { color: var(--text); }
+.legal-switch a[aria-current] { background: var(--btn); color: var(--btn-fg); }
+.legal-card { background: var(--surface); border-radius: var(--radius-l); padding: clamp(26px, 4.5vw, 56px); box-shadow: 0 1px 0 var(--border), 0 30px 60px -40px var(--shadow); border: 1px solid var(--border); max-width: 820px; }
+.legal-card > h2:first-child, .legal-card > div:first-child > h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.legal-card h2 { font-size: 1.2rem; font-stretch: 100%; letter-spacing: -0.01em; margin: 1.8rem 0 .6rem; padding-top: 1.8rem; border-top: 1px solid var(--border); }
+.legal-card p, .legal-card ul { color: var(--text-2); margin: 0 0 .8rem; }
+.legal-card ul { padding-left: 1.2rem; }
+.legal-card li { margin: .25rem 0; }
+.legal-card a { color: inherit; text-decoration-color: var(--sun); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.legal-numbered { counter-reset: lg; }
+.legal-numbered h2 { counter-increment: lg; display: flex; gap: .7rem; align-items: baseline; }
+.legal-numbered h2::before { content: counter(lg); flex: 0 0 auto; display: inline-grid; place-items: center; min-width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--bg-alt); color: var(--text); font-size: .85rem; font-weight: 800; box-shadow: inset 0 0 0 1px var(--border); }
+@media (max-width: 900px) {
+  .legal-grid { grid-template-columns: 1fr; gap: 28px; }
+  .legal-side { position: static; }
+  .legal-kicker { margin-top: 1.4rem; }
+}
 .placeholder { background: #FFF1C2; color: var(--ink); padding: 0 4px; border-radius: 4px; }
 .thanks { text-align: center; display: grid; justify-items: center; }
 .thanks p { max-width: 50ch; color: var(--text-muted); margin-bottom: 2rem; }
