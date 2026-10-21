@@ -190,7 +190,7 @@
       var box = el.closest("[data-phone-line], a[data-cms-href='tel']");
       (box || el).parentNode.removeChild(box || el);
     });
-    document.querySelectorAll('[data-cms-if="tax_number"], [data-cms-if="stats_text"]').forEach(function (el) { el.parentNode.removeChild(el); });
+    document.querySelectorAll('[data-cms-if="tax_number"], [data-cms-if="stats_text"], [data-cms-if="stats_on"]').forEach(function (el) { el.parentNode.removeChild(el); });
     if (/\.github\.io$/.test(location.hostname)) {
       document.querySelectorAll('[data-cms="hoster"]').forEach(function (el) {
         el.textContent = "GitHub Inc. (GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA";
@@ -334,6 +334,7 @@
           '<h3 id="lb-title"></h3>' +
           '<div class="preview-devices" role="group" aria-label="Ansicht wählen">' +
             '<button type="button" class="device-btn is-active" data-lb-device="desktop" aria-pressed="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Desktop</button>' +
+            '<button type="button" class="device-btn" data-lb-device="tablet" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M11 18h2"/></svg>Tablet</button>' +
             '<button type="button" class="device-btn" data-lb-device="phone" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Handy</button>' +
           '</div>' +
           '<p class="lb-desc"></p><ul class="lb-features"></ul>' +
@@ -350,7 +351,10 @@
         var on = b.getAttribute("data-lb-device") === dev;
         b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", String(on));
       });
-      lbImg.src = current + (dev === "phone" ? "-m" : "") + ".webp";
+      // Desktop: scharfe 2x-Version für hochauflösende Bildschirme, Tablet/Handy: eigene Ansicht
+      if (dev === "desktop") { lbImg.srcset = current + ".webp 1200w, " + current + "@2x.webp 2400w"; lbImg.sizes = "(max-width: 900px) 100vw, 900px"; }
+      else { lbImg.removeAttribute("srcset"); lbImg.removeAttribute("sizes"); }
+      lbImg.src = current + (dev === "phone" ? "-m" : dev === "tablet" ? "-t" : "") + ".webp";
       lbScroll.scrollTop = 0;
       cue.classList.remove("is-gone");
     };
@@ -362,7 +366,7 @@
       lb.querySelector(".lb-desc").textContent = shot.getAttribute("data-desc");
       lb.querySelector(".lb-features").innerHTML = shot.getAttribute("data-features").split("|").map(function (f) { return "<li>" + f + "</li>"; }).join("");
       lbImg.alt = "Designbeispiel " + shot.querySelector("strong").textContent + " – komplette Seite";
-      setDevice(window.innerWidth < 700 ? "phone" : "desktop");
+      setDevice(window.innerWidth < 700 ? "phone" : window.innerWidth < 1100 ? "tablet" : "desktop");
       lb.hidden = false;
       lockScroll(true);
       lb.querySelector(".lightbox-close").focus();

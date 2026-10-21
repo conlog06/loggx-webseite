@@ -2,3 +2,4 @@
 _launch/data/*.php
 _launch/data/*.tmp
 img/*-upload.*
+_launch/data/stats.lock
