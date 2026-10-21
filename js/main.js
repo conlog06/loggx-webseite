@@ -239,6 +239,21 @@
       shotImg.src = sources[0];
       shotBox.scrollTop = 0;
     };
+    // Handy-Ansicht auf kleinen Bildschirmen: 390-px-Gerät maßstabsgetreu verkleinern statt abschneiden
+    var fitDevice = function () {
+      var dev = stage.querySelector(".device");
+      dev.style.transform = ""; dev.style.width = ""; dev.style.height = ""; dev.style.maxWidth = ""; dev.style.alignSelf = ""; dev.style.justifySelf = "";
+      if (stage.getAttribute("data-device") !== "phone") return;
+      var cs = getComputedStyle(stage);
+      var availW = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      var availH = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      var full = 406; // 390 px Inhalt + Rahmen
+      if (availW >= full) return;
+      var sc = availW / full;
+      dev.style.maxWidth = "none"; dev.style.width = full + "px"; dev.style.height = (availH / sc) + "px";
+      dev.style.alignSelf = "start"; dev.style.justifySelf = "start"; dev.style.transformOrigin = "top left"; dev.style.transform = "scale(" + sc + ")";
+    };
+    window.addEventListener("resize", function () { if (!preview.hidden) fitDevice(); });
     var phoneBtn = preview.querySelector('.device-btn[data-device="phone"]');
     var deskBtn = preview.querySelector('.device-btn[data-device="desktop"]');
     var openPreview = function (url, title, embed, allowPhone) {
@@ -246,11 +261,11 @@
       current = { url: url, embed: embed };
       // Seiten ohne Handy-Vollbild (z. B. fitness4fun.de): nur Desktop-Ansicht
       preview.querySelector(".preview-devices").hidden = !allowPhone;
-      if (!allowPhone) {
-        stage.setAttribute("data-device", "desktop");
-        deskBtn.classList.add("is-active"); deskBtn.setAttribute("aria-pressed", "true");
-        phoneBtn.classList.remove("is-active"); phoneBtn.setAttribute("aria-pressed", "false");
-      }
+      // Startansicht: auf dem Handy direkt die Handy-Ansicht (wenn die Seite eine hat)
+      var startPhone = allowPhone && window.innerWidth < 700;
+      stage.setAttribute("data-device", startPhone ? "phone" : "desktop");
+      deskBtn.classList.toggle("is-active", !startPhone); deskBtn.setAttribute("aria-pressed", String(!startPhone));
+      phoneBtn.classList.toggle("is-active", startPhone); phoneBtn.setAttribute("aria-pressed", String(startPhone));
       titleEl.textContent = title || "Vorschau";
       urlEl.textContent = url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
       openEl.href = url;
@@ -264,6 +279,7 @@
         noteEl.textContent = "Screenshot der Webseite – zum Scrollen. Für die Live-Seite „Neuer Tab“ nutzen.";
       }
       preview.hidden = false;
+      fitDevice();
       body.classList.add("preview-open");
       if (FX && FX.lenis) FX.lenis.stop();
       preview.querySelector(".preview-close").focus();
@@ -297,6 +313,7 @@
         preview.querySelectorAll(".device-btn").forEach(function (b) { b.classList.remove("is-active"); b.setAttribute("aria-pressed", "false"); });
         btn.classList.add("is-active"); btn.setAttribute("aria-pressed", "true");
         stage.setAttribute("data-device", btn.getAttribute("data-device"));
+        fitDevice();
         if (!current.embed && !preview.hidden) loadShot(btn.getAttribute("data-device"));
       });
     });
@@ -339,7 +356,8 @@
           '</div>' +
           '<p class="lb-desc"></p><ul class="lb-features"></ul>' +
           '<p class="lightbox-note">Designbeispiel für einen fiktiven Betrieb. Inhalte, Farben und Funktionen passe ich an Ihren Betrieb an.</p>' +
-          '<a href="#kontakt" class="btn btn-primary" data-lb-close data-plan="Firmenwebseite"><span>So etwas für meinen Betrieb</span></a>' +
+          '<a href="#kontakt" class="btn btn-primary lb-cta" data-lb-close data-plan="Firmenwebseite"><span class="lb-cta-long">So etwas für meinen Betrieb</span><span class="lb-cta-short">Anfragen</span></a>' +
+          '<button type="button" class="lb-close-m" data-lb-close aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
         '</aside>' +
       '</div>';
     body.appendChild(lb);

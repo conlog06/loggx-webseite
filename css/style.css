@@ -486,11 +486,12 @@ a.service-arrow:focus-visible { outline: none; }
 .device-btn.is-active { background: var(--btn); color: var(--btn-fg); }
 .preview-close { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--bg-alt); cursor: pointer; display: grid; place-items: center; color: var(--text); transition: transform .4s var(--ease); }
 .preview-close:hover { transform: rotate(90deg); }
-.preview-stage { flex: 1; display: grid; place-items: center; padding: 18px; background: var(--bg-alt); min-height: 0; }
+.preview-stage { flex: 1; display: grid; place-items: center; padding: 18px; background: var(--bg-alt); min-height: 0; overflow: hidden; }
 .device { position: relative; width: 100%; height: 100%; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px -30px rgba(15,37,64,.5); transition: width .5s var(--ease); }
 .preview-stage[data-device="phone"] .device { width: 390px; max-width: 100%; border-radius: 30px; border: 8px solid var(--ink); }
 .device iframe { width: 100%; height: 100%; border: 0; }
-.device-shot { position: absolute; inset: 0; overflow-y: auto; }
+.device-shot { position: absolute; inset: 0; overflow-y: auto; background: var(--bg-alt); }
+.device-shot img { display: block; width: 100%; height: auto; }
 .device-shot-error { padding: 40px; text-align: center; color: var(--muted); }
 .device-loader { position: absolute; inset: 0; display: grid; place-items: center; background: #fff; z-index: 2; transition: opacity .3s; }
 .device-loader.is-hidden { opacity: 0; pointer-events: none; }
@@ -619,6 +620,7 @@ body.page-sub { padding-bottom: 0; }
   .hero-actions .btn { flex: 1 1 auto; }
     .plan { padding: 28px 22px; }
   .preview-head { gap: 8px; } #preview-open { display: none; }
+  .preview { padding: 0; } .preview-panel { height: 100%; height: 100dvh; border-radius: 0; } .preview-stage { padding: 10px; }
 }
 
 /* ---------- Reduzierte Bewegung ---------- */
@@ -659,12 +661,24 @@ body.page-sub { padding-bottom: 0; }
 .scroll-cue { position: absolute; left: 50%; bottom: 30px; translate: -50% 0; padding: 8px 14px; border-radius: 999px; background: rgba(15,37,64,.85); color: #fff; font-size: .8rem; font-weight: 700; pointer-events: none; animation: cue 1.6s ease-in-out infinite; transition: opacity .4s; }
 .scroll-cue.is-gone { opacity: 0; }
 @keyframes cue { 50% { transform: translateY(6px); } }
+.lb-cta-short, .lb-close-m { display: none; }
 @media (max-width: 900px) {
   .lightbox { padding: 0; }
-  .lightbox-panel { grid-template-columns: 1fr; grid-template-rows: 1fr auto; height: 100%; border-radius: 0; }
-  .lightbox-side { padding: 16px 18px 20px; gap: 12px; max-height: 42vh; }
-  .lightbox-side ul, .lightbox-note { display: none; }
-  .lightbox-side h3 { font-size: 1.25rem; padding-right: 0; }
+  .lightbox-panel { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; height: 100%; height: 100dvh; border-radius: 0; }
+  .lightbox-view { padding: 12px 12px 0; }
+  .lightbox-close { display: none; }
+  /* Kompakte Leiste: Titel, Anfragen, Schließen – darunter die Geräte. Mehr Platz für die Webseite. */
+  .lightbox-side { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); overflow: visible; }
+  .lightbox-side h3 { font-size: 1.1rem; padding-right: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lightbox-side .lb-desc, .lightbox-side ul, .lightbox-note { display: none; }
+  .lightbox-side .preview-devices { grid-column: 1 / -1; grid-row: 2; }
+  .lightbox-side .lb-cta { margin: 0; padding: .6rem 1.1rem; font-size: .88rem; }
+  .lb-cta-long { display: none; } .lb-cta-short { display: inline; }
+  .lb-close-m { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--bg-alt); color: var(--text); cursor: pointer; }
+  .lb-close-m svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+  .lightbox-view[data-device="phone"] .lightbox-browser { width: min(360px, 100%); border-width: 6px; border-radius: 28px; }
+  .lightbox-view[data-device="tablet"] .lightbox-browser { width: min(560px, 100%); border-width: 7px; border-radius: 22px; }
+  .scroll-cue { bottom: 18px; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .js .plan.reveal.is-visible:hover { transform: translateY(-8px); }
