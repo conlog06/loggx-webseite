@@ -188,7 +188,7 @@ $modeNames = ['live' => 'Öffentlich', 'prelaunch' => 'Vor dem Launch', 'mainten
 head('Admin – LoggX');
 ?>
 <header class="bar">
-  <a class="brand" href="<?= e($self) ?>"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0F2540"/><path d="M9 9l14 14M23 9L9 23" stroke="#FFD166" stroke-width="4" stroke-linecap="round"/></svg>LoggX <span>Admin</span></a>
+  <a class="brand" href="<?= e($self) ?>"><svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#0F2540"/><path d="M70 375V137H129V375ZM80 375V325H219V375Z" fill="#fff"/><path d="M225 375 294 257 225 137H294L332 226H333L370 137H442L372 256L442 375H370L333 284H333L294 375Z" fill="#FFD166"/></svg>LoggX <span>Admin</span></a>
   <nav><a href="<?= e(lx_url('')) ?>" target="_blank" rel="noopener">Seite ansehen ↗</a><a href="?logout">Abmelden</a></nav>
 </header>
 <main class="admin">
@@ -432,7 +432,7 @@ function render_auth(string $type, ?string $error): void {
     head($type === 'setup' ? 'Einrichtung – LoggX Admin' : 'Anmelden – LoggX Admin'); ?>
 <main class="auth">
   <form method="post" class="card auth-card">
-    <svg class="auth-logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0F2540"/><path d="M9 9l14 14M23 9L9 23" stroke="#FFD166" stroke-width="4" stroke-linecap="round"/></svg>
+    <svg viewBox="0 0 512 512" class="auth-logo" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#0F2540"/><path d="M70 375V137H129V375ZM80 375V325H219V375Z" fill="#fff"/><path d="M225 375 294 257 225 137H294L332 226H333L370 137H442L372 256L442 375H370L333 284H333L294 375Z" fill="#FFD166"/></svg>
     <?php if ($type === 'setup'): ?>
       <h1>Admin einrichten</h1>
       <p class="hint">Den Einrichtungscode findest du auf deinem Webspace in der Datei <code>_launch/data/einrichtungscode.php</code> (z. B. über den IONOS Webspace-Explorer oder per FTP öffnen).</p>
@@ -463,7 +463,7 @@ function head(string $title): void { ?>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex, nofollow">
 <title><?= e($title) ?></title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F2540'/%3E%3Cpath d='M9 9l14 14M23 9L9 23' stroke='%23FFD166' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='512' height='512' rx='112' fill='%230F2540'/%3E%3Cpath d='M70 375V137H129V375ZM80 375V325H219V375Z' fill='%23fff'/%3E%3Cpath d='M225 375 294 257 225 137H294L332 226H333L370 137H442L372 256L442 375H370L333 284H333L294 375Z' fill='%23FFD166'/%3E%3C/svg%3E">
 <style>
   @font-face { font-family: "Bricolage"; src: url("<?= e(lx_url('fonts/bricolage-grotesque-latin-standard-normal.woff2')) ?>") format("woff2-variations"); font-weight: 200 800; font-stretch: 75% 100%; }
   @font-face { font-family: "Jakarta"; src: url("<?= e(lx_url('fonts/plus-jakarta-sans-latin-wght-normal.woff2')) ?>") format("woff2-variations"); font-weight: 200 800; }

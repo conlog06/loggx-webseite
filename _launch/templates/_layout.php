@@ -10,7 +10,7 @@ function lx_head(string $title, string $desc): void { ?>
   <title><?= e($title) ?></title>
   <meta name="description" content="<?= e($desc) ?>">
   <meta name="theme-color" content="#0F2540">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F2540'/%3E%3Cpath d='M9 9l14 14M23 9L9 23' stroke='%23FFD166' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='512' height='512' rx='112' fill='%230F2540'/%3E%3Cpath d='M70 375V137H129V375ZM80 375V325H219V375Z' fill='%23fff'/%3E%3Cpath d='M225 375 294 257 225 137H294L332 226H333L370 137H442L372 256L442 375H370L333 284H333L294 375Z' fill='%23FFD166'/%3E%3C/svg%3E">
   <style>
     @font-face { font-family: "Bricolage"; src: url("<?= e(lx_url('fonts/bricolage-grotesque-latin-standard-normal.woff2')) ?>") format("woff2-variations"); font-weight: 200 800; font-stretch: 75% 100%; font-display: swap; }
     @font-face { font-family: "Jakarta"; src: url("<?= e(lx_url('fonts/plus-jakarta-sans-latin-wght-normal.woff2')) ?>") format("woff2-variations"); font-weight: 200 800; font-display: swap; }
@@ -72,7 +72,7 @@ function lx_head(string $title, string $desc): void { ?>
 function lx_top(string $pill): void { ?>
     <header class="top in">
       <a class="brand" href="<?= e(lx_url('')) ?>" aria-label="LoggX">
-        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#FFD166"/><path d="M9 9l14 14M23 9L9 23" stroke="#0F2540" stroke-width="4" stroke-linecap="round"/></svg>LoggX
+        <svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#FFD166"/><path d="M70 375V137H129V375ZM80 375V325H219V375Z" fill="#0F2540"/><path d="M225 375 294 257 225 137H294L332 226H333L370 137H442L372 256L442 375H370L333 284H333L294 375Z" fill="#0F2540"/></svg>LoggX
       </a>
       <span class="pill"><i></i><?= e($pill) ?></span>
     </header>
