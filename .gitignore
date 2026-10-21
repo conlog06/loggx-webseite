@@ -1,3 +1,4 @@
 # Laufzeitdaten des Launch-Systems (Passwörter, Zugangscodes, E-Mails) nie ins Repo
 _launch/data/*.php
 _launch/data/*.tmp
+img/*-upload.*

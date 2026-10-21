@@ -264,6 +264,26 @@ function lx_apply_site(string $html, array $s): string {
         if (trim((string)$s['time_visit']) !== '') $h = str_replace('in 14 Tagen', 'in ' . e((string)$s['time_visit']), $h);
         return $h;
     }, $html, 1) ?? $html;
+    // Markierung: Seite wurde vom Server aufbereitet (main.js räumt sonst Platzhalter selbst auf)
+    $html = preg_replace('~<html\b(?![^>]*data-cms-live)~i', '<html data-cms-live', $html, 1) ?? $html;
+    // Telefonnummer noch Platzhalter → Telefon-Links und -Zeilen ausblenden
+    if (trim((string)$s['phone']) === '' || $s['phone'] === lx_defaults()['site']['phone']) {
+        $html = preg_replace('~<a\b[^>]*data-cms-href="tel"[^>]*>.*?</a>~is', '', $html) ?? $html;
+        $html = preg_replace('~<span data-phone-line>.*?<br></span>~is', '', $html) ?? $html;
+    }
+    // Hochgeladene Bilder (Porträt, Referenz-Screenshots)
+    $html = preg_replace_callback('~<img\b([^>]*\bdata-cms-img="([a-z0-9-]+)"[^>]*)>~i', function ($m) use ($s) {
+        $attrs = $m[1]; $slot = $m[2];
+        $src = (string)($s['img_' . $slot] ?? '');
+        if ($src === '') {
+            $def = lx_image_slots()[$slot][2] ?? '';
+            if ($def === '' || !is_file(lx_root() . '/' . $def)) return $m[0];
+            $src = $def;
+        }
+        $attrs = preg_replace('/\s(data-)?src="[^"]*"/', '', $attrs);
+        $attrs = preg_replace('/\bis-missing\b/', '', $attrs);
+        return '<img src="' . e(lx_url($src)) . '"' . $attrs . '>';
+    }, $html) ?? $html;
     // Durchgestrichener Normalpreis (nur Landingpage): <!--cms-was:visit-->
     $html = preg_replace_callback('~<!--cms-was:([a-z]+)-->~', function ($m) use ($s) {
         $v = (string)($s['was_' . $m[1]] ?? '');
@@ -296,7 +316,18 @@ function lx_apply_site(string $html, array $s): string {
     $html = preg_replace_callback('~<form\b([^>]*\bdata-cms-action="formsubmit"[^>]*)>~i', function ($m) use ($mail) {
         return '<form' . preg_replace('/\baction="[^"]*"/', 'action="https://formsubmit.co/' . e($mail) . '"', $m[1]) . '>';
     }, $html) ?? $html;
+    // Hinweis "gelb markierte Felder" nur zeigen, solange noch Platzhalter übrig sind
+    if (strpos($html, 'class="placeholder"') === false) $html = preg_replace('~<p data-placeholder-note>.*?</p>\s*~is', '', $html) ?? $html;
     return $html;
+}
+
+/** Bilder, die im Admin-Bereich ersetzt werden können: slot => [Name, Hinweis, Standarddatei] */
+function lx_image_slots(): array {
+    return [
+        'portrait'    => ['Porträtfoto (Über mich)', 'Hochformat, ca. 900 × 1100 px', 'img/portrait.jpg'],
+        'dr-loggen'   => ['Referenz: Zahnarztpraxis Dr. Loggen', 'Screenshot der Startseite, ca. 1200 × 750 px', 'img/dr-loggen.jpg'],
+        'fitness4fun' => ['Referenz: 4 fun Fitness & Beauty', 'Screenshot der Startseite, ca. 1200 × 750 px', 'img/fitness4fun.jpg'],
+    ];
 }
 
 /** Einstellungen für die Werbe-Landingpage: eigene Preise + durchgestrichener Normalpreis */

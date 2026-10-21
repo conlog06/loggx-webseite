@@ -166,6 +166,26 @@ if ($post) {
             echo "\xEF\xBB\xBF" . "E-Mail;Datum\n";
             foreach ($list as $s) echo '"' . str_replace('"', '""', $s['email']) . '";' . $s['date'] . "\n";
             exit;
+        case 'image':
+        case 'image_delete':
+            $slots = lx_image_slots(); $slot = (string)($_POST['slot'] ?? '');
+            if (!isset($slots[$slot])) break;
+            $old = (string)($c['site']['img_' . $slot] ?? '');
+            $delOld = function () use ($old) { if ($old !== '') { $f = lx_root() . '/' . strtok($old, '?'); if (is_file($f)) @unlink($f); } };
+            if ($action === 'image_delete') { $delOld(); $c['site']['img_' . $slot] = ''; lx_save_config($c); flash('Bild entfernt.'); break; }
+            $up = $_FILES['file'] ?? null;
+            if (!$up || ($up['error'] ?? 1) !== UPLOAD_ERR_OK || !is_uploaded_file($up['tmp_name'])) { flash('Upload fehlgeschlagen – bitte eine Bilddatei wählen (max. 8 MB).', 'error'); break; }
+            if ($up['size'] > 8 * 1024 * 1024) { flash('Das Bild ist größer als 8 MB.', 'error'); break; }
+            $info = @getimagesize($up['tmp_name']);
+            $ext = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'][$info[2] ?? 0] ?? null;
+            if (!$ext) { flash('Nur JPG, PNG oder WebP möglich.', 'error'); break; }
+            $delOld();
+            $rel = 'img/' . $slot . '-upload.' . $ext;
+            if (!@move_uploaded_file($up['tmp_name'], lx_root() . '/' . $rel)) { flash('Konnte das Bild nicht speichern – hat der Ordner img/ Schreibrechte?', 'error'); break; }
+            @chmod(lx_root() . '/' . $rel, 0644);
+            $c['site']['img_' . $slot] = $rel . '?v=' . time(); lx_save_config($c);
+            flash($slots[$slot][0] . ' aktualisiert.');
+            break;
         case 'delete_signup':
             $list = lx_read('signups', []);
             $list = array_values(array_filter($list, fn($s) => $s['email'] !== ($_POST['email'] ?? '')));
@@ -352,6 +372,30 @@ head('Admin – LoggX');
       </form>
     </section>
 
+    <!-- Bilder -->
+    <section class="card">
+      <h2>Bilder</h2>
+      <p class="hint">JPG, PNG oder WebP, max. 8 MB. Ersetzt das Bild sofort auf der Webseite.</p>
+      <div class="img-slots">
+      <?php foreach (lx_image_slots() as $slot => [$label, $hint, $default]):
+          $cur = (string)($S['img_' . $slot] ?? ''); $show = $cur !== '' ? $cur : (is_file(lx_root() . '/' . $default) ? $default : ''); ?>
+        <div class="img-slot">
+          <div class="img-thumb<?= $slot === 'portrait' ? ' tall' : '' ?>"><?php if ($show !== ''): ?><img src="<?= e(lx_url($show)) ?>" alt=""><?php else: ?><span>Kein Bild</span><?php endif; ?></div>
+          <div class="img-meta">
+            <strong><?= e($label) ?></strong><small><?= e($hint) ?></small>
+            <form method="post" enctype="multipart/form-data" class="img-form">
+              <input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="image"><input type="hidden" name="slot" value="<?= e($slot) ?>">
+              <label class="btn btn-small btn-ghost file-btn">Bild wählen<input type="file" name="file" accept="image/jpeg,image/png,image/webp" onchange="this.form.submit()"></label>
+            </form>
+            <?php if ($cur !== ''): ?>
+            <form method="post" onsubmit="return confirm('Bild entfernen?')"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="image_delete"><input type="hidden" name="slot" value="<?= e($slot) ?>"><button class="btn btn-small btn-danger">Entfernen</button></form>
+            <?php endif; ?>
+          </div>
+        </div>
+      <?php endforeach; ?>
+      </div>
+    </section>
+
     <!-- Texte -->
     <section class="card">
       <h2>Texte</h2>
@@ -531,6 +575,16 @@ function head(string $title): void { ?>
   .site-form fieldset { border: 1.5px solid var(--line); border-radius: 16px; padding: 16px 18px 18px; margin: 0; display: grid; gap: 12px; }
   .site-form legend { font: 700 1rem/1 "Bricolage", sans-serif; padding: 0 6px; display: flex; gap: 8px; align-items: center; }
   .site-form .hint { margin: 0; }
+  .img-slots { display: grid; gap: 14px; }
+  .img-slot { display: flex; gap: 14px; align-items: center; }
+  .img-thumb { flex: 0 0 120px; height: 75px; border-radius: 10px; overflow: hidden; background: var(--paper); display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px var(--line); }
+  .img-thumb.tall { flex-basis: 75px; height: 92px; }
+  .img-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .img-thumb span { font-size: .75rem; color: var(--muted); }
+  .img-meta { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+  .img-meta strong { flex-basis: 100%; } .img-meta small { flex-basis: 100%; color: var(--muted); margin-top: -4px; }
+  .img-meta form { margin: 0; }
+  .file-btn { position: relative; overflow: hidden; } .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
   .bar-preview { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 44px 10px 14px; position: relative; border-radius: 12px; background: linear-gradient(100deg, #FFD166, #FFE4A0 55%, #FFD166); color: var(--ink); font-size: .88rem; font-weight: 600; transition: opacity .2s, filter .2s; }
   .bar-preview.is-off { opacity: .45; filter: grayscale(1); }
   .bar-preview .bp-badge { padding: 3px 9px; border-radius: 999px; background: var(--ink); color: var(--sun); font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }

@@ -176,10 +176,28 @@
 
   /* ---------- Portrait: eigenes Foto, sonst Initialen ---------- */
   var portrait = document.getElementById("portrait-img");
-  if (portrait) {
+  if (portrait && portrait.getAttribute("src")) {
     var markMissing = function () { portrait.classList.add("is-missing"); };
     portrait.addEventListener("error", markMissing);
-    if (portrait.complete && portrait.naturalWidth === 0) markMissing();
+    portrait.addEventListener("load", function () { portrait.classList.remove("is-missing"); });
+    if (portrait.complete) portrait.classList.toggle("is-missing", portrait.naturalWidth === 0);
+  }
+
+  /* ---------- Ohne Server-Aufbereitung (z. B. GitHub Pages): Platzhalter ausblenden ---------- */
+  if (!document.documentElement.hasAttribute("data-cms-live")) {
+    document.querySelectorAll('[data-cms="phone"]').forEach(function (el) {
+      if (!/000 000/.test(el.textContent)) return;
+      var box = el.closest("[data-phone-line], a[data-cms-href='tel']");
+      (box || el).parentNode.removeChild(box || el);
+    });
+    document.querySelectorAll('[data-cms-if="tax_number"], [data-cms-if="stats_text"]').forEach(function (el) { el.parentNode.removeChild(el); });
+    if (/\.github\.io$/.test(location.hostname)) {
+      document.querySelectorAll('[data-cms="hoster"]').forEach(function (el) {
+        el.textContent = "GitHub Inc. (GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA";
+        el.classList.remove("placeholder");
+      });
+    }
+    if (!document.querySelector(".placeholder")) document.querySelectorAll("[data-placeholder-note]").forEach(function (el) { el.parentNode.removeChild(el); });
   }
 
   /* ---------- Live-Vorschau (Popup mit Desktop/Handy-Ansicht) ---------- */
