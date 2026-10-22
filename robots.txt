@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /_launch/
+
+Sitemap: https://loggx.de/sitemap.xml

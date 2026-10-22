@@ -11,6 +11,15 @@ Options -Indexes
   RewriteEngine On
   RewriteBase /
 
+  # Nur auf loggx.de: immer https://loggx.de (ohne www) – eine Adresse für Google
+  RewriteCond %{HTTP_HOST} ^www\.loggx\.de$ [NC]
+  RewriteRule ^ https://loggx.de%{REQUEST_URI} [R=301,L,NE]
+  RewriteCond %{HTTP_HOST} ^loggx\.de$ [NC]
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{SERVER_PORT} !=443
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://loggx.de%{REQUEST_URI} [R=301,L,NE]
+
   # Admin-Bereich und Launch-System selbst nicht umleiten
   RewriteRule ^(admin|_launch)(/|$) - [L]
 
