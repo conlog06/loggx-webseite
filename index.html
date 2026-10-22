@@ -87,7 +87,7 @@
           <li><a href="#ablauf">Ablauf</a></li>
           <li><a href="#preise">Preise</a></li>
           <li><a href="#ueber">Über mich</a></li>
-          <li><a href="#kontakt" class="nav-cta">Projekt anfragen</a></li>
+          <li><a href="#kontakt" class="nav-cta" data-track="cta-nav">Projekt anfragen</a></li>
         </ul>
       </nav>
 
@@ -103,7 +103,7 @@
     </div>
   </header>
 
-  <main id="main">
+  <main id="main" data-page="start">
 
     <!-- ============ HERO ============ -->
     <section class="hero" id="top">
@@ -136,7 +136,7 @@
             Sie haben einen festen Ansprechpartner und wissen vorher, was es kostet.
           </p>
           <div class="hero-actions" data-hero-in>
-            <a href="#kontakt" class="btn btn-primary"><span>Kostenloses Erstgespräch</span></a>
+            <a href="#kontakt" class="btn btn-primary" data-track="cta-hero"><span>Kostenloses Erstgespräch</span></a>
             <a href="#referenzen" class="btn btn-ghost"><span>Arbeiten ansehen</span></a>
           </div>
           <dl class="hero-facts" data-hero-in>
@@ -509,8 +509,8 @@
         <div class="contact-copy reveal reveal-left">
           <h2 class="contact-title">Lassen Sie uns über Ihre Webseite sprechen.</h2>
           <p>
-            Schreiben Sie mir kurz, was Sie vorhaben. Ich melde mich innerhalb von <span data-cms="response_hours">24</span> Stunden
-            mit einem Terminvorschlag für ein kostenloses Erstgespräch.
+            Drei kurze Fragen – Sie sehen sofort, welches Paket zu Ihnen passt. Ich melde mich innerhalb von
+            <span data-cms="response_hours">24</span> Stunden mit einem Terminvorschlag für ein kostenloses Erstgespräch.
           </p>
           <address class="contact-details">
             <a href="mailto:constantinloggen@icloud.com" data-cms-href="mailto"><span data-cms="email">constantinloggen@icloud.com</span></a>
@@ -519,52 +519,111 @@
           </address>
         </div>
 
-        <form class="contact-form spotlight reveal reveal-right" id="contact-form" action="https://formsubmit.co/constantinloggen@icloud.com" data-cms-action="formsubmit" method="post" novalidate>
-          <input type="hidden" name="_subject" value="Neue Anfrage über loggx.de">
-          <input type="hidden" name="_template" value="table">
-          <input type="hidden" name="_captcha" value="false">
-          <input type="hidden" name="_next" id="form-next" value="">
-          <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-          <div class="field">
-            <input type="text" id="name" name="name" autocomplete="name" placeholder=" " required>
-            <label for="name">Ihr Name</label>
-            <span class="field-error" aria-live="polite"></span>
+        <form class="lead-form spotlight reveal reveal-right" id="lead-form" data-page="start" novalidate>
+          <div class="lf-top">
+            <div><h3>Anfrage in 1 Minute</h3><p class="lf-label" id="lf-label">Schritt 1 von 3 · Ihr Vorhaben</p></div>
+            <span class="lf-paket" id="lf-paket" hidden></span>
           </div>
-          <div class="field">
-            <input type="email" id="email" name="email" autocomplete="email" placeholder=" " required>
-            <label for="email">E-Mail-Adresse</label>
-            <span class="field-error" aria-live="polite"></span>
+          <div class="lf-progress" aria-hidden="true"><i id="lf-bar"></i></div>
+          <span class="lf-prices" hidden><span data-cms="price_visit">790</span><span data-cms="price_firm">1.890</span><span data-cms="price_hosting">29</span><span data-cms="price_hourly">50</span><span data-cms="time_visit">14 Tagen</span><span data-cms="time_firm">3–4 Wochen</span></span>
+
+          <fieldset class="lf-step" data-step="1">
+            <legend>Was haben Sie vor?</legend>
+            <div class="opts" data-required="projekt">
+              <label class="opt"><input type="radio" name="projekt" value="neu"><span>Neue Webseite</span></label>
+              <label class="opt"><input type="radio" name="projekt" value="relaunch"><span>Bestehende Seite erneuern</span></label>
+              <label class="opt"><input type="radio" name="projekt" value="landing"><span>Landingpage für eine Aktion</span></label>
+              <label class="opt"><input type="radio" name="projekt" value="shop"><span>Shop, Buchung oder Sonderfunktion</span></label>
+              <label class="opt"><input type="radio" name="projekt" value="aenderung"><span>Änderung an meiner Seite</span></label>
+              <label class="opt"><input type="radio" name="projekt" value="hosting"><span>Hosting &amp; Technik</span></label>
+            </div>
+            <p class="q">In welcher Branche sind Sie unterwegs?</p>
+            <div class="opts opts-sm">
+              <label class="opt"><input type="radio" name="branche" value="praxis"><span>Praxis &amp; Gesundheit</span></label>
+              <label class="opt"><input type="radio" name="branche" value="studio"><span>Studio, Beauty &amp; Fitness</span></label>
+              <label class="opt"><input type="radio" name="branche" value="handwerk"><span>Handwerk &amp; Bau</span></label>
+              <label class="opt"><input type="radio" name="branche" value="gastro"><span>Gastronomie &amp; Café</span></label>
+              <label class="opt"><input type="radio" name="branche" value="dienst"><span>Dienstleistung &amp; Beratung</span></label>
+              <label class="opt"><input type="radio" name="branche" value="handel"><span>Handel</span></label>
+              <label class="opt"><input type="radio" name="branche" value="verein"><span>Verein &amp; Organisation</span></label>
+              <label class="opt"><input type="radio" name="branche" value="andere"><span>Etwas anderes</span></label>
+            </div>
+            <div class="field" data-if="branche=andere" hidden><input id="lf-bt" name="branche_text" placeholder=" " maxlength="80"><label for="lf-bt">Welche Branche?</label></div>
+            <div class="fields2">
+              <div class="field"><input id="lf-firma" name="firma" autocomplete="organization" placeholder=" " maxlength="160"><label for="lf-firma">Firma (optional)</label></div>
+              <div class="field"><input id="lf-ort" name="ort" autocomplete="address-level2" placeholder=" " maxlength="80"><label for="lf-ort">Ort (optional)</label></div>
+            </div>
+            <div class="field" data-if="projekt=relaunch|aenderung|hosting" hidden><input id="lf-web" name="webseite" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder=" " maxlength="200"><label for="lf-web">Ihre jetzige Webseite (optional)</label></div>
+            <p class="lf-error" data-err="1" role="alert" hidden>Bitte wählen Sie kurz aus, was Sie vorhaben.</p>
+            <div class="lf-nav"><span></span><button type="button" class="btn btn-yellow" data-next><span>Weiter</span></button></div>
+          </fieldset>
+
+          <fieldset class="lf-step" data-step="2" hidden>
+            <legend id="lf-l2" data-alt="Wann soll es losgehen?">Wie groß soll die Seite werden?</legend>
+            <div class="lf-group" data-if="projekt=neu|relaunch|landing|shop|">
+            <div class="opts opts-sm">
+              <label class="opt"><input type="radio" name="seiten" value="one"><span>Eine Seite reicht</span></label>
+              <label class="opt"><input type="radio" name="seiten" value="few"><span>2 bis 6 Unterseiten</span></label>
+              <label class="opt"><input type="radio" name="seiten" value="many"><span>Mehr als 6 Seiten</span></label>
+              <label class="opt"><input type="radio" name="seiten" value="unsure"><span>Weiß ich noch nicht</span></label>
+            </div>
+              <p class="q">Was soll dazukommen? <small>Mehrfachauswahl</small></p>
+            <div class="opts opts-sm">
+              <label class="opt"><input type="checkbox" name="extras" value="texte"><span>Hilfe bei Texten</span></label>
+              <label class="opt"><input type="checkbox" name="extras" value="fotos"><span>Fotos &amp; Bilder</span></label>
+              <label class="opt"><input type="checkbox" name="extras" value="logo"><span>Logo &amp; Design</span></label>
+              <label class="opt"><input type="checkbox" name="extras" value="google"><span>Google-Profil</span></label>
+              <label class="opt"><input type="checkbox" name="extras" value="termin"><span>Online-Terminbuchung</span></label>
+              <label class="opt"><input type="checkbox" name="extras" value="shop"><span>Onlineshop</span></label>
+              <label class="opt"><input type="checkbox" name="extras" value="sprachen"><span>Mehrsprachig</span></label>
+              <label class="opt"><input type="checkbox" name="extras" value="hosting"><span>Hosting danach</span></label>
+            </div>
+            </div>
+            <p class="q" id="lf-q-start">Wann soll es losgehen?</p>
+            <div class="opts opts-sm">
+              <label class="opt"><input type="radio" name="start" value="asap"><span>So schnell wie möglich</span></label>
+              <label class="opt"><input type="radio" name="start" value="month"><span>In den nächsten 4 Wochen</span></label>
+              <label class="opt"><input type="radio" name="start" value="later"><span>In 1–3 Monaten</span></label>
+              <label class="opt"><input type="radio" name="start" value="info"><span>Erst mal informieren</span></label>
+            </div>
+            <p class="q">Haben Sie ein Budget im Kopf? <small>optional</small></p>
+            <div class="opts opts-sm">
+              <label class="opt"><input type="radio" name="budget" value="b1"><span>bis 1.000 €</span></label>
+              <label class="opt"><input type="radio" name="budget" value="b2"><span>1.000–2.500 €</span></label>
+              <label class="opt"><input type="radio" name="budget" value="b3"><span>über 2.500 €</span></label>
+              <label class="opt"><input type="radio" name="budget" value="open"><span>Noch offen</span></label>
+            </div>
+            <div class="lf-rec" id="lf-rec" aria-live="polite" hidden><span class="lf-rec-k">Meine Empfehlung</span><b id="lf-rec-name"></b><span id="lf-rec-why"></span></div>
+            <div class="lf-nav"><button type="button" class="btn btn-ghost" data-back><span>Zurück</span></button><button type="button" class="btn btn-yellow" data-next><span>Weiter</span></button></div>
+          </fieldset>
+
+          <fieldset class="lf-step" data-step="3" hidden>
+            <legend>Wie erreiche ich Sie?</legend>
+            <div class="fields2">
+              <div class="field"><input id="lf-name" name="name" autocomplete="name" placeholder=" " required maxlength="120"><label for="lf-name">Ihr Name *</label></div>
+              <div class="field"><input id="lf-mail" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" placeholder=" " required maxlength="200"><label for="lf-mail">E-Mail-Adresse *</label></div>
+            </div>
+            <div class="field"><input id="lf-tel" name="telefon" type="tel" inputmode="tel" autocomplete="tel" placeholder=" " maxlength="40"><label for="lf-tel">Telefon (optional, für einen Rückruf)</label></div>
+            <p class="q">Am liebsten per</p>
+            <div class="opts opts-sm">
+              <label class="opt"><input type="radio" name="kontakt" value="mail" checked><span>E-Mail</span></label>
+              <label class="opt"><input type="radio" name="kontakt" value="phone"><span>Telefon</span></label>
+              <label class="opt"><input type="radio" name="kontakt" value="whatsapp"><span>WhatsApp</span></label>
+            </div>
+            <div class="field"><textarea id="lf-msg" name="nachricht" rows="3" placeholder=" " maxlength="4000"></textarea><label for="lf-msg">Noch etwas, das ich wissen sollte? (optional)</label></div>
+            <label class="consent"><input type="checkbox" name="consent" value="1" required><span>Ich bin einverstanden, dass meine Angaben zur Bearbeitung der Anfrage gespeichert werden. Mehr in der <a href="datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a>.</span></label>
+            <div class="hp" aria-hidden="true"><label>Webseite<input name="website" tabindex="-1" autocomplete="off"></label></div>
+            <input type="hidden" name="paket" value="">
+            <p class="lf-error" id="lf-error" role="alert" hidden></p>
+            <div class="lf-nav"><button type="button" class="btn btn-ghost" data-back><span>Zurück</span></button><button type="submit" class="btn btn-yellow" id="lf-submit"><span>Anfrage senden</span></button></div>
+          </fieldset>
+
+          <div class="lf-done" id="lf-done" hidden tabindex="-1">
+            <span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L19 7"/></svg></span>
+            <h3>Danke<span id="lf-done-name"></span>!</h3>
+            <p>Ihre Anfrage ist angekommen. Ich melde mich innerhalb von <span data-cms="response_hours">24</span> Stunden bei Ihnen.</p>
+            <div class="lf-rec" id="lf-done-rec" hidden><span class="lf-rec-k">Meine erste Einschätzung</span><b></b><span></span></div>
           </div>
-          <div class="field">
-            <input type="text" id="company" name="company" autocomplete="organization" placeholder=" ">
-            <label for="company">Firma (optional)</label>
-          </div>
-          <div class="field field-select">
-            <select id="plan" name="plan">
-              <option value="">Noch unentschieden</option>
-              <option>Visitenkarte</option>
-              <option>Firmenwebseite</option>
-              <option>Individuell</option>
-              <option>Neue Webseite</option>
-              <option>Relaunch</option>
-              <option>Landingpage</option>
-              <option>Hosting &amp; Technik</option>
-              <option>Änderungen</option>
-            </select>
-            <label for="plan">Interesse an</label>
-          </div>
-          <div class="field">
-            <textarea id="message" name="message" rows="4" placeholder=" " required></textarea>
-            <label for="message">Worum geht es?</label>
-            <span class="field-error" aria-live="polite"></span>
-          </div>
-          <div class="field field-check">
-            <input type="checkbox" id="privacy" name="privacy" required>
-            <label for="privacy">Ich habe die <a href="datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Daten einverstanden.</label>
-            <span class="field-error" aria-live="polite"></span>
-          </div>
-          <button type="submit" class="btn btn-yellow btn-block" id="form-submit"><span>Anfrage senden</span></button>
-          <p class="form-status" id="form-status" aria-live="polite"></p>
         </form>
       </div>
     </section>
@@ -637,7 +696,7 @@
     <a href="#referenzen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg><span>Arbeiten</span></a>
     <a href="#leistungen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg><span>Leistungen</span></a>
     <a href="#preise"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="8" cy="8" r="1.6"/></svg><span>Preise</span></a>
-    <a href="#kontakt" class="mobile-bar-cta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l2-6 12-12 4 4L8 18z"/></svg><span>Anfrage</span></a>
+    <a href="#kontakt" class="mobile-bar-cta" data-track="cta-nav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l2-6 12-12 4 4L8 18z"/></svg><span>Anfrage</span></a>
   </nav>
 
   <footer class="site-footer">

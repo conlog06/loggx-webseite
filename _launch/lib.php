@@ -100,6 +100,12 @@ function lx_defaults(): array {
             'bar_link' => '',
             'bar_badge' => 'Aktion',
             'bar_id' => '',
+            'mail_from' => '',             // Absender für E-Mails (leer = noreply@eigene-domain)
+        ],
+        // Anfragen über das Formular
+        'leads' => [
+            'autoreply' => true,           // Bestätigung mit Empfehlung an den Kunden
+            'keep_months' => 12,           // danach automatisch löschen (0 = nie); "Auftrag erhalten" bleibt
         ],
         'shared_password' => '',          // Hash; leer = aus
         'contact_email' => 'constantinloggen@icloud.com',
@@ -238,6 +244,56 @@ function lx_fail(string $bucket, int $window = 900): void {
     $t[$key][] = $now;
     lx_write('throttle', $t);
 }
+function lx_hit(string $bucket, int $window = 900): void { lx_locked('throttle', fn() => lx_fail($bucket, $window)); }
+
+/** Mit Dateisperre lesen, ändern und schreiben */
+function lx_locked(string $lock, callable $fn) {
+    if (!is_dir(LX_DATA)) @mkdir(LX_DATA, 0750, true);
+    $h = @fopen(LX_DATA . "/$lock.lock", 'c');
+    if ($h) flock($h, LOCK_EX);
+    try { return $fn(); }
+    finally { if ($h) { flock($h, LOCK_UN); fclose($h); } }
+}
+function lx_cut(string $v, int $max): string { return function_exists('mb_substr') ? mb_substr(trim($v), 0, $max) : substr(trim($v), 0, $max); }
+function lx_abs_url(string $path = ''): string {
+    return (lx_https() ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'localhost') . lx_url($path);
+}
+
+/** Absender für E-Mails: eingetragene Adresse oder noreply@eigene-domain.de */
+function lx_mail_from(): string {
+    $from = trim((string)(lx_config()['site']['mail_from'] ?? ''));
+    if ($from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL)) return $from;
+    $host = preg_replace('/^www\./', '', (string)preg_replace('/:\d+$/', '', strtolower((string)($_SERVER['HTTP_HOST'] ?? 'localhost'))));
+    return 'noreply@' . $host;
+}
+/** Einfache Text-E-Mail (UTF-8). Lokal (php -S) landet sie in data/mail-test.log. */
+function lx_mail(string $to, string $subject, string $text, string $replyTo = '', string $replyName = ''): bool {
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
+    $from = lx_mail_from();
+    $clean = fn($s) => str_replace(["\r", "\n"], ' ', (string)$s);
+    $b64 = fn($s) => '=?UTF-8?B?' . base64_encode($clean($s)) . '?=';
+    $headers = 'From: ' . $b64('LoggX') . " <$from>\r\n";
+    if ($replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+        $headers .= 'Reply-To: ' . ($replyName !== '' ? $b64($replyName) . ' ' : '') . "<$replyTo>\r\n";
+    }
+    $headers .= "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\nX-Mailer: LoggX\r\n";
+    if (PHP_SAPI === 'cli-server') {
+        @file_put_contents(LX_DATA . '/mail-test.log', "TO: $to\nSUBJECT: $subject\n$headers\n$text\n\n-----\n", FILE_APPEND);
+        return true;
+    }
+    return @mail($to, $b64($subject), str_replace("\n", "\r\n", str_replace("\r\n", "\n", $text)), $headers, '-f' . $from);
+}
+
+/** "vor 5 Min." / "gestern" / "12.11." */
+function lx_ago(int $ts): string {
+    $d = time() - $ts;
+    if ($d < 60) return 'gerade eben';
+    if ($d < 3600) return 'vor ' . floor($d / 60) . ' Min.';
+    if ($d < 86400 && date('Y-m-d', $ts) === date('Y-m-d')) return 'vor ' . floor($d / 3600) . ' Std.';
+    if (date('Y-m-d', $ts) === date('Y-m-d', strtotime('-1 day'))) return 'gestern';
+    if ($d < 6 * 86400) return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][(int)date('w', $ts)] . ', ' . date('H:i', $ts);
+    return date('d.m.' . (date('Y', $ts) !== date('Y') ? 'Y' : ''), $ts);
+}
 
 /** "Samstag, 1. November 2026, 18:00 Uhr" */
 function lx_date_de(int $ts, bool $withDay = true): string {
@@ -267,7 +323,7 @@ function lx_apply_site(string $html, array $s): string {
         return $h;
     }, $html, 1) ?? $html;
     // Markierung: Seite wurde vom Server aufbereitet (main.js räumt sonst Platzhalter selbst auf)
-    $html = preg_replace('~<html\b(?![^>]*data-cms-live)~i', '<html data-cms-live', $html, 1) ?? $html;
+    $html = preg_replace('~<html\b(?![^>]*data-cms-live)~i', '<html data-cms-live data-api="' . e(lx_url('_launch/api.php')) . '"' . (!empty($s['stats_on']) ? ' data-stats' : ''), $html, 1) ?? $html;
     // Telefonnummer noch Platzhalter → Telefon-Links und -Zeilen ausblenden
     if (trim((string)$s['phone']) === '' || $s['phone'] === lx_defaults()['site']['phone']) {
         $html = preg_replace('~<a\b[^>]*data-cms-href="tel"[^>]*>.*?</a>~is', '', $html) ?? $html;
@@ -374,3 +430,4 @@ function lx_bar_html(array $s): string {
 }
 
 require_once __DIR__ . '/stats.php';
+require_once __DIR__ . '/leads.php';

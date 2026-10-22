@@ -15,6 +15,7 @@ if (preg_match('#^/admin(/|$)#', $path)) {
     require $root . '/admin/index.php'; return true;
 }
 if ($path !== '/' && substr($path, -1) !== '/' && is_dir($root . $path)) { header('Location: ' . $path . '/', true, 301); return true; }
+if ($path === '/_launch/api.php') { $_SERVER['SCRIPT_NAME'] = '/_launch/api.php'; require $root . '/_launch/api.php'; return true; }
 if (preg_match('#^/_launch/#', $path)) { http_response_code(403); echo 'Gesperrt'; return true; }
 // Wie die .htaccess: .html-Adressen auf saubere Adressen umleiten
 if (preg_match('~^(.*/)index\.html?$~i', $path, $m)) { header('Location: ' . $m[1], true, 301); return true; }

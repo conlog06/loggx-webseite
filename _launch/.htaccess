@@ -1,7 +1,7 @@
-# Nur der Torwächter darf direkt aufgerufen werden
+# Nur der Torwächter und die Formular-/Statistik-Schnittstelle dürfen direkt aufgerufen werden
 <FilesMatch "\.php$">
   Require all denied
 </FilesMatch>
-<Files "gate.php">
+<FilesMatch "^(gate|api)\.php$">
   Require all granted
-</Files>
+</FilesMatch>
