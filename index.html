@@ -8,12 +8,51 @@
   <meta name="theme-color" content="#0F2540">
   <meta property="og:title" content="LoggX – Webseiten, die Anfragen bringen">
   <meta property="og:description" content="Moderne Webseiten für Praxen, Studios, Handwerk und Dienstleister. Festpreis, persönlich, aus Osnabrück.">
-  <meta property="og:image" content="img/work/dental.webp">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LoggX">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:url" content="https://loggx.de/">
+  <meta property="og:image" content="https://loggx.de/img/og-loggx.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://loggx.de/">
   <link rel="preload" href="fonts/bricolage-grotesque-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='512' height='512' rx='112' fill='%230F2540'/%3E%3Cpath d='M70 375V137H129V375ZM80 375V325H219V375Z' fill='%23fff'/%3E%3Cpath d='M225 375 294 257 225 137H294L332 226H333L370 137H442L372 256L442 375H370L333 284H333L294 375Z' fill='%23FFD166'/%3E%3C/svg%3E">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon-96.png" sizes="96x96" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="color-scheme" content="light dark">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://loggx.de/#website",
+        "url": "https://loggx.de/",
+        "name": "LoggX",
+        "alternateName": ["loggx.de", "LoggX Webdesign"],
+        "inLanguage": "de-DE",
+        "publisher": { "@id": "https://loggx.de/#firma" }
+      },
+      {
+        "@type": "ProfessionalService",
+        "@id": "https://loggx.de/#firma",
+        "name": "LoggX",
+        "url": "https://loggx.de/",
+        "logo": "https://loggx.de/img/logo-512.png",
+        "image": "https://loggx.de/img/og-loggx.png",
+        "description": "Moderne Webseiten für Praxen, Studios, Handwerk und Dienstleister – zum Festpreis, persönlich betreut aus Osnabrück.",
+        "founder": { "@type": "Person", "name": "Constantin Moritz Loggen" },
+        "address": { "@type": "PostalAddress", "addressLocality": "Osnabrück", "addressCountry": "DE" },
+        "areaServed": ["Osnabrück", "Deutschland"],
+        "knowsAbout": ["Webdesign", "Webentwicklung", "Firmenwebseiten"]
+      }
+    ]
+  }
+  </script>
   <script>
     /* Farbschema vor dem ersten Zeichnen setzen (verhindert Aufblitzen) */
     (function () {
@@ -521,7 +560,7 @@
           </div>
           <div class="field field-check">
             <input type="checkbox" id="privacy" name="privacy" required>
-            <label for="privacy">Ich habe die <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Daten einverstanden.</label>
+            <label for="privacy">Ich habe die <a href="datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Daten einverstanden.</label>
             <span class="field-error" aria-live="polite"></span>
           </div>
           <button type="submit" class="btn btn-yellow btn-block" id="form-submit"><span>Anfrage senden</span></button>
@@ -573,7 +612,7 @@
     <div class="cookie-box">
       <div class="cookie-text">
         <strong id="cookie-title">Cookies auf dieser Webseite</strong>
-        <p>Ich nutze notwendige Cookies, damit die Seite funktioniert. Optional helfen mir Statistik-Cookies zu verstehen, wie die Seite genutzt wird. Details in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
+        <p>Ich nutze notwendige Cookies, damit die Seite funktioniert. Optional helfen mir Statistik-Cookies zu verstehen, wie die Seite genutzt wird. Details in der <a href="datenschutz">Datenschutzerklärung</a>.</p>
       </div>
       <div class="cookie-options" id="cookie-options" hidden>
         <label class="cookie-option">
@@ -608,8 +647,8 @@
         <p>Webseiten für Unternehmen.<br>Inhaber: Constantin Moritz Loggen<br><span data-cms="street">Zum Himmelreich 5</span>, <span data-cms="city">49082 Osnabrück</span></p>
       </div>
       <nav class="footer-nav" aria-label="Rechtliches">
-        <a href="impressum.html">Impressum</a>
-        <a href="datenschutz.html">Datenschutz</a>
+        <a href="impressum">Impressum</a>
+        <a href="datenschutz">Datenschutz</a>
         <a href="#" id="cookie-reopen">Cookie-Einstellungen</a>
         <a href="#top">Nach oben</a>
       </nav>
