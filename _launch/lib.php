@@ -400,6 +400,11 @@ function lx_apply_site(string $html, array $s): string {
     $html = preg_replace_callback('~<form\b([^>]*\bdata-cms-action="formsubmit"[^>]*)>~i', function ($m) use ($mail) {
         return '<form' . preg_replace('/\baction="[^"]*"/', 'action="https://formsubmit.co/' . e($mail) . '"', $m[1]) . '>';
     }, $html) ?? $html;
+    // CSS/JS mit Versionsnummer (Änderungsdatum der Datei) – Browser dürfen sie lange zwischenspeichern
+    $html = preg_replace_callback('~\b(href|src)="((?:\.\./)*)((?:css|js)/[A-Za-z0-9_./-]+\.(?:css|js))"~', function ($m) {
+        $f = lx_root() . '/' . $m[3];
+        return is_file($f) ? $m[1] . '="' . $m[2] . $m[3] . '?v=' . filemtime($f) . '"' : $m[0];
+    }, $html) ?? $html;
     // Hinweis "gelb markierte Felder" nur zeigen, solange noch Platzhalter übrig sind
     if (strpos($html, 'class="placeholder"') === false) $html = preg_replace('~<p data-placeholder-note>.*?</p>\s*~is', '', $html) ?? $html;
     return $html;
