@@ -135,3 +135,8 @@ llms.txt (für ChatGPT, Claude, Gemini & Co.)
   https://loggx.de/llms.txt – kurze Beschreibung von LoggX für KI-Assistenten.
   Kommt aus _launch/llms.php, Preise und Kontakt also immer aktuell aus dem Admin.
   Ohne PHP (GitHub Pages) gilt die statische Datei llms.txt im Hauptordner.
+
+Tempo (Komprimierung & Browser-Cache, in der .htaccess)
+  CSS/JS bekommen automatisch eine Versionsnummer (?v=Änderungsdatum), Änderungen kommen also sofort an.
+  Bilder in img/work/ (.webp) werden 1 Jahr zwischengespeichert: Wer dort ein Bild austauscht,
+  sollte einen neuen Dateinamen verwenden. Hero-Handys nutzen kleine Extra-Bilder (*-h.webp).
