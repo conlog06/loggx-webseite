@@ -498,7 +498,7 @@
     }, 16000);
   }
   // Wichtige Klicks zählen (nur Name des Buttons, nichts Persönliches)
-  var planTrack = { "Visitenkarte": "plan-visit", "Firmenwebseite": "plan-firm", "Individuell": "plan-indiv", "Hosting & Technik": "plan-hosting", "Änderungen": "plan-change" };
+  var planTrack = { "Visitenkarte": "plan-visit", "Firmenwebseite": "plan-firm", "Individuell": "plan-indiv", "Änderungen": "plan-change" };
   document.addEventListener("click", function (e) {
     var t = e.target.closest("a, button, .shot");
     if (!t) return;
@@ -547,15 +547,14 @@
       var p = radio("projekt"), pages = radio("seiten"), x = checks("extras");
       var has = function (a) { return a.some(function (k) { return x.indexOf(k) >= 0; }); };
       var visit = ["Visitenkarte", "Eine schlanke Seite mit allem Wichtigen auf einen Blick – ab " + eur("price_visit") + ", online in " + price("time_visit") + "."];
-      if (p === "hosting") return ["Hosting & Technik", "Server in Deutschland, Domain, SSL-Zertifikat und tägliche Backups – ab " + eur("price_hosting") + " im Monat."];
-      if (p === "aenderung") return ["Änderungen", "Abrechnung nach Aufwand mit " + eur("price_hourly") + " pro Stunde, in 15-Minuten-Schritten. Kein Abo."];
+      if (p === "aenderung") return ["Änderungen & Support", "Abrechnung nach Aufwand ab " + eur("price_hourly") + " pro Stunde. Kein Abo, keine Grundgebühr."];
       if (p === "shop" || pages === "many" || has(["shop", "termin", "sprachen"])) return ["Individuell", "Für Sonderfunktionen wie Shop, Terminbuchung oder mehrere Sprachen. Sie bekommen vorher ein Angebot zum Festpreis."];
       if (pages === "one" || p === "landing") return visit;
       if (pages === "few" || p === "relaunch" || x.length >= 3) return ["Firmenwebseite", "Mehrere Unterseiten für Leistungen, Team und Referenzen – ab " + eur("price_firm") + ", online in " + price("time_firm") + "."];
       return visit;
     };
     var updateRec = function () {
-      var any = radio("projekt") && (radio("seiten") || checks("extras").length || radio("start") || ["aenderung", "hosting"].indexOf(radio("projekt")) >= 0);
+      var any = radio("projekt") && (radio("seiten") || checks("extras").length || radio("start") || radio("projekt") === "aenderung");
       var box = document.getElementById("lf-rec");
       box.hidden = !any;
       if (!any) return;
@@ -569,7 +568,7 @@
         var m = el.getAttribute("data-if").split("="), v = radio(m[0]);
         el.hidden = m[1].split("|").indexOf(v) < 0;
       });
-      var small = ["aenderung", "hosting"].indexOf(radio("projekt")) >= 0;
+      var small = radio("projekt") === "aenderung";
       var l2 = document.getElementById("lf-l2");
       if (!l2.getAttribute("data-main")) l2.setAttribute("data-main", l2.textContent);
       l2.textContent = small ? l2.getAttribute("data-alt") : l2.getAttribute("data-main");
@@ -593,20 +592,34 @@
     var showErr = function (msg) { var el = document.getElementById("lf-error"); el.textContent = msg; el.hidden = !msg; };
 
     form.addEventListener("focusin", markStart);
+    form.addEventListener("input", function (e) {
+      var f = e.target.closest && e.target.closest(".field.is-invalid");
+      if (f && e.target.value.trim()) f.classList.remove("is-invalid");
+    });
     form.addEventListener("change", function (e) {
       markStart();
       var t = e.target;
       if (t.name === "projekt") { t.closest(".opts").classList.remove("is-err"); form.querySelector('[data-err="1"]').hidden = true; }
+      if (t.closest && t.closest(".field.is-invalid") && t.value.trim()) t.closest(".field").classList.remove("is-invalid");
       if (["projekt", "branche"].indexOf(t.name) >= 0) applyIf();
       if (["projekt", "seiten", "extras", "start"].indexOf(t.name) >= 0) updateRec();
       if (t.name === "consent") t.closest(".consent").classList.remove("is-err");
     });
     form.querySelectorAll("[data-next]").forEach(function (b) {
       b.addEventListener("click", function () {
-        if (step === 1 && !radio("projekt")) {
-          form.querySelector('[data-required="projekt"]').classList.add("is-err");
-          form.querySelector('[data-err="1"]').hidden = false;
-          return;
+        if (step === 1) {
+          var err1 = form.querySelector('[data-err="1"]'), firma = form.elements.firma, ort = form.elements.ort;
+          var noP = !radio("projekt"), noF = !firma.value.trim(), noO = !ort.value.trim();
+          form.querySelector('[data-required="projekt"]').classList.toggle("is-err", noP);
+          firma.closest(".field").classList.toggle("is-invalid", noF);
+          ort.closest(".field").classList.toggle("is-invalid", noO);
+          if (noP || noF || noO) {
+            err1.textContent = noP ? "Bitte wählen Sie kurz aus, was Sie vorhaben." : noF ? "Bitte geben Sie Ihre Firma an." : "Bitte geben Sie Ihren Ort an.";
+            err1.hidden = false;
+            if (!noP) (noF ? firma : ort).focus();
+            return;
+          }
+          err1.hidden = true;
         }
         goStep(step + 1);
       });
@@ -617,7 +630,7 @@
 
     // "… anfragen"-Buttons: Paket bzw. Vorhaben im Formular vorauswählen
     var planPreset = {
-      "Visitenkarte": ["neu", "one"], "Firmenwebseite": ["neu", "few"], "Individuell": ["shop", ""], "Hosting & Technik": ["hosting", ""],
+      "Visitenkarte": ["neu", "one"], "Firmenwebseite": ["neu", "few"], "Individuell": ["shop", ""],
       "Änderungen": ["aenderung", ""], "Neue Webseite": ["neu", ""], "Relaunch": ["relaunch", ""], "Landingpage": ["landing", "one"]
     };
     document.addEventListener("click", function (e) {
@@ -630,7 +643,7 @@
       var isPlan = !!planTrack[plan];
       form.elements.paket.value = isPlan ? plan : "";
       var chip = document.getElementById("lf-paket");
-      chip.textContent = "Paket: " + plan; chip.hidden = !isPlan;
+      chip.textContent = "Paket: " + (plan === "Änderungen" ? "Änderungen & Support" : plan); chip.hidden = !isPlan;
       form.querySelector('[data-required="projekt"]').classList.remove("is-err");
       form.querySelector('[data-err="1"]').hidden = true;
       applyIf(); updateRec();
@@ -641,12 +654,16 @@
       e.preventDefault();
       showErr("");
       var name = form.elements.name, mail = form.elements.email, consent = form.elements.consent;
+      var tel = form.elements.telefon;
       var badName = !name.value.trim(), badMail = !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail.value.trim());
+      var badTel = tel.value.replace(/\D/g, "").length < 6;
       name.closest(".field").classList.toggle("is-invalid", badName);
       mail.closest(".field").classList.toggle("is-invalid", badMail);
+      tel.closest(".field").classList.toggle("is-invalid", badTel);
       consent.closest(".consent").classList.toggle("is-err", !consent.checked);
       if (badName) { showErr("Bitte geben Sie Ihren Namen an."); return name.focus(); }
       if (badMail) { showErr("Bitte geben Sie eine gültige E-Mail-Adresse an."); return mail.focus(); }
+      if (badTel) { showErr("Bitte geben Sie Ihre Telefonnummer an."); return tel.focus(); }
       if (!consent.checked) return showErr("Bitte bestätigen Sie noch kurz den Hinweis zum Datenschutz.");
 
       var data = {
@@ -677,8 +694,11 @@
       };
       if (LIVE) {
         fetch(API + "?a=anfrage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
-          .then(function (res) { return res.json().catch(function () { return {}; }).then(function (j) { return { ok: res.ok, j: j }; }); })
-          .then(function (r) { if (!r.ok || !r.j.ok) throw new Error(r.j.error || ""); done(r.j.rec || rec[0], r.j.why || rec[1]); })
+          .then(function (res) { return res.json().catch(function () { return {}; }).then(function (j) { return { ok: res.ok, status: res.status, j: j }; }); })
+          .then(function (r) {
+            if (!r.ok || !r.j.ok) throw new Error(r.j.error || (r.ok ? "Unerwartete Antwort vom Server." : "Server-Fehler " + r.status + "."));
+            done(r.j.rec || rec[0], r.j.why || rec[1]);
+          })
           .catch(function (err) { fail(err.message); });
         return;
       }

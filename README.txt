@@ -100,7 +100,7 @@ Werbe-Landingpage: /angebot/
   Vor dem Launch / in der Wartung ist sie wie die übrige Seite gesperrt.
 
 Inhalte im Admin ändern (Karte "Webseite: Preise, Kontakt & Hinweise")
-  Preise (Visitenkarte, Firmenwebseite, Hosting), Lieferzeiten, Antwortzeit,
+  Preise (Visitenkarte, Firmenwebseite, Änderungen & Support pro Stunde), Lieferzeiten, Antwortzeit,
   Telefon, E-Mail (auch Empfänger des Kontaktformulars), Adresse,
   Hinweis über der Überschrift (z. B. "Noch 2 Projektplätze frei") und eine
   gelbe Ankündigungsleiste mit Link. Technik: Elemente mit data-cms="…" in den
@@ -112,7 +112,7 @@ Anfragen & Statistik (Admin → Übersicht, Anfragen, Statistik)
 ==========================================================================
 Anfrage in 3 Schritten (Startseite und /angebot/)
   1. Vorhaben, Branche, Firma, Ort  2. Umfang, Extras, Start, Budget  3. Kontaktdaten
-  - Live-Empfehlung (Visitenkarte, Firmenwebseite, Individuell, Hosting, Änderungen)
+  - Live-Empfehlung (Visitenkarte, Firmenwebseite, Individuell, Änderungen & Support)
     mit den Preisen aus dem Admin. Dieselbe Logik steht in _launch/leads.php und js/main.js.
   - Priorität heiß/warm/kalt (Start, Budget, Telefon, Nachricht …).
   - E-Mail an dich (Antworten geht direkt an den Kunden) + automatische Bestätigung

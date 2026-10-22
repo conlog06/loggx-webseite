@@ -11,15 +11,15 @@ declare(strict_types=1);
 function lx_lead_options(): array {
     return [
         'projekt' => ['neu' => 'Neue Webseite', 'relaunch' => 'Bestehende Seite erneuern', 'landing' => 'Landingpage für eine Aktion',
-                      'shop' => 'Shop, Buchung oder Sonderfunktion', 'aenderung' => 'Änderung an meiner Seite', 'hosting' => 'Hosting & Technik'],
+                      'shop' => 'Shop, Buchung oder Sonderfunktion', 'aenderung' => 'Änderung oder Support für meine Seite'],
         'branche' => ['praxis' => 'Praxis & Gesundheit', 'studio' => 'Studio, Beauty & Fitness', 'handwerk' => 'Handwerk & Bau', 'gastro' => 'Gastronomie & Café',
                       'dienst' => 'Dienstleistung & Beratung', 'handel' => 'Handel', 'verein' => 'Verein & Organisation', 'andere' => 'Etwas anderes'],
         'seiten' => ['one' => 'Eine Seite reicht', 'few' => '2 bis 6 Unterseiten', 'many' => 'Mehr als 6 Seiten', 'unsure' => 'Weiß ich noch nicht'],
         'extras' => ['texte' => 'Hilfe bei Texten', 'fotos' => 'Fotos & Bilder', 'logo' => 'Logo & Design', 'google' => 'Google-Profil',
-                     'termin' => 'Online-Terminbuchung', 'shop' => 'Onlineshop', 'sprachen' => 'Mehrsprachig', 'hosting' => 'Hosting danach'],
+                     'termin' => 'Online-Terminbuchung', 'shop' => 'Onlineshop', 'sprachen' => 'Mehrsprachig'],
         'start' => ['asap' => 'So schnell wie möglich', 'month' => 'In den nächsten 4 Wochen', 'later' => 'In 1–3 Monaten', 'info' => 'Erst mal informieren'],
         'budget' => ['b1' => 'bis 1.000 €', 'b2' => '1.000–2.500 €', 'b3' => 'über 2.500 €', 'open' => 'Noch offen'],
-        'kontakt' => ['mail' => 'E-Mail', 'phone' => 'Telefon', 'whatsapp' => 'WhatsApp'],
+        'kontakt' => ['mail' => 'E-Mail', 'phone' => 'Telefon', 'whatsapp' => 'WhatsApp', 'video' => 'Videocall (Zoom/Teams)'],
     ];
 }
 function lx_lead_status(): array {
@@ -30,8 +30,7 @@ function lx_lead_status(): array {
 function lx_lead_recommend(array $d, array $s): array {
     $p = $d['projekt'] ?? ''; $pages = $d['seiten'] ?? ''; $x = $d['extras'] ?? [];
     $eur = fn($v) => number_format((int)$v, 0, ',', '.') . ' €';
-    if ($p === 'hosting') return ['Hosting & Technik', 'Server in Deutschland, Domain, SSL-Zertifikat und tägliche Backups – ab ' . $eur($s['price_hosting']) . ' im Monat.'];
-    if ($p === 'aenderung') return ['Änderungen', 'Abrechnung nach Aufwand mit ' . $eur($s['price_hourly']) . ' pro Stunde, in 15-Minuten-Schritten. Kein Abo.'];
+    if ($p === 'aenderung') return ['Änderungen & Support', 'Abrechnung nach Aufwand ab ' . $eur($s['price_hourly']) . ' pro Stunde. Kein Abo, keine Grundgebühr.'];
     if ($p === 'shop' || $pages === 'many' || array_intersect($x, ['shop', 'termin', 'sprachen'])) {
         return ['Individuell', 'Für Sonderfunktionen wie Shop, Terminbuchung oder mehrere Sprachen. Sie bekommen vorher ein Angebot zum Festpreis.'];
     }
@@ -43,7 +42,7 @@ function lx_lead_recommend(array $d, array $s): array {
 /** Priorität 0–100 (wie dringend und wie konkret) */
 function lx_lead_score(array $d): int {
     $s = ['asap' => 30, 'month' => 22, 'later' => 12, 'info' => 4][$d['start'] ?? ''] ?? 8;
-    $s += ['neu' => 15, 'relaunch' => 15, 'shop' => 15, 'landing' => 12, 'aenderung' => 8, 'hosting' => 8][$d['projekt'] ?? ''] ?? 5;
+    $s += ['neu' => 15, 'relaunch' => 15, 'shop' => 15, 'landing' => 12, 'aenderung' => 8][$d['projekt'] ?? ''] ?? 5;
     $s += ['b3' => 20, 'b2' => 15, 'b1' => 8, 'open' => 4][$d['budget'] ?? ''] ?? 0;
     $s += min(12, count($d['extras'] ?? []) * 3);
     if (($d['telefon'] ?? '') !== '') $s += 10;
@@ -75,8 +74,11 @@ function lx_lead_create(array $in): array {
     ];
     $d['name'] = str_replace("\n", ' ', $d['name']);
     $d['webseite'] = str_replace("\n", ' ', $d['webseite']);
+    if ($d['firma'] === '') return [false, 'Bitte geben Sie Ihre Firma an.'];
+    if ($d['ort'] === '') return [false, 'Bitte geben Sie Ihren Ort an.'];
     if ($d['name'] === '') return [false, 'Bitte geben Sie Ihren Namen an.'];
     if (!filter_var($d['email'], FILTER_VALIDATE_EMAIL)) return [false, 'Bitte geben Sie eine gültige E-Mail-Adresse an.'];
+    if (strlen((string)preg_replace('/\D+/', '', $d['telefon'])) < 6) return [false, 'Bitte geben Sie Ihre Telefonnummer an.'];
     if (empty($in['consent'])) return [false, 'Bitte bestätigen Sie den Hinweis zum Datenschutz.'];
 
     $page = ($in['page'] ?? '') === 'angebot' ? 'angebot' : 'start';
@@ -92,7 +94,7 @@ function lx_lead_create(array $in): array {
     ];
     lx_locked('leads', function () use ($lead) { $l = lx_leads(); $l[] = $lead; lx_save_leads($l); });
     lx_stats_lead();
-    lx_lead_mails($lead, $site);
+    try { lx_lead_mails($lead, $site); } catch (Throwable $e) { error_log('LoggX Anfrage-Mail: ' . $e->getMessage()); }
     if (random_int(1, 20) === 1) lx_leads_cleanup();
     return [true, $lead];
 }
@@ -136,11 +138,18 @@ function lx_lead_mails(array $lead, array $site): void {
     lx_mail((string)$c['site']['email'], "Neue Anfrage: $who – $temp, {$lead['rec']}", $text, $d['email'], $d['name']);
 
     if (!empty($c['leads']['autoreply'])) {
-        $how = ['phone' => ' telefonisch', 'whatsapp' => ' per WhatsApp'][$d['kontakt']] ?? '';
+        $hours = (int)$site['response_hours'];
+        $how = [
+            'phone' => "Ich rufe Sie innerhalb von $hours Stunden an.",
+            'whatsapp' => "Ich melde mich innerhalb von $hours Stunden per WhatsApp bei Ihnen.",
+            'video' => "Ich melde mich innerhalb von $hours Stunden mit einem Terminvorschlag für einen Videocall (Zoom oder Teams).",
+        ][$d['kontakt']] ?? "Ich melde mich innerhalb von $hours Stunden bei Ihnen.";
         $r  = "Guten Tag {$d['name']},\n\n";
-        $r .= 'vielen Dank für Ihre Anfrage! Sie ist gut bei mir angekommen. Ich melde mich innerhalb von ' . (int)$site['response_hours'] . " Stunden$how bei Ihnen.\n\n";
+        $r .= "vielen Dank für Ihre Anfrage! Sie ist gut bei mir angekommen. $how\n\n";
         $r .= "Meine erste Einschätzung: Das Paket „{$lead['rec']}“ passt wahrscheinlich gut zu Ihnen.\n{$lead['why']}\n";
-        $r .= "Im kostenlosen Erstgespräch schauen wir gemeinsam, was Sie wirklich brauchen. Danach bekommen Sie ein Angebot zum Festpreis.\n\n";
+        $r .= $d['projekt'] === 'aenderung'
+            ? "Wenn Sie mögen, schicken Sie mir als Antwort auf diese E-Mail schon vorab, was geändert werden soll – dann kann ich den Aufwand direkt einschätzen.\n\n"
+            : "Im kostenlosen Erstgespräch schauen wir gemeinsam, was Sie wirklich brauchen. Danach bekommen Sie ein Angebot zum Festpreis.\n\n";
         $r .= "Ihre Angaben im Überblick:\n--------------------------\n" . lx_lead_summary($lead);
         $r .= "\nViele Grüße\nConstantin Moritz Loggen\nLoggX – Webseiten für Unternehmen\n";
         $phone = trim((string)$site['phone']);

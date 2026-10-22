@@ -387,7 +387,14 @@ a.service-arrow:focus-visible { outline: none; }
 .care-card .btn-ghost:hover { color: var(--ink); }
 .care-badge { position: absolute; top: -13px; right: 18px; padding: .3rem .8rem; border-radius: 999px; background: var(--sun); color: var(--ink); font-weight: 800; font-size: .78rem; }
 .care-note { grid-column: 1 / -1; margin: 0; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.12); color: var(--muted-ink); font-size: .9rem; }
-@media (max-width: 900px) { .care { grid-template-columns: 1fr; } }
+.care-slim { grid-template-columns: 1fr 1fr; }
+.care-box { display: grid; gap: 4px; justify-items: start; padding: 26px 26px 28px; border-radius: 20px; background: rgba(255,209,102,.08); border: 2px solid var(--sun); color: var(--white); }
+.care-box .care-price { margin-bottom: .6rem; }
+.care-list { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: 8px; font-size: .95rem; }
+.care-list li { position: relative; padding-left: 24px; }
+.care-list li::before { content: ""; position: absolute; left: 0; top: .45em; width: 12px; height: 7px; border-left: 2.5px solid var(--sun); border-bottom: 2.5px solid var(--sun); transform: rotate(-45deg); }
+@media (max-width: 900px) { .care, .care-slim { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .care-box { padding: 22px 20px; } .care-box .btn { width: 100%; } }
 @media (max-width: 560px) { .care-options { grid-template-columns: 1fr; } .care-card-plus { margin-top: 10px; } }
 
 /* Paket-Berater */

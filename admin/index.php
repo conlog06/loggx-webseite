@@ -562,8 +562,7 @@ head('Admin – LoggX', true);
           <div class="cols">
             <label>Visitenkarte ab <span class="unit-in"><input type="number" name="price_visit" min="0" max="99999" value="<?= (int)$S['price_visit'] ?>"><i>€</i></span></label>
             <label>Firmenwebseite ab <span class="unit-in"><input type="number" name="price_firm" min="0" max="99999" value="<?= (int)$S['price_firm'] ?>"><i>€</i></span></label>
-            <label>Hosting ab <span class="unit-in"><input type="number" name="price_hosting" min="0" max="9999" value="<?= (int)$S['price_hosting'] ?>"><i>€/Monat</i></span></label>
-            <label>Änderungen <span class="unit-in"><input type="number" name="price_hourly" min="0" max="999" value="<?= (int)$S['price_hourly'] ?>"><i>€/Std.</i></span></label>
+            <label>Änderungen &amp; Support ab <span class="unit-in"><input type="number" name="price_hourly" min="0" max="999" value="<?= (int)$S['price_hourly'] ?>"><i>€/Std.</i></span></label>
           </div>
         </fieldset>
         <fieldset><legend>Preise auf der Werbe-Landingpage <small style="font:600 .8rem 'Jakarta',sans-serif;color:var(--muted)">/angebot/</small></legend>
@@ -764,7 +763,7 @@ function insights(array $st, array $leads, int $range): array {
     if ($all >= 5) $o[] = ['phone', '<b>' . round(($st['g']['m'] ?? 0) / $all * 100) . ' %</b> der Besucher sind am Handy unterwegs.'];
     $apps = ($st['br']['Instagram-App'] ?? 0) + ($st['br']['Facebook-App'] ?? 0) + ($st['br']['LinkedIn-App'] ?? 0);
     if ($apps) $o[] = ['ig', "<b>$apps</b> Besucher kamen direkt aus Instagram, Facebook oder LinkedIn (Link in Bio, Story oder Nachricht)."];
-    $names = ['plan-visit' => 'Visitenkarte', 'plan-firm' => 'Firmenwebseite', 'plan-indiv' => 'Individuell', 'plan-hosting' => 'Hosting & Technik', 'plan-change' => 'Änderungen'];
+    $names = ['plan-visit' => 'Visitenkarte', 'plan-firm' => 'Firmenwebseite', 'plan-indiv' => 'Individuell', 'plan-hosting' => 'Hosting & Technik', 'plan-change' => 'Änderungen & Support'];
     $plans = array_intersect_key($st['c'], $names);
     if ($plans) { arsort($plans); $o[] = ['plan', 'Am häufigsten angeklickt: Paket <b>' . e($names[array_key_first($plans)]) . '</b>.']; }
     if (($ex = (int)($st['c']['example'] ?? 0)) > 0) $o[] = ['ex', "<b>{$ex}×</b> wurde eine Beispielseite angesehen" . (($cta = (int)($st['c']['example-cta'] ?? 0)) ? ", <b>{$cta}×</b> ging es danach direkt zur Anfrage." : '.')];

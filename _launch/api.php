@@ -5,13 +5,19 @@
    POST ?a=t         Statistik-Signal (gesehene Abschnitte, Klicks, Verweildauer)
    ========================================================================== */
 declare(strict_types=1);
-require __DIR__ . '/lib.php';
-
+// PHP-Hinweise/Warnungen dürfen die JSON-Antwort nie kaputt machen (sie landen nur im Fehlerprotokoll)
+ini_set('display_errors', '0');
+ob_start();
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
 header('X-Robots-Tag: noindex');
-$out = function (array $d, int $code = 200) { http_response_code($code); echo json_encode($d, JSON_UNESCAPED_UNICODE); exit; };
+$out = function (array $d, int $code = 200) { while (ob_get_level()) ob_end_clean(); http_response_code($code); echo json_encode($d, JSON_UNESCAPED_UNICODE); exit; };
+set_exception_handler(function (Throwable $e) use ($out) {
+    error_log('LoggX api.php: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    $out(['ok' => false, 'error' => 'Technischer Fehler auf dem Server (' . $e->getMessage() . ').'], 500);
+});
+require __DIR__ . '/lib.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') $out(['ok' => false, 'error' => 'Nur POST erlaubt.'], 405);
 // Nur Anfragen von der eigenen Seite annehmen

@@ -38,7 +38,7 @@ function lx_stats_sections_lp(): array {
 /** Klickziele mit lesbarem Namen */
 function lx_stats_clicks(): array {
     return ['plan-visit' => 'Paket „Visitenkarte“ angefragt', 'plan-firm' => 'Paket „Firmenwebseite“ angefragt', 'plan-indiv' => 'Paket „Individuell“ angefragt',
-            'plan-hosting' => 'Hosting angefragt', 'plan-change' => 'Änderungen angefragt', 'advisor' => 'Paket-Berater benutzt',
+            'plan-hosting' => 'Hosting angefragt', 'plan-change' => 'Änderungen & Support angefragt', 'advisor' => 'Paket-Berater benutzt',
             'cta-hero' => 'Startseite: Anfrage-Button oben', 'cta-nav' => 'Menü: Anfrage-Button', 'lp-cta' => 'Landingpage: Anfrage-Button', 'lp-sticky' => 'Landingpage: Handy-Leiste',
             'example' => 'Beispielseite angesehen', 'example-cta' => 'Beispiel → „So etwas für meinen Betrieb“', 'ref' => 'Referenz-Webseite besucht',
             'mail' => 'E-Mail-Adresse geklickt', 'tel' => 'Telefonnummer geklickt',

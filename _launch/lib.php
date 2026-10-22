@@ -8,6 +8,23 @@
 declare(strict_types=1);
 date_default_timezone_set('Europe/Berlin');
 
+/* ---------- Ersatz für fehlende PHP-Erweiterungen (z. B. PHP unter Windows ohne mbstring) ---------- */
+if (!function_exists('mb_substr')) {
+    function mb_substr($s, $start, $length = null, $enc = null) { preg_match_all('/./us', (string)$s, $m); return implode('', array_slice($m[0], (int)$start, $length === null ? null : (int)$length)); }
+}
+if (!function_exists('mb_strlen')) {
+    function mb_strlen($s, $enc = null) { return (int)preg_match_all('/./us', (string)$s); }
+}
+if (!function_exists('mb_strtolower')) {
+    function mb_strtolower($s, $enc = null) { return strtr(strtolower((string)$s), ['Ä' => 'ä', 'Ö' => 'ö', 'Ü' => 'ü']); }
+}
+if (!function_exists('str_starts_with')) {
+    function str_starts_with($h, $n) { return $n === '' || strpos((string)$h, (string)$n) === 0; }
+}
+if (!function_exists('str_ends_with')) {
+    function str_ends_with($h, $n) { return $n === '' || substr((string)$h, -strlen((string)$n)) === (string)$n; }
+}
+
 const LX_DATA = __DIR__ . '/data';
 const LX_GUARD = "<?php exit; ?>\n";
 const LX_COOKIE = 'loggx_zugang';
@@ -79,15 +96,15 @@ function lx_defaults(): array {
             'price_visit' => 790,
             'price_firm' => 1890,
             'price_hosting' => 29,
-            'price_hourly' => 50,          // Änderungen nach Aufwand (€/Stunde)
+            'price_hourly' => 70,          // Änderungen & Support nach Aufwand (€/Stunde)
             'lp_price_visit' => 0,         // Werbe-Landingpage (/angebot/): 0 = gleicher Preis wie Hauptseite
             'lp_price_firm' => 0,
             'lp_strike' => true,           // Normalpreis durchgestrichen daneben zeigen, wenn der Landingpage-Preis günstiger ist
             'time_visit' => '14 Tagen',
             'time_firm' => '3–4 Wochen',
             'response_hours' => 24,
-            'kicker_home' => 'Webdesign aus Osnabrück',
-            'kicker_angebot' => 'Für Betriebe aus Osnabrück und Umgebung',
+            'kicker_home' => 'Webdesign für Unternehmen',
+            'kicker_angebot' => 'Für Betriebe in ganz Deutschland',
             'tax_number' => '',            // leer = Abschnitt im Impressum ausgeblendet
             'tax_office' => 'Osnabrück',
             'hoster' => '',                // z. B. "IONOS SE, Elgendorfer Str. 57, 56410 Montabaur"
@@ -111,14 +128,23 @@ function lx_defaults(): array {
         'contact_email' => 'constantinloggen@icloud.com',
         'admin_hash' => '',
         'secret' => '',
+        'schema' => 2,
     ];
 }
 function lx_config(): array {
     $c = lx_read('config', []);
     $d = lx_defaults();
+    if ($c && !isset($c['schema'])) $c['schema'] = 1; // gespeicherte Einstellungen von vor der Umstellung
     foreach ($d as $k => $v) {
         if (!array_key_exists($k, $c)) $c[$k] = $v;
         elseif (is_array($v)) $c[$k] = array_merge($v, is_array($c[$k]) ? $c[$k] : []);
+    }
+    // Einmalige Umstellung älterer Einstellungen (Stand Oktober 2026)
+    if ((int)($c['schema'] ?? 1) < 2) {
+        if ((int)($c['site']['price_hourly'] ?? 0) === 50) $c['site']['price_hourly'] = 70;
+        if (($c['site']['kicker_home'] ?? '') === 'Webdesign aus Osnabrück') $c['site']['kicker_home'] = $d['site']['kicker_home'];
+        if (($c['site']['kicker_angebot'] ?? '') === 'Für Betriebe aus Osnabrück und Umgebung') $c['site']['kicker_angebot'] = $d['site']['kicker_angebot'];
+        $c['schema'] = 2;
     }
     if (!empty($c['site']['email'])) $c['contact_email'] = $c['site']['email'];
     return $c;
