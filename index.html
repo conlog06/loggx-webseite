@@ -649,8 +649,9 @@
   </div>
 
   <!-- Cookie-Hinweis -->
-  <div class="cookie" id="cookie" role="dialog" aria-modal="false" aria-labelledby="cookie-title" hidden>
-    <div class="cookie-box">
+  <div class="cookie" id="cookie" role="dialog" aria-modal="true" aria-labelledby="cookie-title" hidden>
+    <div class="cookie-box" tabindex="-1" data-lenis-prevent>
+      <span class="cookie-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 3 3 0 0 1-3.5-3A3 3 0 0 1 14 5.5 3 3 0 0 1 12 3z"/><circle cx="8.5" cy="10" r="1"/><circle cx="10" cy="15.5" r="1"/><circle cx="15" cy="14" r="1"/></svg></span>
       <div class="cookie-text">
         <strong id="cookie-title">Cookies auf dieser Webseite</strong>
         <p>Ich nutze notwendige Cookies, damit die Seite funktioniert. Optional helfen mir Statistik-Cookies zu verstehen, wie die Seite genutzt wird. Details in der <a href="datenschutz">Datenschutzerklärung</a>.</p>
@@ -666,9 +667,9 @@
         </label>
       </div>
       <div class="cookie-actions">
-        <button type="button" class="btn btn-ghost btn-small" id="cookie-settings"><span>Einstellungen</span></button>
-        <button type="button" class="btn btn-ghost btn-small" id="cookie-necessary"><span>Nur notwendige</span></button>
-        <button type="button" class="btn btn-primary btn-small" id="cookie-accept"><span>Alle akzeptieren</span></button>
+        <button type="button" class="btn btn-ghost" id="cookie-necessary"><span>Nur notwendige</span></button>
+        <button type="button" class="btn btn-primary" id="cookie-accept"><span>Alle akzeptieren</span></button>
+        <button type="button" class="cookie-more" id="cookie-settings"><span>Einstellungen</span></button>
       </div>
     </div>
   </div>

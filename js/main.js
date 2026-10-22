@@ -419,11 +419,14 @@
       optionsEl.hidden = true;
       settingsBtn.querySelector("span").textContent = "Einstellungen";
       cookieBox.hidden = false;
+      if (FX && FX.lenis) FX.lenis.stop();
+      setTimeout(function () { cookieBox.querySelector(".cookie-box").focus({ preventScroll: true }); }, 50);
     };
     var saveAndClose = function (stats) {
       var consent = { necessary: true, stats: Boolean(stats), date: new Date().toISOString() };
       writeConsent(consent); applyConsent(consent);
       cookieBox.hidden = true;
+      if (FX && FX.lenis) FX.lenis.start();
     };
     document.getElementById("cookie-accept").addEventListener("click", function () { saveAndClose(true); });
     document.getElementById("cookie-necessary").addEventListener("click", function () { saveAndClose(false); });
