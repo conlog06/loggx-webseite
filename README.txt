@@ -42,7 +42,8 @@ und datenschutz.html eintragen. Telefonnummer auch in index.html (Kontakt).
   5. Anfrageformular: läuft mit PHP über _launch/api.php (siehe unten "Anfragen").
      Ohne PHP (GitHub Pages) geht die Anfrage über formsubmit.co an die E-Mail-Adresse
      aus dem Kontaktbereich – beim allerersten Mal einmal "Activate" klicken.
-  6. Cookie-Hinweis: Statistik-Tools nur in js/main.js in applyConsent() einhängen.
+  6. Kein Cookie-Hinweis nötig: Die Seite setzt keine Statistik- oder Werbe-Cookies.
+     Wer später Google Analytics o. Ä. einbaut, braucht wieder einen Einwilligungs-Hinweis.
 
 Hochladen
   Alle Dateien und Ordner unverändert in das Web-Verzeichnis des Hosters kopieren.
@@ -129,3 +130,8 @@ Statistik (ohne Cookies)
   Geräte, Systeme, Browser, Uhrzeit, Wochentage, Scroll-Tiefe pro Abschnitt,
   Klicks (Pakete, Beispiele, Telefon, E-Mail), Weg durchs Formular, Verweildauer.
   Die Übersicht fasst das in kurzen Hinweisen zusammen.
+
+llms.txt (für ChatGPT, Claude, Gemini & Co.)
+  https://loggx.de/llms.txt – kurze Beschreibung von LoggX für KI-Assistenten.
+  Kommt aus _launch/llms.php, Preise und Kontakt also immer aktuell aus dem Admin.
+  Ohne PHP (GitHub Pages) gilt die statische Datei llms.txt im Hauptordner.
