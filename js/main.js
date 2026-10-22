@@ -1,6 +1,6 @@
 /* ==========================================================================
    LoggX – main.js
-   1) Grundfunktionen (Navigation, Cookie, Vorschau, Anfrage in 3 Schritten, Statistik)
+   1) Grundfunktionen (Navigation, Vorschau, Anfrage in 3 Schritten, Statistik)
    2) Animationen (GSAP + ScrollTrigger + Lenis, alles lokal in js/vendor)
    ========================================================================== */
 
@@ -387,58 +387,6 @@
       shot.addEventListener("click", function () { openLb(shot); });
       shot.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLb(shot); } });
     });
-  }
-
-  /* ---------- Cookie-Hinweis ---------- */
-  var cookieBox = document.getElementById("cookie");
-  if (cookieBox) {
-    var COOKIE_NAME = "loggx_consent";
-    var COOKIE_DAYS = 365;
-    var readConsent = function () {
-      var m = document.cookie.match(new RegExp("(?:^|; )" + COOKIE_NAME + "=([^;]*)"));
-      if (!m) return null;
-      try { return JSON.parse(decodeURIComponent(m[1])); } catch (e) { return null; }
-    };
-    var writeConsent = function (consent) {
-      var d = new Date(); d.setTime(d.getTime() + COOKIE_DAYS * 864e5);
-      document.cookie = COOKIE_NAME + "=" + encodeURIComponent(JSON.stringify(consent)) +
-        "; expires=" + d.toUTCString() + "; path=/; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
-    };
-    // Hier Statistik-Tools einhängen, die nur mit Zustimmung laden sollen
-    var applyConsent = function (consent) {
-      if (consent && consent.stats) {
-        // Beispiel: Google Analytics / Matomo hier laden
-      }
-    };
-    var optionsEl = document.getElementById("cookie-options");
-    var statsEl = document.getElementById("cookie-stats");
-    var settingsBtn = document.getElementById("cookie-settings");
-    var showCookie = function () {
-      var existing = readConsent();
-      if (existing) statsEl.checked = Boolean(existing.stats);
-      optionsEl.hidden = true;
-      settingsBtn.querySelector("span").textContent = "Einstellungen";
-      cookieBox.hidden = false;
-      if (FX && FX.lenis) FX.lenis.stop();
-      setTimeout(function () { cookieBox.querySelector(".cookie-box").focus({ preventScroll: true }); }, 50);
-    };
-    var saveAndClose = function (stats) {
-      var consent = { necessary: true, stats: Boolean(stats), date: new Date().toISOString() };
-      writeConsent(consent); applyConsent(consent);
-      cookieBox.hidden = true;
-      if (FX && FX.lenis) FX.lenis.start();
-    };
-    document.getElementById("cookie-accept").addEventListener("click", function () { saveAndClose(true); });
-    document.getElementById("cookie-necessary").addEventListener("click", function () { saveAndClose(false); });
-    settingsBtn.addEventListener("click", function () {
-      if (optionsEl.hidden) { optionsEl.hidden = false; settingsBtn.querySelector("span").textContent = "Auswahl speichern"; }
-      else saveAndClose(statsEl.checked);
-    });
-    var reopen = document.getElementById("cookie-reopen");
-    if (reopen) reopen.addEventListener("click", function (e) { e.preventDefault(); showCookie(); });
-    var saved = readConsent();
-    if (saved) applyConsent(saved);
-    else setTimeout(showCookie, 600);
   }
 
   /* ---------- Paket-Berater ---------- */

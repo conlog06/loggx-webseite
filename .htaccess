@@ -20,6 +20,9 @@ Options -Indexes
   RewriteCond %{HTTP:X-Forwarded-Proto} !=https
   RewriteRule ^ https://loggx.de%{REQUEST_URI} [R=301,L,NE]
 
+  # Kurzbeschreibung für KI-Assistenten (Preise/Kontakt aus dem Admin)
+  RewriteRule ^llms\.txt$ _launch/llms.php [L]
+
   # Admin-Bereich und Launch-System selbst nicht umleiten
   RewriteRule ^(admin|_launch)(/|$) - [L]
 
