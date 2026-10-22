@@ -39,9 +39,9 @@ und datenschutz.html eintragen. Telefonnummer auch in index.html (Kontakt).
      (1200×750 px). Solange sie fehlen, kommt ein Screenshot von image.thum.io.
   4. Designbeispiele: Die Bilder in img/work/ sind Entwürfe für fiktive Betriebe.
      Eigene Bilder einfach unter gleichem Namen ersetzen.
-  5. Kontaktformular: E-Mail in js/main.js (CONFIG.contactEmail) und im
-     action-Attribut des <form> in index.html. Beim ersten Absenden kommt eine
-     Aktivierungs-Mail von formsubmit.co – einmal "Activate" klicken.
+  5. Anfrageformular: läuft mit PHP über _launch/api.php (siehe unten "Anfragen").
+     Ohne PHP (GitHub Pages) geht die Anfrage über formsubmit.co an die E-Mail-Adresse
+     aus dem Kontaktbereich – beim allerersten Mal einmal "Activate" klicken.
   6. Cookie-Hinweis: Statistik-Tools nur in js/main.js in applyConsent() einhängen.
 
 Hochladen
@@ -95,14 +95,37 @@ Testen auf dem eigenen Rechner
 
 Werbe-Landingpage: /angebot/
   angebot/index.html – fokussierte Seite für Anzeigen, Flyer, QR-Codes (ein Ziel: Anfrage).
-  Aufruf: https://deine-domain.de/angebot/  ·  Anfragen kommen mit dem Betreff
-  "Neue Anfrage über die Landingpage" an, so siehst du, woher sie stammen.
+  Aufruf: https://deine-domain.de/angebot/  ·  Anfragen von dort sind im Admin mit
+  "(Landingpage)" markiert, so siehst du, woher sie stammen.
   Vor dem Launch / in der Wartung ist sie wie die übrige Seite gesperrt.
 
 Inhalte im Admin ändern (Karte "Webseite: Preise, Kontakt & Hinweise")
-  Preise (Visitenkarte, Firmenwebseite, Hosting), Lieferzeiten, Antwortzeit,
+  Preise (Visitenkarte, Firmenwebseite, Änderungen & Support pro Stunde), Lieferzeiten, Antwortzeit,
   Telefon, E-Mail (auch Empfänger des Kontaktformulars), Adresse,
   Hinweis über der Überschrift (z. B. "Noch 2 Projektplätze frei") und eine
   gelbe Ankündigungsleiste mit Link. Technik: Elemente mit data-cms="…" in den
   HTML-Dateien werden beim Ausliefern durch gate.php ersetzt. Ohne PHP bleiben
   die Werte aus den HTML-Dateien stehen.
+
+==========================================================================
+Anfragen & Statistik (Admin → Übersicht, Anfragen, Statistik)
+==========================================================================
+Anfrage in 3 Schritten (Startseite und /angebot/)
+  1. Vorhaben, Branche, Firma, Ort  2. Umfang, Extras, Start, Budget  3. Kontaktdaten
+  - Live-Empfehlung (Visitenkarte, Firmenwebseite, Individuell, Änderungen & Support)
+    mit den Preisen aus dem Admin. Dieselbe Logik steht in _launch/leads.php und js/main.js.
+  - Priorität heiß/warm/kalt (Start, Budget, Telefon, Nachricht …).
+  - E-Mail an dich (Antworten geht direkt an den Kunden) + automatische Bestätigung
+    an den Kunden mit Empfehlung (im Admin abschaltbar).
+  - Spam-Schutz: verstecktes Feld, Zeitsperre, max. 5 Anfragen pro Stunde und Gerät.
+  - "… anfragen"-Buttons bei den Paketen wählen das Paket im Formular vor.
+  Admin → Anfragen: Postfach mit Status (Neu → Kontaktiert → Angebot → Auftrag/kein Auftrag),
+  Notizen, Antworten per E-Mail/Telefon/WhatsApp, CSV-Export, Löschfrist.
+  E-Mail-Versand: unter Anfragen → Einstellungen eine Absender-Adresse deiner Domain
+  eintragen (z. B. kontakt@loggx.de) und "Test-E-Mail an mich schicken".
+
+Statistik (ohne Cookies)
+  Besucher, Herkunft (auch Instagram/Facebook-App), Kampagnen (?utm_source=…&utm_campaign=…),
+  Geräte, Systeme, Browser, Uhrzeit, Wochentage, Scroll-Tiefe pro Abschnitt,
+  Klicks (Pakete, Beispiele, Telefon, E-Mail), Weg durchs Formular, Verweildauer.
+  Die Übersicht fasst das in kurzen Hinweisen zusammen.

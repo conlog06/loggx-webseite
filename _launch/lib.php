@@ -8,6 +8,23 @@
 declare(strict_types=1);
 date_default_timezone_set('Europe/Berlin');
 
+/* ---------- Ersatz für fehlende PHP-Erweiterungen (z. B. PHP unter Windows ohne mbstring) ---------- */
+if (!function_exists('mb_substr')) {
+    function mb_substr($s, $start, $length = null, $enc = null) { preg_match_all('/./us', (string)$s, $m); return implode('', array_slice($m[0], (int)$start, $length === null ? null : (int)$length)); }
+}
+if (!function_exists('mb_strlen')) {
+    function mb_strlen($s, $enc = null) { return (int)preg_match_all('/./us', (string)$s); }
+}
+if (!function_exists('mb_strtolower')) {
+    function mb_strtolower($s, $enc = null) { return strtr(strtolower((string)$s), ['Ä' => 'ä', 'Ö' => 'ö', 'Ü' => 'ü']); }
+}
+if (!function_exists('str_starts_with')) {
+    function str_starts_with($h, $n) { return $n === '' || strpos((string)$h, (string)$n) === 0; }
+}
+if (!function_exists('str_ends_with')) {
+    function str_ends_with($h, $n) { return $n === '' || substr((string)$h, -strlen((string)$n)) === (string)$n; }
+}
+
 const LX_DATA = __DIR__ . '/data';
 const LX_GUARD = "<?php exit; ?>\n";
 const LX_COOKIE = 'loggx_zugang';
@@ -79,15 +96,15 @@ function lx_defaults(): array {
             'price_visit' => 790,
             'price_firm' => 1890,
             'price_hosting' => 29,
-            'price_hourly' => 50,          // Änderungen nach Aufwand (€/Stunde)
+            'price_hourly' => 70,          // Änderungen & Support nach Aufwand (€/Stunde)
             'lp_price_visit' => 0,         // Werbe-Landingpage (/angebot/): 0 = gleicher Preis wie Hauptseite
             'lp_price_firm' => 0,
             'lp_strike' => true,           // Normalpreis durchgestrichen daneben zeigen, wenn der Landingpage-Preis günstiger ist
             'time_visit' => '14 Tagen',
             'time_firm' => '3–4 Wochen',
             'response_hours' => 24,
-            'kicker_home' => 'Webdesign aus Osnabrück',
-            'kicker_angebot' => 'Für Betriebe aus Osnabrück und Umgebung',
+            'kicker_home' => 'Webdesign für Unternehmen',
+            'kicker_angebot' => 'Für Betriebe in ganz Deutschland',
             'tax_number' => '',            // leer = Abschnitt im Impressum ausgeblendet
             'tax_office' => 'Osnabrück',
             'hoster' => '',                // z. B. "IONOS SE, Elgendorfer Str. 57, 56410 Montabaur"
@@ -100,19 +117,34 @@ function lx_defaults(): array {
             'bar_link' => '',
             'bar_badge' => 'Aktion',
             'bar_id' => '',
+            'mail_from' => '',             // Absender für E-Mails (leer = noreply@eigene-domain)
+        ],
+        // Anfragen über das Formular
+        'leads' => [
+            'autoreply' => true,           // Bestätigung mit Empfehlung an den Kunden
+            'keep_months' => 12,           // danach automatisch löschen (0 = nie); "Auftrag erhalten" bleibt
         ],
         'shared_password' => '',          // Hash; leer = aus
         'contact_email' => 'constantinloggen@icloud.com',
         'admin_hash' => '',
         'secret' => '',
+        'schema' => 2,
     ];
 }
 function lx_config(): array {
     $c = lx_read('config', []);
     $d = lx_defaults();
+    if ($c && !isset($c['schema'])) $c['schema'] = 1; // gespeicherte Einstellungen von vor der Umstellung
     foreach ($d as $k => $v) {
         if (!array_key_exists($k, $c)) $c[$k] = $v;
         elseif (is_array($v)) $c[$k] = array_merge($v, is_array($c[$k]) ? $c[$k] : []);
+    }
+    // Einmalige Umstellung älterer Einstellungen (Stand Oktober 2026)
+    if ((int)($c['schema'] ?? 1) < 2) {
+        if ((int)($c['site']['price_hourly'] ?? 0) === 50) $c['site']['price_hourly'] = 70;
+        if (($c['site']['kicker_home'] ?? '') === 'Webdesign aus Osnabrück') $c['site']['kicker_home'] = $d['site']['kicker_home'];
+        if (($c['site']['kicker_angebot'] ?? '') === 'Für Betriebe aus Osnabrück und Umgebung') $c['site']['kicker_angebot'] = $d['site']['kicker_angebot'];
+        $c['schema'] = 2;
     }
     if (!empty($c['site']['email'])) $c['contact_email'] = $c['site']['email'];
     return $c;
@@ -238,6 +270,56 @@ function lx_fail(string $bucket, int $window = 900): void {
     $t[$key][] = $now;
     lx_write('throttle', $t);
 }
+function lx_hit(string $bucket, int $window = 900): void { lx_locked('throttle', fn() => lx_fail($bucket, $window)); }
+
+/** Mit Dateisperre lesen, ändern und schreiben */
+function lx_locked(string $lock, callable $fn) {
+    if (!is_dir(LX_DATA)) @mkdir(LX_DATA, 0750, true);
+    $h = @fopen(LX_DATA . "/$lock.lock", 'c');
+    if ($h) flock($h, LOCK_EX);
+    try { return $fn(); }
+    finally { if ($h) { flock($h, LOCK_UN); fclose($h); } }
+}
+function lx_cut(string $v, int $max): string { return function_exists('mb_substr') ? mb_substr(trim($v), 0, $max) : substr(trim($v), 0, $max); }
+function lx_abs_url(string $path = ''): string {
+    return (lx_https() ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'localhost') . lx_url($path);
+}
+
+/** Absender für E-Mails: eingetragene Adresse oder noreply@eigene-domain.de */
+function lx_mail_from(): string {
+    $from = trim((string)(lx_config()['site']['mail_from'] ?? ''));
+    if ($from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL)) return $from;
+    $host = preg_replace('/^www\./', '', (string)preg_replace('/:\d+$/', '', strtolower((string)($_SERVER['HTTP_HOST'] ?? 'localhost'))));
+    return 'noreply@' . $host;
+}
+/** Einfache Text-E-Mail (UTF-8). Lokal (php -S) landet sie in data/mail-test.log. */
+function lx_mail(string $to, string $subject, string $text, string $replyTo = '', string $replyName = ''): bool {
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
+    $from = lx_mail_from();
+    $clean = fn($s) => str_replace(["\r", "\n"], ' ', (string)$s);
+    $b64 = fn($s) => '=?UTF-8?B?' . base64_encode($clean($s)) . '?=';
+    $headers = 'From: ' . $b64('LoggX') . " <$from>\r\n";
+    if ($replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+        $headers .= 'Reply-To: ' . ($replyName !== '' ? $b64($replyName) . ' ' : '') . "<$replyTo>\r\n";
+    }
+    $headers .= "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\nX-Mailer: LoggX\r\n";
+    if (PHP_SAPI === 'cli-server') {
+        @file_put_contents(LX_DATA . '/mail-test.log', "TO: $to\nSUBJECT: $subject\n$headers\n$text\n\n-----\n", FILE_APPEND);
+        return true;
+    }
+    return @mail($to, $b64($subject), str_replace("\n", "\r\n", str_replace("\r\n", "\n", $text)), $headers, '-f' . $from);
+}
+
+/** "vor 5 Min." / "gestern" / "12.11." */
+function lx_ago(int $ts): string {
+    $d = time() - $ts;
+    if ($d < 60) return 'gerade eben';
+    if ($d < 3600) return 'vor ' . floor($d / 60) . ' Min.';
+    if ($d < 86400 && date('Y-m-d', $ts) === date('Y-m-d')) return 'vor ' . floor($d / 3600) . ' Std.';
+    if (date('Y-m-d', $ts) === date('Y-m-d', strtotime('-1 day'))) return 'gestern';
+    if ($d < 6 * 86400) return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][(int)date('w', $ts)] . ', ' . date('H:i', $ts);
+    return date('d.m.' . (date('Y', $ts) !== date('Y') ? 'Y' : ''), $ts);
+}
 
 /** "Samstag, 1. November 2026, 18:00 Uhr" */
 function lx_date_de(int $ts, bool $withDay = true): string {
@@ -267,7 +349,7 @@ function lx_apply_site(string $html, array $s): string {
         return $h;
     }, $html, 1) ?? $html;
     // Markierung: Seite wurde vom Server aufbereitet (main.js räumt sonst Platzhalter selbst auf)
-    $html = preg_replace('~<html\b(?![^>]*data-cms-live)~i', '<html data-cms-live', $html, 1) ?? $html;
+    $html = preg_replace('~<html\b(?![^>]*data-cms-live)~i', '<html data-cms-live data-api="' . e(lx_url('_launch/api.php')) . '"' . (!empty($s['stats_on']) ? ' data-stats' : ''), $html, 1) ?? $html;
     // Telefonnummer noch Platzhalter → Telefon-Links und -Zeilen ausblenden
     if (trim((string)$s['phone']) === '' || $s['phone'] === lx_defaults()['site']['phone']) {
         $html = preg_replace('~<a\b[^>]*data-cms-href="tel"[^>]*>.*?</a>~is', '', $html) ?? $html;
@@ -374,3 +456,4 @@ function lx_bar_html(array $s): string {
 }
 
 require_once __DIR__ . '/stats.php';
+require_once __DIR__ . '/leads.php';

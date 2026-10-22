@@ -1,27 +1,11 @@
 /* ==========================================================================
    LoggX – main.js
-   1) Grundfunktionen (Navigation, Cookie, Vorschau, Formular, Paket-Berater)
+   1) Grundfunktionen (Navigation, Cookie, Vorschau, Anfrage in 3 Schritten, Statistik)
    2) Animationen (GSAP + ScrollTrigger + Lenis, alles lokal in js/vendor)
    ========================================================================== */
 
 (function () {
   "use strict";
-
-  /* ==========================================================
-     EINSTELLUNGEN – nur hier die E-Mail-Adresse eintragen!
-     Versand über formsubmit.co. Beim allerersten Absenden kommt eine
-     Aktivierungs-Mail – einmal auf "Activate" klicken, fertig.
-     Eigenes Server-Skript: formEndpoint auf "kontakt.php" setzen.
-     ========================================================== */
-  var CONFIG = {
-    contactEmail: "constantinloggen@icloud.com",
-    formEndpoint: null   // null = automatisch formsubmit.co
-  };
-  // Empfänger-Adresse kommt aus dem Formular (im Admin-Bereich änderbar), sonst aus CONFIG
-  var formTarget = document.getElementById("contact-form");
-  var formAction = formTarget ? formTarget.getAttribute("action") || "" : "";
-  if (/formsubmit\.co\/[^/]+@/.test(formAction)) CONFIG.contactEmail = formAction.split("/").pop();
-  if (!CONFIG.formEndpoint) CONFIG.formEndpoint = "https://formsubmit.co/ajax/" + CONFIG.contactEmail;
 
   var root = document.documentElement;
   var body = document.body;
@@ -435,11 +419,14 @@
       optionsEl.hidden = true;
       settingsBtn.querySelector("span").textContent = "Einstellungen";
       cookieBox.hidden = false;
+      if (FX && FX.lenis) FX.lenis.stop();
+      setTimeout(function () { cookieBox.querySelector(".cookie-box").focus({ preventScroll: true }); }, 50);
     };
     var saveAndClose = function (stats) {
       var consent = { necessary: true, stats: Boolean(stats), date: new Date().toISOString() };
       writeConsent(consent); applyConsent(consent);
       cookieBox.hidden = true;
+      if (FX && FX.lenis) FX.lenis.start();
     };
     document.getElementById("cookie-accept").addEventListener("click", function () { saveAndClose(true); });
     document.getElementById("cookie-necessary").addEventListener("click", function () { saveAndClose(false); });
@@ -453,18 +440,6 @@
     if (saved) applyConsent(saved);
     else setTimeout(showCookie, 600);
   }
-
-  /* ---------- Paket ins Formular übernehmen ---------- */
-  var planSelect = document.getElementById("plan");
-  function selectPlan(value) {
-    if (!planSelect) return;
-    var match = Array.prototype.find.call(planSelect.options, function (o) { return o.value === value || o.text === value; });
-    if (match) planSelect.value = match.value;
-  }
-  document.addEventListener("click", function (e) {
-    var btn = e.target.closest("[data-plan]");
-    if (btn) selectPlan(btn.getAttribute("data-plan"));
-  });
 
   /* ---------- Paket-Berater ---------- */
   var advisor = document.getElementById("advisor");
@@ -488,86 +463,270 @@
     });
   }
 
-  /* ---------- Kontaktformular ---------- */
-  var form = document.getElementById("contact-form");
-  var status = document.getElementById("form-status");
-  if (form) {
-    var fields = {
-      name: { el: form.elements.name, msg: "Bitte geben Sie Ihren Namen an." },
-      email: { el: form.elements.email, msg: "Bitte geben Sie eine gültige E-Mail-Adresse an." },
-      message: { el: form.elements.message, msg: "Bitte beschreiben Sie kurz Ihr Anliegen." },
-      privacy: { el: form.elements.privacy, msg: "Bitte bestätigen Sie die Datenschutzerklärung." }
-    };
-    var setError = function (field, message) {
-      var wrapper = field.el.closest(".field");
-      var errorEl = wrapper ? wrapper.querySelector(".field-error") : null;
-      if (wrapper) wrapper.classList.toggle("is-invalid", Boolean(message));
-      if (errorEl) errorEl.textContent = message || "";
-      field.el.setAttribute("aria-invalid", message ? "true" : "false");
-    };
-    var validate = function (field, key) {
-      var el = field.el, valid;
-      if (key === "privacy") valid = el.checked;
-      else if (key === "email") valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(el.value.trim());
-      else valid = el.value.trim().length > 1;
-      setError(field, valid ? "" : field.msg);
-      return valid;
-    };
-    Object.keys(fields).forEach(function (key) {
-      var field = fields[key];
-      field.el.addEventListener(key === "privacy" ? "change" : "input", function () {
-        if (field.el.closest(".field").classList.contains("is-invalid")) validate(field, key);
+  /* ---------- Statistik ohne Cookies (nur wenn die Seite vom Server kommt) ---------- */
+  var LIVE = root.hasAttribute("data-cms-live");
+  var API = root.getAttribute("data-api") || "_launch/api.php";
+  var PAGE = (document.getElementById("main") || body).getAttribute("data-page") || "start";
+  var T = null;
+  function track(id) { if (T && id) T.c[id] = 1; }
+  var dnt = navigator.doNotTrack === "1" || window.doNotTrack === "1" || navigator.globalPrivacyControl === true;
+  if (LIVE && root.hasAttribute("data-stats") && !dnt && navigator.sendBeacon && "IntersectionObserver" in window) {
+    T = { s: {}, c: {}, sentS: {}, sentC: {}, vis: Date.now(), acc: 0, engaged: false, sentE: false };
+    var secIo = new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        T.s[(PAGE === "angebot" ? "lp-" : "") + en.target.id] = 1;
+        secIo.unobserve(en.target);
       });
+    }, { threshold: 0.3 });
+    document.querySelectorAll("#main > section[id]").forEach(function (s) { secIo.observe(s); });
+    var flush = function () {
+      var now = Date.now();
+      if (T.vis) { T.acc += (now - T.vis) / 1000; T.vis = 0; }
+      if (T.acc >= 15) T.engaged = true;
+      var s = Object.keys(T.s).filter(function (x) { return !T.sentS[x]; });
+      var c = Object.keys(T.c).filter(function (x) { return !T.sentC[x]; });
+      var d = Math.round(T.acc); T.acc -= d;
+      var e = T.engaged && !T.sentE;
+      if (!s.length && !c.length && !d && !e) return;
+      var ok = navigator.sendBeacon(API + "?a=t", JSON.stringify({ s: s, c: c, d: d, e: e ? 1 : 0 }));
+      if (ok) { s.forEach(function (x) { T.sentS[x] = 1; }); c.forEach(function (x) { T.sentC[x] = 1; }); if (e) T.sentE = true; }
+    };
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flush(); else T.vis = Date.now(); });
+    window.addEventListener("pagehide", flush);
+    setTimeout(function () {
+      if (document.visibilityState !== "visible") return;
+      T.acc += (Date.now() - T.vis) / 1000; T.vis = Date.now();
+      if (T.acc >= 15) { T.engaged = true; flush(); }
+    }, 16000);
+  }
+  // Wichtige Klicks zählen (nur Name des Buttons, nichts Persönliches)
+  var planTrack = { "Visitenkarte": "plan-visit", "Firmenwebseite": "plan-firm", "Individuell": "plan-indiv", "Änderungen": "plan-change" };
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("a, button, .shot");
+    if (!t) return;
+    if (t.hasAttribute("data-track")) track(t.getAttribute("data-track"));
+    else if (t.classList.contains("lb-cta")) track("example-cta");
+    else if (t.id === "adv-cta") track("advisor");
+    else if (t.hasAttribute("data-plan")) track(planTrack[t.getAttribute("data-plan")]);
+    else if (/^mailto:/.test(t.getAttribute("href") || "")) track("mail");
+    else if (/^tel:/.test(t.getAttribute("href") || "")) track("tel");
+    else if (t.classList.contains("shot")) track("example");
+    else if (t.hasAttribute("data-preview") || t.closest(".reference")) track("ref");
+  }, true);
+
+  /* ---------- Herkunft merken (für Anfragen) ---------- */
+  var source = function () {
+    try {
+      var s = sessionStorage.getItem("lx-src");
+      if (s) return s;
+      var u = new URLSearchParams(location.search), src = u.get("utm_source") || "";
+      if (!src && document.referrer) { try { var h = new URL(document.referrer).hostname; if (h !== location.hostname) src = h.replace(/^www\./, ""); } catch (e) {} }
+      if (!src && /Instagram/i.test(navigator.userAgent)) src = "Instagram";
+      if (!src && /FBAN|FBAV/.test(navigator.userAgent)) src = "Facebook";
+      if (!src && /LinkedInApp/i.test(navigator.userAgent)) src = "LinkedIn";
+      sessionStorage.setItem("lx-src", src || "direkt");
+      return src || "direkt";
+    } catch (e) { return "direkt"; }
+  };
+  source();
+
+  /* ---------- Anfrage in 3 Schritten ---------- */
+  var form = document.getElementById("lead-form");
+  if (form) {
+    var stepsEl = form.querySelectorAll(".lf-step");
+    var labels = ["Ihr Vorhaben", "Umfang & Zeitplan", "Ihre Kontaktdaten"];
+    var step = 1, started = 0;
+    var val = function (n) { var el = form.elements[n]; return el && el.value ? String(el.value).trim() : ""; };
+    var radio = function (n) { var el = form.querySelector('input[name="' + n + '"]:checked'); return el ? el.value : ""; };
+    var checks = function (n) { return Array.prototype.map.call(form.querySelectorAll('input[name="' + n + '"]:checked'), function (i) { return i.value; }); };
+    var label = function (n) { var el = form.querySelector('input[name="' + n + '"]:checked + span'); return el ? el.textContent.trim() : "–"; };
+    var price = function (k) { var el = form.querySelector('.lf-prices [data-cms="' + k + '"]'); return el ? el.textContent.trim() : ""; };
+    var eur = function (k) { var n = parseInt(price(k).replace(/\D/g, ""), 10) || 0; return n.toLocaleString("de-DE") + " €"; };
+    var markStart = function () { if (!started) { started = Date.now(); track("form-start"); } };
+
+    // Dieselbe Logik wie in _launch/leads.php
+    var recommend = function () {
+      var p = radio("projekt"), pages = radio("seiten"), x = checks("extras");
+      var has = function (a) { return a.some(function (k) { return x.indexOf(k) >= 0; }); };
+      var visit = ["Visitenkarte", "Eine schlanke Seite mit allem Wichtigen auf einen Blick – ab " + eur("price_visit") + ", online in " + price("time_visit") + "."];
+      if (p === "aenderung") return ["Änderungen & Support", "Abrechnung nach Aufwand ab " + eur("price_hourly") + " pro Stunde. Kein Abo, keine Grundgebühr."];
+      if (p === "shop" || pages === "many" || has(["shop", "termin", "sprachen"])) return ["Individuell", "Für Sonderfunktionen wie Shop, Terminbuchung oder mehrere Sprachen. Sie bekommen vorher ein Angebot zum Festpreis."];
+      if (pages === "one" || p === "landing") return visit;
+      if (pages === "few" || p === "relaunch" || x.length >= 3) return ["Firmenwebseite", "Mehrere Unterseiten für Leistungen, Team und Referenzen – ab " + eur("price_firm") + ", online in " + price("time_firm") + "."];
+      return visit;
+    };
+    var updateRec = function () {
+      var any = radio("projekt") && (radio("seiten") || checks("extras").length || radio("start") || radio("projekt") === "aenderung");
+      var box = document.getElementById("lf-rec");
+      box.hidden = !any;
+      if (!any) return;
+      var r = recommend();
+      document.getElementById("lf-rec-name").textContent = r[0];
+      document.getElementById("lf-rec-why").textContent = r[1];
+    };
+    // Felder je nach Auswahl ein-/ausblenden: data-if="projekt=neu|relaunch|" (leerer Wert = noch nichts gewählt)
+    var applyIf = function () {
+      form.querySelectorAll("[data-if]").forEach(function (el) {
+        var m = el.getAttribute("data-if").split("="), v = radio(m[0]);
+        el.hidden = m[1].split("|").indexOf(v) < 0;
+      });
+      var small = radio("projekt") === "aenderung";
+      var l2 = document.getElementById("lf-l2");
+      if (!l2.getAttribute("data-main")) l2.setAttribute("data-main", l2.textContent);
+      l2.textContent = small ? l2.getAttribute("data-alt") : l2.getAttribute("data-main");
+      document.getElementById("lf-q-start").hidden = small;
+    };
+    var goStep = function (n, focus) {
+      step = n;
+      stepsEl.forEach(function (s) { s.hidden = +s.getAttribute("data-step") !== n; });
+      document.getElementById("lf-bar").style.width = (n / 3 * 100) + "%";
+      document.getElementById("lf-label").textContent = "Schritt " + n + " von 3 · " + labels[n - 1];
+      if (n === 2) updateRec();
+      if (n >= 2) track("form-step" + n);
+      if (focus !== false) {
+        var r = form.getBoundingClientRect();
+        if (r.top < 60 || r.top > window.innerHeight * 0.4) {
+          var y = window.scrollY + r.top - (parseInt(getComputedStyle(root).getPropertyValue("--header-h"), 10) || 76) - 12;
+          if (FX && FX.lenis) FX.lenis.scrollTo(y); else window.scrollTo({ top: y, behavior: reduceMotion ? "auto" : "smooth" });
+        }
+      }
+    };
+    var showErr = function (msg) { var el = document.getElementById("lf-error"); el.textContent = msg; el.hidden = !msg; };
+
+    form.addEventListener("focusin", markStart);
+    form.addEventListener("input", function (e) {
+      var f = e.target.closest && e.target.closest(".field.is-invalid");
+      if (f && e.target.value.trim()) f.classList.remove("is-invalid");
+    });
+    form.addEventListener("change", function (e) {
+      markStart();
+      var t = e.target;
+      if (t.name === "projekt") { t.closest(".opts").classList.remove("is-err"); form.querySelector('[data-err="1"]').hidden = true; }
+      if (t.closest && t.closest(".field.is-invalid") && t.value.trim()) t.closest(".field").classList.remove("is-invalid");
+      if (["projekt", "branche"].indexOf(t.name) >= 0) applyIf();
+      if (["projekt", "seiten", "extras", "start"].indexOf(t.name) >= 0) updateRec();
+      if (t.name === "consent") t.closest(".consent").classList.remove("is-err");
+    });
+    form.querySelectorAll("[data-next]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        if (step === 1) {
+          var err1 = form.querySelector('[data-err="1"]'), firma = form.elements.firma, ort = form.elements.ort;
+          var noP = !radio("projekt"), noF = !firma.value.trim(), noO = !ort.value.trim();
+          form.querySelector('[data-required="projekt"]').classList.toggle("is-err", noP);
+          firma.closest(".field").classList.toggle("is-invalid", noF);
+          ort.closest(".field").classList.toggle("is-invalid", noO);
+          if (noP || noF || noO) {
+            err1.textContent = noP ? "Bitte wählen Sie kurz aus, was Sie vorhaben." : noF ? "Bitte geben Sie Ihre Firma an." : "Bitte geben Sie Ihren Ort an.";
+            err1.hidden = false;
+            if (!noP) (noF ? firma : ort).focus();
+            return;
+          }
+          err1.hidden = true;
+        }
+        goStep(step + 1);
+      });
+    });
+    form.querySelectorAll("[data-back]").forEach(function (b) { b.addEventListener("click", function () { goStep(step - 1); }); });
+    applyIf();
+    goStep(1, false);
+
+    // "… anfragen"-Buttons: Paket bzw. Vorhaben im Formular vorauswählen
+    var planPreset = {
+      "Visitenkarte": ["neu", "one"], "Firmenwebseite": ["neu", "few"], "Individuell": ["shop", ""],
+      "Änderungen": ["aenderung", ""], "Neue Webseite": ["neu", ""], "Relaunch": ["relaunch", ""], "Landingpage": ["landing", "one"]
+    };
+    document.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-plan]");
+      if (!b) return;
+      var plan = b.getAttribute("data-plan"), pre = planPreset[plan];
+      if (!pre) return;
+      var setR = function (n, v) { if (!v) return; var r = form.querySelector('input[name="' + n + '"][value="' + v + '"]'); if (r) r.checked = true; };
+      setR("projekt", pre[0]); setR("seiten", pre[1]);
+      var isPlan = !!planTrack[plan];
+      form.elements.paket.value = isPlan ? plan : "";
+      var chip = document.getElementById("lf-paket");
+      chip.textContent = "Paket: " + (plan === "Änderungen" ? "Änderungen & Support" : plan); chip.hidden = !isPlan;
+      form.querySelector('[data-required="projekt"]').classList.remove("is-err");
+      form.querySelector('[data-err="1"]').hidden = true;
+      applyIf(); updateRec();
+      if (step !== 1) goStep(1, false);
     });
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      var allValid = true, firstInvalid = null;
-      Object.keys(fields).forEach(function (key) {
-        if (!validate(fields[key], key)) { allValid = false; if (!firstInvalid) firstInvalid = fields[key].el; }
-      });
-      if (!allValid) {
-        status.className = "form-status is-error";
-        status.textContent = "Bitte prüfen Sie die markierten Felder.";
-        firstInvalid.focus();
+      showErr("");
+      var name = form.elements.name, mail = form.elements.email, consent = form.elements.consent;
+      var tel = form.elements.telefon;
+      var badName = !name.value.trim(), badMail = !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail.value.trim());
+      var badTel = tel.value.replace(/\D/g, "").length < 6;
+      name.closest(".field").classList.toggle("is-invalid", badName);
+      mail.closest(".field").classList.toggle("is-invalid", badMail);
+      tel.closest(".field").classList.toggle("is-invalid", badTel);
+      consent.closest(".consent").classList.toggle("is-err", !consent.checked);
+      if (badName) { showErr("Bitte geben Sie Ihren Namen an."); return name.focus(); }
+      if (badMail) { showErr("Bitte geben Sie eine gültige E-Mail-Adresse an."); return mail.focus(); }
+      if (badTel) { showErr("Bitte geben Sie Ihre Telefonnummer an."); return tel.focus(); }
+      if (!consent.checked) return showErr("Bitte bestätigen Sie noch kurz den Hinweis zum Datenschutz.");
+
+      var data = {
+        name: val("name"), email: val("email"), telefon: val("telefon"), firma: val("firma"), ort: val("ort"), webseite: val("webseite"),
+        nachricht: val("nachricht"), projekt: radio("projekt"), branche: radio("branche"), branche_text: val("branche_text"),
+        seiten: radio("seiten"), extras: checks("extras"), start: radio("start"), budget: radio("budget"), kontakt: radio("kontakt"),
+        paket: val("paket"), consent: 1, website: val("website"), t: started ? Date.now() - started : 0, src: source(), page: PAGE
+      };
+      var rec = recommend();
+      var btn = document.getElementById("lf-submit"), btnText = btn.querySelector("span");
+      var done = function (recName, recWhy) {
+        stepsEl.forEach(function (s) { s.hidden = true; });
+        form.querySelector(".lf-progress").hidden = true;
+        document.getElementById("lf-paket").hidden = true;
+        document.getElementById("lf-label").textContent = "Anfrage gesendet";
+        document.getElementById("lf-done-name").textContent = data.name ? ", " + data.name.split(" ")[0] : "";
+        var r = document.getElementById("lf-done-rec");
+        r.hidden = false; r.querySelector("b").textContent = recName; r.querySelector("span:last-child").textContent = recWhy;
+        var d = document.getElementById("lf-done"); d.hidden = false; d.focus({ preventScroll: true });
+      };
+      if (data.website) return done(rec[0], rec[1]); // Spam-Falle
+      if (location.protocol === "file:") return showErr("Vorschau-Modus: Das Formular sendet erst, wenn die Seite online liegt.");
+
+      btn.disabled = true; btn.classList.add("is-loading"); btnText.textContent = "Wird gesendet …";
+      var fail = function (msg) {
+        showErr((msg || "Senden hat nicht geklappt.") + " Sie können mir auch direkt eine E-Mail schreiben.");
+        btn.disabled = false; btn.classList.remove("is-loading"); btnText.textContent = "Anfrage senden";
+      };
+      if (LIVE) {
+        fetch(API + "?a=anfrage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+          .then(function (res) { return res.json().catch(function () { return {}; }).then(function (j) { return { ok: res.ok, status: res.status, j: j }; }); })
+          .then(function (r) {
+            if (!r.ok || !r.j.ok) throw new Error(r.j.error || (r.ok ? "Unerwartete Antwort vom Server." : "Server-Fehler " + r.status + "."));
+            done(r.j.rec || rec[0], r.j.why || rec[1]);
+          })
+          .catch(function (err) { fail(err.message); });
         return;
       }
-      if (form.elements._honey && form.elements._honey.value) return; // Spam-Falle
-
-      var submitBtn = document.getElementById("form-submit");
-      if (location.protocol === "file:") {
-        status.className = "form-status is-error";
-        status.textContent = "Vorschau-Modus: Das Formular sendet erst, wenn die Seite online bei einem Hoster liegt.";
-        return;
-      }
-      var showSuccess = function () {
-        form.innerHTML = '<div class="form-success"><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L19 7"/></svg></span>' +
-          '<h3>Anfrage gesendet</h3><p>Vielen Dank! Ich melde mich innerhalb von 24 Stunden bei Ihnen.</p></div>';
+      // Ohne Server (z. B. GitHub Pages): Versand über formsubmit.co
+      var mailEl = document.querySelector('[data-cms="email"]');
+      var to = mailEl ? mailEl.textContent.trim() : "constantinloggen@icloud.com";
+      var payload = {
+        _subject: "Neue Anfrage: " + (data.firma || data.name) + " – " + rec[0], _template: "table", _captcha: "false",
+        Name: data.name, "E-Mail": data.email, Telefon: data.telefon || "–", Firma: data.firma || "–", Ort: data.ort || "–",
+        Branche: data.branche === "andere" && data.branche_text ? data.branche_text : label("branche"), Vorhaben: label("projekt"),
+        "Jetzige Seite": data.webseite || "–", Umfang: label("seiten"),
+        "Dazu gewünscht": Array.prototype.map.call(form.querySelectorAll('input[name="extras"]:checked + span'), function (s) { return s.textContent.trim(); }).join(", ") || "–",
+        Start: label("start"), Budget: label("budget"), "Lieber per": label("kontakt"), Paket: data.paket || "–", Empfehlung: rec[0],
+        Nachricht: data.nachricht || "–", Herkunft: data.src + (PAGE === "angebot" ? " (Landingpage)" : "")
       };
-      var nativeSubmit = function () {
-        var next = document.getElementById("form-next");
-        if (next && /^https?:/.test(location.protocol)) next.value = new URL(form.getAttribute("data-thanks") || "danke", location.href).href;
-        else if (next) next.remove();
-        form.submit();
-      };
-      submitBtn.classList.add("is-loading");
-      submitBtn.querySelector("span").textContent = "Wird gesendet …";
-      status.className = "form-status"; status.textContent = "";
-
-      var payload = {};
-      new FormData(form).forEach(function (v, k) { if (k !== "_next") payload[k] = v; });
-      fetch(CONFIG.formEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify(payload)
+      fetch("https://formsubmit.co/ajax/" + encodeURIComponent(to), {
+        method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(payload)
       })
         .then(function (res) { return res.json(); })
-        .then(function (json) {
-          var ok = json && (json.ok === true || json.success === "true" || json.success === true);
-          if (!ok) throw new Error("Fehler");
-          showSuccess();
-        })
-        .catch(nativeSubmit);
+        .then(function (j) { if (!(j && (j.success === true || j.success === "true"))) throw new Error(""); done(rec[0], rec[1]); })
+        .catch(function () {
+          var lines = Object.keys(payload).filter(function (k) { return k.charAt(0) !== "_"; }).map(function (k) { return k + ": " + payload[k]; });
+          location.href = "mailto:" + to + "?subject=" + encodeURIComponent(payload._subject) + "&body=" + encodeURIComponent(lines.join("\n"));
+          done(rec[0], rec[1]);
+        });
     });
   }
 
