@@ -18,6 +18,11 @@ function lx_stats_pages(): array {
     return [
         'index.html' => 'Startseite',
         'angebot/index.html' => 'Werbe-Landingpage',
+        'webseite-praxis.html' => 'Branche: Praxen',
+        'webseite-handwerk.html' => 'Branche: Handwerk',
+        'webseite-studio.html' => 'Branche: Studios',
+        'webseite-gastronomie.html' => 'Branche: Gastronomie',
+        'preise.html' => 'Preise',
         'impressum.html' => 'Impressum',
         'datenschutz.html' => 'Datenschutz',
         'danke.html' => 'Danke-Seite',

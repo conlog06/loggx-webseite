@@ -423,7 +423,7 @@
     var secIo = new IntersectionObserver(function (es) {
       es.forEach(function (en) {
         if (!en.isIntersecting) return;
-        T.s[(PAGE === "angebot" ? "lp-" : "") + en.target.id] = 1;
+        T.s[(PAGE === "angebot" ? "lp-" : PAGE === "start" ? "" : PAGE + "-") + en.target.id] = 1;
         secIo.unobserve(en.target);
       });
     }, { threshold: 0.3 });
@@ -492,6 +492,9 @@
     var price = function (k) { var el = form.querySelector('.lf-prices [data-cms="' + k + '"]'); return el ? el.textContent.trim() : ""; };
     var eur = function (k) { var n = parseInt(price(k).replace(/\D/g, ""), 10) || 0; return n.toLocaleString("de-DE") + " €"; };
     var markStart = function () { if (!started) { started = Date.now(); track("form-start"); } };
+    // Branchenseiten: passende Branche schon vorauswählen
+    var preB = form.getAttribute("data-branche");
+    if (preB) { var preR = form.querySelector('input[name="branche"][value="' + preB + '"]'); if (preR) preR.checked = true; }
 
     // Dieselbe Logik wie in _launch/leads.php
     var recommend = function () {

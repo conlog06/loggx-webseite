@@ -420,7 +420,7 @@ head('Admin – LoggX', true);
 ?>
   <a href="?tab=anfragen" class="backlink">← Alle Anfragen</a>
   <div class="page-head">
-    <div><h1><?= e($d['firma'] ?: $d['name']) ?></h1><p class="sub"><?= e(lx_date_de((int)$one['created'])) ?> · über <?= e($one['src']) ?><?= ($one['page'] ?? '') === 'angebot' ? ' (Landingpage)' : '' ?> · <?= e($one['device']) ?></p></div>
+    <div><h1><?= e($d['firma'] ?: $d['name']) ?></h1><p class="sub"><?= e(lx_date_de((int)$one['created'])) ?> · über <?= e($one['src']) ?><?= e(lx_lead_pages()[$one['page'] ?? ''] ?? '') ?> · <?= e($one['device']) ?></p></div>
     <div class="head-tags"><span class="temp t-<?= $tk ?>"><?= $tl ?> · <?= (int)$one['score'] ?></span><span class="pill-s"><i class="dot st-<?= e($one['status']) ?>"></i><?= e($stat[$one['status']] ?? '') ?></span></div>
   </div>
   <div class="cols-2-1">
