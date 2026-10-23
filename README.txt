@@ -92,7 +92,12 @@ Hinweis
 Testen auf dem eigenen Rechner
   PHP installieren (Windows: https://windows.php.net/download oder XAMPP), dann im
   Ordner der Webseite:  php -S localhost:8000 _launch/testserver.php
+  Einfacher (Windows): Doppelklick auf testserver-starten.bat – sucht PHP, startet den
+  Server und öffnet den Admin im Browser.
   Browser: http://localhost:8000 (Seite) und http://localhost:8000/admin/ (Admin)
+  Finanzen lokal: http://localhost:8000/admin/finanzen.php (eigener Code + Sync funktionieren
+  auch lokal; die Testdaten liegen getrennt von loggx.de im Browser).
+  testserver-starten.bat und README.txt nicht hochladen (sind auf dem Server ohnehin gesperrt).
 
 Werbe-Landingpage: /angebot/
   angebot/index.html – fokussierte Seite für Anzeigen, Flyer, QR-Codes (ein Ziel: Anfrage).
@@ -145,8 +150,23 @@ Finanzen (FinanzKlar, nur für dich)
   Admin → Finanzen öffnet deine Buchhaltungs-App. Sie liegt in _launch/private/finanzklar.html,
   ist per .htaccess gesperrt und wird nur ausgeliefert, wenn du im Admin eingeloggt bist.
   Die Datei ist absichtlich NICHT im Git-Repo (öffentlich) – sie liegt nur im Upload-Ordner.
-  Die Buchungen speichert die App im Browser (nicht auf dem Server): regelmäßig ein Backup
-  (Einstellungen → Backup exportieren) machen. Bibliotheken/Schriften liegen in admin/finanzen-assets/.
+  Bibliotheken/Schriften liegen in admin/finanzen-assets/.
+  Eigenes Passwort + Code: Der Finanzbereich hat ein eigenes Passwort und einen eigenen zweiten
+  Faktor (Eintrag "LoggX Finanzen" in der Authenticator-App), beides getrennt vom Admin-Login.
+  Beim ersten Öffnen wird beides eingerichtet (Pflicht), danach bei jedem Öffnen abgefragt.
+  Finanz-Passwort vergessen: in _launch/data/config.php "fin_pw_hash" auf "" setzen – nach dem
+  Code legst du dann ein neues fest.
+  Kein Handy? Auf der Sperrseite "Code per E-Mail schicken": einmaliger Code (10 Minuten gültig)
+  an deine Adresse und die Kopie-Adresse – zusammen mit dem Finanz-Passwort. Nach 30 Minuten ohne Aktivität sperrt sich der Bereich.
+  8 eigene Notfallcodes. Notfall ohne Handy und Codes: in _launch/data/config.php
+  "fin_totp_on": true auf false setzen – dann wird der Code beim nächsten Öffnen neu eingerichtet.
+  Sync zwischen Geräten (Einstellungen → Sync): Die App verschlüsselt alle Daten im Browser
+  (AES-256, Schlüssel aus deiner Sync-Passphrase) und legt nur den verschlüsselten Block in
+  _launch/data/finanzsync*.blob.php ab (die letzten 3 Stände). Ohne Passphrase nicht lesbar –
+  Passphrase gut aufheben. Zusätzlich ab und zu Einstellungen → Backup exportieren.
+  Weitere Funktionen: Angebote (→ mit einem Klick zur Rechnung), Daueraufträge (werden automatisch
+  gebucht), GiroCode-QR auf Rechnungen (IBAN in den Firmendaten eintragen), Kunden/Angebote direkt
+  aus den LoggX-Anfragen (Status im Admin wird mitgeführt), Rechnungen bearbeiten.
 
 Zwei-Faktor-Anmeldung (Admin → Webseite → Sicherheit)
   Nach dem Passwort zusätzlich ein 6-stelliger Code aus einer Authenticator-App
@@ -154,3 +174,13 @@ Zwei-Faktor-Anmeldung (Admin → Webseite → Sicherheit)
   8 Wiederherstellungscodes (je einmal nutzbar) für den Fall, dass das Handy weg ist.
   Notfall ohne Handy und ohne Codes: in _launch/data/config.php "totp_on": true auf false setzen
   (per WinSCP), dann geht der Login wieder nur mit Passwort.
+
+E-Mails an dich (Admin → Anfragen → Einstellungen → "Kopie an")
+  Alle E-Mails an dich (neue Anfragen, Test-E-Mail, Finanz-Codes) gehen an die Kontakt-Adresse
+  UND an die Kopie-Adressen (Standard: info@loggx.de, mehrere mit Komma).
+
+IndexNow (Admin → Webseite → "Bing & Co. sofort informieren")
+  Meldet die Seiten aus der sitemap.xml an Bing, Yandex, Seznam und Naver. Läuft automatisch,
+  wenn du im Admin die Webseite speicherst oder live schaltest (höchstens alle 10 Minuten).
+  Die Schlüsseldatei https://loggx.de/<schlüssel>.txt wird automatisch bereitgestellt
+  (.htaccess + _launch/indexnow.php) – nichts extra hochladen.

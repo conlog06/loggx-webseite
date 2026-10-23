@@ -1,7 +1,7 @@
-# Nur Torwächter, Formular-/Statistik-Schnittstelle und llms.txt dürfen direkt aufgerufen werden
+# Nur Torwächter, Formular-/Statistik-Schnittstelle, llms.txt und IndexNow-Schlüssel dürfen direkt aufgerufen werden
 <FilesMatch "\.php$">
   Require all denied
 </FilesMatch>
-<FilesMatch "^(gate|api|llms)\.php$">
+<FilesMatch "^(gate|api|llms|indexnow)\.php$">
   Require all granted
 </FilesMatch>

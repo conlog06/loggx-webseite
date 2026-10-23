@@ -1,3 +1,8 @@
+# Lokale Hilfsdateien nicht ausliefern (nur für den eigenen Rechner)
+<FilesMatch "^(README\.txt|.*\.bat)$">
+  Require all denied
+</FilesMatch>
+
 # ==========================================================================
 # LoggX – Launch-System (Landingpage, Wartungsseite, Zugangscodes)
 # Alle HTML-Seiten laufen über _launch/gate.php. Admin-Bereich: /admin/
@@ -52,6 +57,8 @@ Options -Indexes
 
   # Kurzbeschreibung für KI-Assistenten (Preise/Kontakt aus dem Admin)
   RewriteRule ^llms\.txt$ _launch/llms.php [L]
+  # IndexNow-Schlüssel für Bing & Co. (Schlüssel steht im Admin)
+  RewriteRule ^([a-f0-9]{32})\.txt$ _launch/indexnow.php?key=$1 [L]
 
   # Admin-Bereich und Launch-System selbst nicht umleiten
   RewriteRule ^(admin|_launch)(/|$) - [L]

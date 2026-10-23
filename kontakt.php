@@ -6,7 +6,7 @@
  */
 
 // ---------- EINSTELLUNGEN ----------
-$empfaenger = 'constantinloggen@icloud.com';          // Hier kommen die Anfragen an
+$empfaenger = 'constantinloggen@icloud.com, info@loggx.de'; // Hier kommen die Anfragen an (mehrere mit Komma)
 $absender   = 'noreply@loggx.de';          // Muss zur eigenen Domain gehören, sonst landet es im Spam
 // -----------------------------------
 
