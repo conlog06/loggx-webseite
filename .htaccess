@@ -1,3 +1,8 @@
+# Lokale Hilfsdateien nicht ausliefern (nur für den eigenen Rechner)
+<FilesMatch "^(README\.txt|.*\.bat)$">
+  Require all denied
+</FilesMatch>
+
 # ==========================================================================
 # LoggX – Launch-System (Landingpage, Wartungsseite, Zugangscodes)
 # Alle HTML-Seiten laufen über _launch/gate.php. Admin-Bereich: /admin/

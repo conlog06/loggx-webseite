@@ -92,7 +92,12 @@ Hinweis
 Testen auf dem eigenen Rechner
   PHP installieren (Windows: https://windows.php.net/download oder XAMPP), dann im
   Ordner der Webseite:  php -S localhost:8000 _launch/testserver.php
+  Einfacher (Windows): Doppelklick auf testserver-starten.bat – sucht PHP, startet den
+  Server und öffnet den Admin im Browser.
   Browser: http://localhost:8000 (Seite) und http://localhost:8000/admin/ (Admin)
+  Finanzen lokal: http://localhost:8000/admin/finanzen.php (eigener Code + Sync funktionieren
+  auch lokal; die Testdaten liegen getrennt von loggx.de im Browser).
+  testserver-starten.bat und README.txt nicht hochladen (sind auf dem Server ohnehin gesperrt).
 
 Werbe-Landingpage: /angebot/
   angebot/index.html – fokussierte Seite für Anzeigen, Flyer, QR-Codes (ein Ziel: Anfrage).
