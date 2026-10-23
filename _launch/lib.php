@@ -133,6 +133,11 @@ function lx_defaults(): array {
         'totp_secret' => '',
         'totp_last' => 0,
         'totp_recovery' => [],
+        // Eigener zweiter Faktor nur für den Finanzbereich (eigener Eintrag "LoggX Finanzen" in der App)
+        'fin_totp_on' => false,
+        'fin_totp_secret' => '',
+        'fin_totp_last' => 0,
+        'fin_totp_recovery' => [],
         'schema' => 2,
     ];
 }

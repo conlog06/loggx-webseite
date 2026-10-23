@@ -10,7 +10,7 @@ if (PHP_SAPI !== 'cli-server') { http_response_code(404); exit; }
 $root = dirname(__DIR__);
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 if ($path === '/admin/finanzen.php') { $_SERVER['SCRIPT_NAME'] = '/admin/finanzen.php'; require $root . '/admin/finanzen.php'; return true; }
-if (strpos($path, '/admin/finanzen-assets/') === 0) return false; // Bibliotheken und Schriften direkt ausliefern
+if (strpos($path, '/admin/finanzen-assets/') === 0 || $path === '/admin/qrcode.js') return false; // Bibliotheken und Schriften direkt ausliefern
 if (preg_match('#^/admin(/|$)#', $path)) {
     if ($path === '/admin') { header('Location: /admin/'); exit; }
     $_SERVER['SCRIPT_NAME'] = '/admin/index.php';

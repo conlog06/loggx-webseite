@@ -145,8 +145,19 @@ Finanzen (FinanzKlar, nur für dich)
   Admin → Finanzen öffnet deine Buchhaltungs-App. Sie liegt in _launch/private/finanzklar.html,
   ist per .htaccess gesperrt und wird nur ausgeliefert, wenn du im Admin eingeloggt bist.
   Die Datei ist absichtlich NICHT im Git-Repo (öffentlich) – sie liegt nur im Upload-Ordner.
-  Die Buchungen speichert die App im Browser (nicht auf dem Server): regelmäßig ein Backup
-  (Einstellungen → Backup exportieren) machen. Bibliotheken/Schriften liegen in admin/finanzen-assets/.
+  Bibliotheken/Schriften liegen in admin/finanzen-assets/.
+  Eigener Code: Der Finanzbereich hat einen eigenen zweiten Faktor (Eintrag "LoggX Finanzen" in
+  der Authenticator-App, getrennt vom Admin-Login). Beim ersten Öffnen wird er eingerichtet (Pflicht),
+  danach bei jedem Öffnen abgefragt. Nach 30 Minuten ohne Aktivität sperrt sich der Bereich.
+  8 eigene Notfallcodes. Notfall ohne Handy und Codes: in _launch/data/config.php
+  "fin_totp_on": true auf false setzen – dann wird der Code beim nächsten Öffnen neu eingerichtet.
+  Sync zwischen Geräten (Einstellungen → Sync): Die App verschlüsselt alle Daten im Browser
+  (AES-256, Schlüssel aus deiner Sync-Passphrase) und legt nur den verschlüsselten Block in
+  _launch/data/finanzsync*.blob.php ab (die letzten 3 Stände). Ohne Passphrase nicht lesbar –
+  Passphrase gut aufheben. Zusätzlich ab und zu Einstellungen → Backup exportieren.
+  Weitere Funktionen: Angebote (→ mit einem Klick zur Rechnung), Daueraufträge (werden automatisch
+  gebucht), GiroCode-QR auf Rechnungen (IBAN in den Firmendaten eintragen), Kunden/Angebote direkt
+  aus den LoggX-Anfragen (Status im Admin wird mitgeführt), Rechnungen bearbeiten.
 
 Zwei-Faktor-Anmeldung (Admin → Webseite → Sicherheit)
   Nach dem Passwort zusätzlich ein 6-stelliger Code aus einer Authenticator-App

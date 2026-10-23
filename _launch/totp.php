@@ -45,8 +45,8 @@ function lx_totp_check(string $secret, string $code, int $lastStep = 0): ?int {
     }
     return null;
 }
-function lx_totp_uri(string $secret, string $account): string {
-    return 'otpauth://totp/' . rawurlencode('LoggX Admin:' . $account) . '?secret=' . $secret . '&issuer=' . rawurlencode('LoggX Admin') . '&algorithm=SHA1&digits=6&period=30';
+function lx_totp_uri(string $secret, string $account, string $issuer = 'LoggX Admin'): string {
+    return 'otpauth://totp/' . rawurlencode($issuer . ':' . $account) . '?secret=' . $secret . '&issuer=' . rawurlencode($issuer) . '&algorithm=SHA1&digits=6&period=30';
 }
 
 /* ---------- Wiederherstellungscodes ---------- */
