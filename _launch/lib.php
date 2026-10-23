@@ -128,6 +128,11 @@ function lx_defaults(): array {
         'contact_email' => 'constantinloggen@icloud.com',
         'admin_hash' => '',
         'secret' => '',
+        // Zwei-Faktor-Anmeldung (Authenticator-App) für den Admin-Bereich
+        'totp_on' => false,
+        'totp_secret' => '',
+        'totp_last' => 0,
+        'totp_recovery' => [],
         'schema' => 2,
     ];
 }
@@ -462,3 +467,4 @@ function lx_bar_html(array $s): string {
 
 require_once __DIR__ . '/stats.php';
 require_once __DIR__ . '/leads.php';
+require_once __DIR__ . '/totp.php';

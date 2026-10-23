@@ -147,3 +147,10 @@ Finanzen (FinanzKlar, nur für dich)
   Die Datei ist absichtlich NICHT im Git-Repo (öffentlich) – sie liegt nur im Upload-Ordner.
   Die Buchungen speichert die App im Browser (nicht auf dem Server): regelmäßig ein Backup
   (Einstellungen → Backup exportieren) machen. Bibliotheken/Schriften liegen in admin/finanzen-assets/.
+
+Zwei-Faktor-Anmeldung (Admin → Webseite → Sicherheit)
+  Nach dem Passwort zusätzlich ein 6-stelliger Code aus einer Authenticator-App
+  (Google/Microsoft Authenticator, 1Password, Bitwarden …). Optional "Diesem Gerät 30 Tage vertrauen".
+  8 Wiederherstellungscodes (je einmal nutzbar) für den Fall, dass das Handy weg ist.
+  Notfall ohne Handy und ohne Codes: in _launch/data/config.php "totp_on": true auf false setzen
+  (per WinSCP), dann geht der Login wieder nur mit Passwort.

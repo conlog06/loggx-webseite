@@ -20,7 +20,7 @@ function flash(string $text, string $type = 'ok'): void { $_SESSION['lx_flash'] 
 function back(string $q = ''): void {
     global $self, $tab;
     $t = (string)($_POST['tab'] ?? '');
-    if ($t === '') { $a = (string)($_POST['action'] ?? ''); $t = in_array($a, ['login', 'setup'], true) ? 'start' : (str_starts_with($a, 'lead_') || $a === 'test_mail' ? 'anfragen' : (str_starts_with($a, 'stats') ? 'statistik' : 'webseite')); }
+    if ($t === '') { $a = (string)($_POST['action'] ?? ''); $t = in_array($a, ['login', 'login2', 'setup'], true) ? 'start' : (str_starts_with($a, 'lead_') || $a === 'test_mail' ? 'anfragen' : (str_starts_with($a, 'stats') ? 'statistik' : 'webseite')); }
     header('Location: ' . $self . '?tab=' . urlencode($t) . $q, true, 303); exit;
 }
 function setup_code(): string {
@@ -69,14 +69,41 @@ if ($c['admin_hash'] === '') {
 /* ---------- Login / Logout ---------- */
 if (isset($_GET['logout'])) { $_SESSION = []; session_destroy(); header('Location: ' . $self, true, 303); exit; }
 if (!$isAdmin) {
+    $need2fa = !empty($c['totp_on']) && $c['totp_secret'] !== '';
+    $grant = function () { session_regenerate_id(true); unset($_SESSION['lx_pw_ok']); $_SESSION['lx_admin'] = true; $_SESSION['lx_admin_until'] = time() + 8 * 3600; };
+    if (isset($_GET['abbrechen'])) unset($_SESSION['lx_pw_ok']);
+    $pwOk = !empty($_SESSION['lx_pw_ok']) && $_SESSION['lx_pw_ok'] > time() - 300; // 5 Minuten für den Code
     if ($post && $action === 'login') {
         if (lx_throttled('login', 6)) $error = 'Zu viele Fehlversuche. Bitte 15 Minuten warten.';
         elseif (password_verify((string)($_POST['password'] ?? ''), $c['admin_hash'])) {
-            session_regenerate_id(true);
-            $_SESSION['lx_admin'] = true; $_SESSION['lx_admin_until'] = time() + 8 * 3600;
-            back();
+            if ($need2fa && !lx_trust_ok($c)) { session_regenerate_id(true); $_SESSION['lx_pw_ok'] = time(); header('Location: ' . $self, true, 303); exit; }
+            $grant(); back();
         } else { lx_fail('login'); $error = 'Passwort falsch.'; }
     }
+    if ($post && $action === 'login2') {
+        if (!$need2fa || !$pwOk) $error = 'Die Zeit ist abgelaufen – bitte noch einmal mit dem Passwort anmelden.';
+        elseif (lx_throttled('login2', 6)) $error = 'Zu viele Fehlversuche. Bitte 15 Minuten warten.';
+        else {
+            $code = (string)($_POST['code'] ?? '');
+            $step = lx_totp_check($c['totp_secret'], $code, (int)$c['totp_last']);
+            $usedRecovery = false;
+            if ($step === null && ($n = lx_recovery_norm($code)) !== '' && strlen($n) === 10) {
+                foreach ($c['totp_recovery'] as $i => $h) if (password_verify($n, (string)$h)) { unset($c['totp_recovery'][$i]); $usedRecovery = true; break; }
+            }
+            if ($step !== null || $usedRecovery) {
+                if ($step !== null) $c['totp_last'] = $step;
+                $c['totp_recovery'] = array_values($c['totp_recovery']);
+                lx_save_config($c);
+                $grant();
+                if (!empty($_POST['trust'])) lx_trust_set($c);
+                if ($usedRecovery) flash('Wiederherstellungscode verwendet – noch ' . count($c['totp_recovery']) . ' übrig. Erstelle unter Webseite → Sicherheit neue Codes.', 'warn');
+                back();
+            }
+            lx_fail('login2'); $error = 'Der Code stimmt nicht. Bitte den aktuellen Code aus der App eingeben.';
+            $pwOk = true;
+        }
+    }
+    if ($need2fa && $pwOk) { render_auth('totp', $error); exit; }
     render_auth('login', $error);
     exit;
 }
@@ -161,6 +188,42 @@ if ($post) {
             else { $c['shared_password'] = password_hash($pw, PASSWORD_DEFAULT); flash('Vorschau-Passwort gesetzt.'); }
             lx_save_config($c);
             break;
+        /* ----- Zwei-Faktor-Anmeldung ----- */
+        case 'totp_start':
+            $_SESSION['lx_totp_pending'] = lx_totp_new_secret();
+            back('#sicherheit');
+        case 'totp_cancel':
+            unset($_SESSION['lx_totp_pending']); back('#sicherheit');
+        case 'totp_confirm':
+            $sec = (string)($_SESSION['lx_totp_pending'] ?? '');
+            $step = $sec !== '' ? lx_totp_check($sec, (string)($_POST['code'] ?? '')) : null;
+            if ($step === null) { flash('Der Code stimmt nicht. Prüfe, ob die Uhrzeit am Handy stimmt, und gib den aktuellen Code ein.', 'error'); back('#sicherheit'); }
+            $codes = lx_recovery_new();
+            $c['totp_on'] = true; $c['totp_secret'] = $sec; $c['totp_last'] = $step;
+            $c['totp_recovery'] = array_map(fn($x) => password_hash(lx_recovery_norm($x), PASSWORD_DEFAULT), $codes);
+            lx_save_config($c);
+            unset($_SESSION['lx_totp_pending']); $_SESSION['lx_recovery_show'] = $codes;
+            flash('Zwei-Faktor-Anmeldung ist aktiv. Speichere jetzt deine Wiederherstellungscodes!');
+            back('#sicherheit');
+        case 'totp_recovery_new':
+        case 'totp_off':
+            $code = (string)($_POST['code'] ?? '');
+            $okCode = lx_totp_check($c['totp_secret'], $code, (int)$c['totp_last']) !== null;
+            if ($action === 'totp_off' && !password_verify((string)($_POST['password'] ?? ''), $c['admin_hash'])) { flash('Passwort falsch.', 'error'); back('#sicherheit'); }
+            if (!$okCode) { flash('Der Code aus der Authenticator-App stimmt nicht.', 'error'); back('#sicherheit'); }
+            if ($action === 'totp_off') {
+                $c['totp_on'] = false; $c['totp_secret'] = ''; $c['totp_last'] = 0; $c['totp_recovery'] = [];
+                lx_save_config($c); lx_trust_clear();
+                flash('Zwei-Faktor-Anmeldung ist ausgeschaltet.', 'warn');
+            } else {
+                $codes = lx_recovery_new();
+                $c['totp_recovery'] = array_map(fn($x) => password_hash(lx_recovery_norm($x), PASSWORD_DEFAULT), $codes);
+                lx_save_config($c); $_SESSION['lx_recovery_show'] = $codes;
+                flash('Neue Wiederherstellungscodes erstellt – die alten gelten nicht mehr.');
+            }
+            back('#sicherheit');
+        case 'totp_untrust':
+            lx_trust_clear(); flash('Dieses Gerät fragt beim nächsten Login wieder nach dem Code.'); back('#sicherheit');
         case 'admin_pw':
             $old = (string)($_POST['old'] ?? ''); $new = (string)($_POST['new'] ?? '');
             if (!password_verify($old, $c['admin_hash'])) flash('Aktuelles Passwort falsch.', 'error');
@@ -301,6 +364,7 @@ head('Admin – LoggX', true);
   $conv = $st['u'] ? $st['a'] / $st['u'] * 100 : 0;
   $hello = (int)date('G') < 11 ? 'Guten Morgen' : ((int)date('G') < 18 ? 'Hallo' : 'Guten Abend');
 ?>
+  <?php if (empty($c['totp_on'])): ?><p class="flash warn">Tipp: Schütze den Admin-Bereich mit einer Zwei-Faktor-Anmeldung. <a href="?tab=webseite#sicherheit">Jetzt einrichten</a></p><?php endif; ?>
   <div class="page-head">
     <div><h1><?= $hello ?>, Constantin.</h1><p class="sub">So läuft loggx.de in den letzten <?= $range === 365 ? '12 Monaten' : $range . ' Tagen' ?>.</p></div>
     <?= range_nav($range, 'start') ?>
@@ -491,6 +555,50 @@ head('Admin – LoggX', true);
     <?php endif; ?>
   </section>
   <div class="grid">
+    <!-- Sicherheit: Zwei-Faktor-Anmeldung -->
+    <?php $totpOn = !empty($c['totp_on']) && $c['totp_secret'] !== ''; $pending = (string)($_SESSION['lx_totp_pending'] ?? ''); $showCodes = $_SESSION['lx_recovery_show'] ?? null; unset($_SESSION['lx_recovery_show']); ?>
+    <section class="card card-wide" id="sicherheit">
+      <h2>Sicherheit: Zwei-Faktor-Anmeldung <?= $totpOn ? '<span class="tag on">aktiv</span>' : '<span class="tag no">aus</span>' ?></h2>
+      <?php if ($showCodes): ?>
+      <div class="flash warn" style="margin-bottom:16px">
+        <strong>Deine Wiederherstellungscodes – nur jetzt sichtbar!</strong><br>
+        Speichere sie in deinem Passwort-Manager oder druck sie aus. Jeder Code funktioniert genau einmal, falls du dein Handy nicht hast.
+        <pre class="rc-codes" id="rc-codes"><?= e(implode("\n", $showCodes)) ?></pre>
+        <button type="button" class="btn btn-small btn-ghost" data-copy="<?= e(implode("\n", $showCodes)) ?>">Codes kopieren</button>
+      </div>
+      <?php endif; ?>
+      <?php if ($totpOn): ?>
+        <p class="hint">Beim Login fragt der Admin nach dem Passwort zusätzlich einen 6-stelligen Code aus deiner Authenticator-App ab. Noch <strong><?= count($c['totp_recovery']) ?></strong> Wiederherstellungscodes übrig.<?= lx_trust_ok($c) ? ' Dieses Gerät ist für 30 Tage als vertrauenswürdig gespeichert.' : '' ?></p>
+        <div class="cols">
+          <form method="post" class="stack"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="totp_recovery_new">
+            <label>Neue Wiederherstellungscodes <small>(Code aus der App)</small><input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" required></label>
+            <button class="btn btn-small btn-ghost">Neue Codes erstellen</button></form>
+          <form method="post" class="stack" onsubmit="return confirm('Zwei-Faktor-Anmeldung wirklich ausschalten?')"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="totp_off">
+            <label>Ausschalten <small>(Passwort + Code aus der App)</small><input type="password" name="password" autocomplete="current-password" placeholder="Admin-Passwort" required></label>
+            <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" required>
+            <button class="btn btn-small btn-danger">Zwei-Faktor ausschalten</button></form>
+        </div>
+        <?php if (lx_trust_ok($c)): ?><form method="post" style="margin-top:12px"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="totp_untrust"><button class="btn btn-small btn-ghost">Diesem Gerät nicht mehr vertrauen</button></form><?php endif; ?>
+      <?php elseif ($pending !== ''): $uri = lx_totp_uri($pending, preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? 'loggx.de'))); ?>
+        <div class="totp-setup">
+          <div class="totp-qr" id="totp-qr" data-uri="<?= e($uri) ?>" role="img" aria-label="QR-Code für die Authenticator-App"></div>
+          <ol class="totp-steps">
+            <li>Installiere eine Authenticator-App auf deinem Handy, z. B. <strong>Google Authenticator</strong>, <strong>Microsoft Authenticator</strong> oder deinen Passwort-Manager.</li>
+            <li>Scanne den QR-Code in der App. Geht das nicht, gib den Schlüssel von Hand ein:<br><code class="totp-key"><?= e(trim(chunk_split($pending, 4, ' '))) ?></code></li>
+            <li>Gib den 6-stelligen Code ein, den die App jetzt anzeigt:
+              <form method="post" class="row" style="margin:10px 0 0"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="totp_confirm">
+                <label class="grow">Code<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" required autofocus></label>
+                <button class="btn">Aktivieren</button></form></li>
+          </ol>
+        </div>
+        <form method="post"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="totp_cancel"><button class="btn btn-small btn-ghost">Abbrechen</button></form>
+        <script src="qrcode.js"></script>
+        <script>(function(){var el=document.getElementById("totp-qr");if(!el||typeof qrcode!=="function")return;var q=qrcode(0,"M");q.addData(el.getAttribute("data-uri"));q.make();el.innerHTML=q.createSvgTag(5,2);})();</script>
+      <?php else: ?>
+        <p class="hint">Schützt deinen Admin-Bereich (und die Finanzen) zusätzlich: Selbst wenn jemand dein Passwort kennt, braucht er noch einen Code von deinem Handy. Dauert 2 Minuten.</p>
+        <form method="post"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="totp_start"><button class="btn">Zwei-Faktor einrichten</button></form>
+      <?php endif; ?>
+    </section>
     <!-- Status & Launch -->
     <section class="card">
       <h2>Status &amp; Launch</h2>
@@ -821,6 +929,15 @@ function render_auth(string $type, ?string $error): void {
       <label>Passwort wiederholen<input type="password" name="password2" required minlength="10" autocomplete="new-password"></label>
       <?php if ($error): ?><p class="flash error"><?= e($error) ?></p><?php endif; ?>
       <button class="btn">Einrichten</button>
+    <?php elseif ($type === 'totp'): ?>
+      <h1>Bestätigungscode</h1>
+      <p class="hint">Öffne deine Authenticator-App und gib den 6-stelligen Code für <strong>LoggX Admin</strong> ein.</p>
+      <input type="hidden" name="action" value="login2">
+      <label>Code<input type="text" name="code" required autofocus inputmode="numeric" autocomplete="one-time-code" maxlength="11" placeholder="123456" style="font-size:1.4rem;letter-spacing:.3em;text-align:center"></label>
+      <label class="check"><input type="checkbox" name="trust" value="1"> Diesem Gerät 30 Tage vertrauen</label>
+      <?php if ($error): ?><p class="flash error"><?= e($error) ?></p><?php endif; ?>
+      <button class="btn">Bestätigen</button>
+      <p class="hint" style="font-size:.85rem">Handy nicht zur Hand? Gib einen deiner Wiederherstellungscodes ein (Format XXXXX-XXXXX). <a href="?abbrechen=1">Abbrechen</a></p>
     <?php else: ?>
       <h1>Admin-Bereich</h1>
       <input type="hidden" name="action" value="login">
@@ -1065,6 +1182,13 @@ function head(string $title, bool $app = false): void { ?>
     .funnel .frow { grid-template-columns: 110px minmax(0, 1fr) 46px; font-size: .82rem; }
     .card { padding: 18px; }
   }
+  .totp-setup { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 22px; align-items: start; margin-bottom: 14px; }
+  .totp-qr { width: 210px; aspect-ratio: 1; padding: 8px; background: #fff; border: 1.5px solid var(--line); border-radius: 14px; }
+  .totp-qr svg { width: 100%; height: 100%; display: block; }
+  .totp-steps { margin: 0; padding-left: 20px; display: grid; gap: 14px; }
+  .totp-key { display: inline-block; margin-top: 6px; padding: 6px 10px; background: var(--paper); border-radius: 8px; font: 700 .95rem/1.4 ui-monospace, monospace; letter-spacing: .05em; word-break: break-all; }
+  .rc-codes { margin: 12px 0; padding: 12px 14px; background: #fff; border-radius: 10px; font: 700 1rem/1.7 ui-monospace, monospace; letter-spacing: .06em; color: var(--ink); white-space: pre-wrap; }
+  @media (max-width: 700px) { .totp-setup { grid-template-columns: 1fr; } .totp-qr { width: min(240px, 100%); } }
 </style>
 </head>
 <body class="<?= $app ? 'app' : 'auth-page' ?>">
