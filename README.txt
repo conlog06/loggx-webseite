@@ -151,9 +151,11 @@ Finanzen (FinanzKlar, nur für dich)
   ist per .htaccess gesperrt und wird nur ausgeliefert, wenn du im Admin eingeloggt bist.
   Die Datei ist absichtlich NICHT im Git-Repo (öffentlich) – sie liegt nur im Upload-Ordner.
   Bibliotheken/Schriften liegen in admin/finanzen-assets/.
-  Eigener Code: Der Finanzbereich hat einen eigenen zweiten Faktor (Eintrag "LoggX Finanzen" in
-  der Authenticator-App, getrennt vom Admin-Login). Beim ersten Öffnen wird er eingerichtet (Pflicht),
-  danach bei jedem Öffnen abgefragt. Nach 30 Minuten ohne Aktivität sperrt sich der Bereich.
+  Eigenes Passwort + Code: Der Finanzbereich hat ein eigenes Passwort und einen eigenen zweiten
+  Faktor (Eintrag "LoggX Finanzen" in der Authenticator-App), beides getrennt vom Admin-Login.
+  Beim ersten Öffnen wird beides eingerichtet (Pflicht), danach bei jedem Öffnen abgefragt.
+  Finanz-Passwort vergessen: in _launch/data/config.php "fin_pw_hash" auf "" setzen – nach dem
+  Code legst du dann ein neues fest. Nach 30 Minuten ohne Aktivität sperrt sich der Bereich.
   8 eigene Notfallcodes. Notfall ohne Handy und Codes: in _launch/data/config.php
   "fin_totp_on": true auf false setzen – dann wird der Code beim nächsten Öffnen neu eingerichtet.
   Sync zwischen Geräten (Einstellungen → Sync): Die App verschlüsselt alle Daten im Browser

@@ -138,6 +138,7 @@ function lx_defaults(): array {
         'fin_totp_secret' => '',
         'fin_totp_last' => 0,
         'fin_totp_recovery' => [],
+        'fin_pw_hash' => '',              // eigenes Passwort nur für den Finanzbereich
         'schema' => 2,
     ];
 }

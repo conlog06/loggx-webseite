@@ -9,8 +9,9 @@
    - Geräte-Sync: Die App verschlüsselt alle Daten im Browser (AES-256-GCM,
      Schlüssel aus deiner Sync-Passphrase). Auf dem Server liegt nur der
      verschlüsselte Block – ohne Passphrase ist er nicht lesbar.
-   Notfall: Wiederherstellungscode – oder in _launch/data/config.php
-   "fin_totp_on": false setzen, dann wird der Finanz-Code neu eingerichtet.
+   Zugang: eigenes Finanz-Passwort + Code. Notfall: Wiederherstellungscode – oder in
+   _launch/data/config.php "fin_totp_on": false setzen (Code neu einrichten) bzw.
+   "fin_pw_hash": "" setzen (Passwort nach dem Code neu festlegen).
    ========================================================================== */
 declare(strict_types=1);
 require dirname(__DIR__) . '/_launch/lib.php';
@@ -66,12 +67,15 @@ if ($post && !lx_check_csrf()) { $error = 'Sitzung abgelaufen – bitte noch ein
 
 if ($post && $action === 'fin_setup' && empty($c['fin_totp_on'])) {
     $secret = (string)($_SESSION['lx_fin_setup'] ?? '');
+    $pwErr = fin_pw_invalid($c, (string)($_POST['password'] ?? ''), (string)($_POST['password2'] ?? ''));
     if ($secret === '') $error = 'Die Einrichtung ist abgelaufen – bitte den neuen QR-Code scannen.';
+    elseif ($pwErr) $error = $pwErr;
     elseif (lx_throttled('fin', 8)) $error = 'Zu viele Fehlversuche. Bitte 15 Minuten warten.';
     elseif (($step = lx_totp_check($secret, (string)($_POST['code'] ?? ''))) !== null) {
         $codes = lx_recovery_new();
         $c = lx_config();
         $c['fin_totp_on'] = true; $c['fin_totp_secret'] = $secret; $c['fin_totp_last'] = $step;
+        $c['fin_pw_hash'] = password_hash((string)$_POST['password'], PASSWORD_DEFAULT);
         $c['fin_totp_recovery'] = array_map(fn($x) => password_hash(lx_recovery_norm($x), PASSWORD_DEFAULT), $codes);
         lx_save_config($c);
         unset($_SESSION['lx_fin_setup']);
@@ -84,6 +88,7 @@ if ($post && $action === 'fin_setup' && empty($c['fin_totp_on'])) {
 
 if ($post && $action === 'fin_unlock' && !empty($c['fin_totp_on'])) {
     if (lx_throttled('fin', 6)) $error = 'Zu viele Fehlversuche. Bitte 15 Minuten warten.';
+    elseif ($c['fin_pw_hash'] !== '' && !password_verify((string)($_POST['password'] ?? ''), $c['fin_pw_hash'])) { lx_hit('fin'); $error = 'Passwort oder Code stimmt nicht.'; }
     else {
         $res = fin_check_code($c, (string)($_POST['code'] ?? ''));
         if ($res) {
@@ -92,7 +97,26 @@ if ($post && $action === 'fin_unlock' && !empty($c['fin_totp_on'])) {
             if ($res === 'recovery') $_SESSION['lx_fin_notice'] = 'Wiederherstellungscode verwendet – noch ' . count(lx_config()['fin_totp_recovery']) . ' übrig. Erstelle in den Einstellungen neue Codes.';
             header('Location: ' . $self, true, 303); exit;
         }
-        lx_hit('fin'); $error = 'Der Code stimmt nicht. Bitte den aktuellen Code von „LoggX Finanzen“ eingeben.';
+        lx_hit('fin'); $error = 'Passwort oder Code stimmt nicht.';
+    }
+}
+
+// Passwort festlegen (falls noch keins da ist, z. B. nach Zurücksetzen) oder ändern
+if ($post && $unlocked && $action === 'fin_setpw' && $c['fin_pw_hash'] === '') {
+    $error = fin_pw_invalid($c, (string)($_POST['password'] ?? ''), (string)($_POST['password2'] ?? ''));
+    if (!$error) {
+        lx_locked('config', function () { $c = lx_config(); $c['fin_pw_hash'] = password_hash((string)$_POST['password'], PASSWORD_DEFAULT); lx_save_config($c); });
+        $_SESSION['lx_fin_notice'] = 'Finanz-Passwort gespeichert. Ab jetzt brauchst du Passwort + Code.';
+        header('Location: ' . $self, true, 303); exit;
+    }
+}
+if ($post && $unlocked && $action === 'fin_pw_change') {
+    if (lx_throttled('fin', 6)) $error = 'Zu viele Fehlversuche. Bitte 15 Minuten warten.';
+    elseif (!password_verify((string)($_POST['pw_old'] ?? ''), $c['fin_pw_hash'])) { lx_hit('fin'); $error = 'Das aktuelle Finanz-Passwort stimmt nicht.'; }
+    elseif (!($error = fin_pw_invalid($c, (string)($_POST['password'] ?? ''), (string)($_POST['password2'] ?? '')))) {
+        lx_locked('config', function () { $c = lx_config(); $c['fin_pw_hash'] = password_hash((string)$_POST['password'], PASSWORD_DEFAULT); lx_save_config($c); });
+        $_SESSION['lx_fin_notice'] = 'Finanz-Passwort geändert.';
+        header('Location: ' . $self, true, 303); exit;
     }
 }
 
@@ -134,8 +158,11 @@ if ($unlocked && isset($_GET['codes']) && !empty($_SESSION['lx_fin_codes'])) {
     fin_page('codes', null, ['codes' => $codes]);
 }
 
-/* ---------- Gesperrt → Code abfragen ---------- */
-if (!$unlocked) fin_page('unlock', $error, ['idle' => isset($_GET['idle'])]);
+/* ---------- Gesperrt → Passwort + Code abfragen ---------- */
+if (!$unlocked) fin_page('unlock', $error, ['idle' => isset($_GET['idle']), 'pw' => $c['fin_pw_hash'] !== '']);
+
+/* ---------- Noch kein Finanz-Passwort → jetzt festlegen (Pflicht) ---------- */
+if ($c['fin_pw_hash'] === '') fin_page('setpw', $error);
 
 /* ---------- Entsperrt → App ausliefern ---------- */
 $file = dirname(__DIR__) . '/_launch/private/finanzklar.html';
@@ -193,6 +220,14 @@ function fin_check_code(array $c, string $code, bool $allowRecovery = true): ?st
         }
         return null;
     });
+}
+
+/** Prüft ein neues Finanz-Passwort. Gibt eine Fehlermeldung zurück oder null. */
+function fin_pw_invalid(array $c, string $pw, string $pw2): ?string {
+    if (strlen($pw) < 10) return 'Das Finanz-Passwort braucht mindestens 10 Zeichen.';
+    if ($pw !== $pw2) return 'Die Passwörter stimmen nicht überein.';
+    if ($c['admin_hash'] !== '' && password_verify($pw, $c['admin_hash'])) return 'Bitte ein anderes Passwort als für den Admin-Login nehmen.';
+    return null;
 }
 
 /* ---------- Geräte-Sync (nur verschlüsselte Daten) ---------- */
@@ -290,7 +325,7 @@ function fin_page(string $type, ?string $error, array $v = []): void {
   *{box-sizing:border-box;margin:0}
   body{min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:radial-gradient(60vmax 60vmax at 10% -10%,rgba(91,140,255,.18),transparent 60%),radial-gradient(50vmax 50vmax at 110% 110%,rgba(62,214,196,.14),transparent 60%),var(--bg);color:var(--ink);font:15px/1.6 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   .box{width:100%;max-width:440px;background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 40%),var(--panel);border:1px solid var(--line);border-radius:22px;padding:34px 30px;box-shadow:0 30px 80px -30px rgba(0,0,0,.8)}
-  .logo{width:56px;height:56px;margin-bottom:18px;filter:drop-shadow(0 10px 24px rgba(62,214,196,.35))}
+  .logo{display:block;width:56px;height:56px;margin-bottom:18px;filter:drop-shadow(0 10px 24px rgba(62,214,196,.35))}
   h1{font:800 1.55rem/1.2 Sora,sans-serif;letter-spacing:-.02em;margin-bottom:6px}
   h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   p{color:var(--muted);font-size:.92rem;margin-bottom:16px} p b{color:var(--ink)}
@@ -298,6 +333,8 @@ function fin_page(string $type, ?string $error, array $v = []): void {
   label{display:block;font-size:.8rem;font-weight:600;margin:0 0 6px}
   input{width:100%;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px;color:var(--ink);font:600 1.5rem/1 "JetBrains Mono",monospace;letter-spacing:.3em;text-align:center}
   input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.2)}
+  input.pw{font:500 1rem Inter,sans-serif;letter-spacing:normal;text-align:left;margin-bottom:12px}
+  label small{color:var(--muted);font-weight:500}
   button{width:100%;margin-top:14px;border:none;border-radius:12px;padding:14px;font:700 .95rem Inter,sans-serif;color:#fff;background:var(--grad);cursor:pointer;box-shadow:0 12px 30px -12px rgba(124,92,255,.7)}
   .err{background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.35);color:var(--bad);border-radius:12px;padding:11px 14px;font-size:.88rem;margin:12px 0 0}
   .warn{background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.35);color:var(--amber);border-radius:12px;padding:11px 14px;font-size:.85rem;margin:0 0 16px}
@@ -317,16 +354,20 @@ function fin_page(string $type, ?string $error, array $v = []): void {
 <?php if ($type === 'setup'): ?>
   <span class="tag">🔐 Einmalige Einrichtung</span>
   <h1>Finanz<span>Klar</span> absichern</h1>
-  <p>Der Finanzbereich bekommt einen <b>eigenen Code</b> – getrennt vom Admin-Login. So kommt selbst mit deinem Admin-Zugang niemand an deine Zahlen.</p>
+  <p>Der Finanzbereich bekommt ein <b>eigenes Passwort und einen eigenen Code</b> – getrennt vom Admin-Login. So kommt selbst mit deinem Admin-Zugang niemand an deine Zahlen.</p>
   <ol>
     <li>Authenticator-App öffnen (Google, Microsoft, 1Password …)</li>
     <li>QR-Code scannen – es entsteht der Eintrag <b>LoggX Finanzen</b></li>
-    <li>Den 6-stelligen Code unten eingeben</li>
+    <li>Eigenes Passwort festlegen und den 6-stelligen Code eingeben</li>
   </ol>
   <div class="qr" id="qr" data-uri="<?= e($v['uri']) ?>"></div>
   <div class="secret" title="Falls der QR-Code nicht klappt: diesen Schlüssel manuell eintragen"><?= e(trim(chunk_split($v['secret'], 4, ' '))) ?></div>
   <form method="post">
     <input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="fin_setup">
+    <label for="pw1">Eigenes Finanz-Passwort <small>(mind. 10 Zeichen, nicht das Admin-Passwort)</small></label>
+    <input class="pw" id="pw1" type="password" name="password" required minlength="10" autocomplete="new-password">
+    <label for="pw2">Passwort wiederholen</label>
+    <input class="pw" id="pw2" type="password" name="password2" required minlength="10" autocomplete="new-password">
     <label for="code">Code aus „LoggX Finanzen“</label>
     <input id="code" name="code" required autofocus inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000000">
     <?php if ($error): ?><p class="err"><?= e($error) ?></p><?php endif; ?>
@@ -335,6 +376,19 @@ function fin_page(string $type, ?string $error, array $v = []): void {
   <div class="links"><a href="./?tab=start">← Admin</a><span style="color:var(--muted)">Pflicht für den Finanzbereich</span></div>
   <script src="qrcode.js"></script>
   <script>(function(){var el=document.getElementById("qr");if(!el||typeof qrcode!=="function")return;var q=qrcode(0,"M");q.addData(el.getAttribute("data-uri"));q.make();el.innerHTML=q.createSvgTag(5,0);})();</script>
+<?php elseif ($type === 'setpw'): ?>
+  <span class="tag">🔑 Noch ein Schritt</span>
+  <h1>Finanz-Passwort festlegen</h1>
+  <p>Zusätzlich zum Code schützt jetzt ein <b>eigenes Passwort</b> deine Finanzen. Nimm ein anderes als für den Admin-Login.</p>
+  <form method="post">
+    <input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="fin_setpw">
+    <label for="pw1">Finanz-Passwort <small>(mind. 10 Zeichen)</small></label>
+    <input class="pw" id="pw1" type="password" name="password" required minlength="10" autofocus autocomplete="new-password">
+    <label for="pw2">Passwort wiederholen</label>
+    <input class="pw" id="pw2" type="password" name="password2" required minlength="10" autocomplete="new-password">
+    <?php if ($error): ?><p class="err"><?= e($error) ?></p><?php endif; ?>
+    <button>Speichern &amp; öffnen</button>
+  </form>
 <?php elseif ($type === 'codes'): ?>
   <span class="tag">✅ Fertig</span>
   <h1>Deine Notfall&shy;codes</h1>
@@ -345,11 +399,15 @@ function fin_page(string $type, ?string $error, array $v = []): void {
   <span class="tag">🔒 Gesperrt</span>
   <h1>Finanz<span>Klar</span></h1>
   <?php if (!empty($v['idle'])): ?><p class="warn">Automatisch gesperrt nach 30 Minuten ohne Aktivität.</p><?php endif; ?>
-  <p>Gib den aktuellen Code aus deiner Authenticator-App ein – Eintrag <b>LoggX Finanzen</b> (nicht „LoggX Admin“).</p>
+  <p><?= !empty($v['pw']) ? 'Finanz-Passwort und' : 'Gib' ?> den aktuellen Code aus deiner Authenticator-App<?= !empty($v['pw']) ? ' eingeben' : ' ein' ?> – Eintrag <b>LoggX Finanzen</b> (nicht „LoggX Admin“).</p>
   <form method="post">
     <input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="fin_unlock">
+    <?php if (!empty($v['pw'])): ?>
+    <label for="pw">Finanz-Passwort</label>
+    <input class="pw" id="pw" type="password" name="password" required autofocus autocomplete="current-password">
+    <?php endif; ?>
     <label for="code">Code</label>
-    <input id="code" name="code" required autofocus inputmode="numeric" autocomplete="one-time-code" maxlength="11" placeholder="000000">
+    <input id="code" name="code" required <?= empty($v['pw']) ? 'autofocus' : '' ?> inputmode="numeric" autocomplete="one-time-code" maxlength="11" placeholder="000000">
     <?php if ($error): ?><p class="err"><?= e($error) ?></p><?php endif; ?>
     <button>Entsperren</button>
   </form>
