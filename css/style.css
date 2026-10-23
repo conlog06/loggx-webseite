@@ -853,3 +853,61 @@ body.page-sub { padding-bottom: 0; }
 .lp-phone > [data-cms], .footer-brand [data-cms] { color: inherit; font: inherit; letter-spacing: inherit; }
 /* Checkbox-Text im Formular: klickbar (Link zur Datenschutzerklärung), nicht schwebend */
 .field-check > label { position: static; pointer-events: auto; transform: none; top: auto; left: auto; }
+
+/* ==========================================================================
+   Branchenseiten & Preise-Seite
+   ========================================================================== */
+.lp-home { font-weight: 700; text-decoration: none; font-size: .95rem; margin-right: 4px; }
+.lp-home:hover { color: var(--cobalt); }
+.crumbs { position: absolute; top: calc(var(--header-h) + 10px); left: 0; right: 0; z-index: 2; display: flex; gap: 8px; align-items: center; font-size: .85rem; font-weight: 600; color: var(--text-muted); }
+.crumbs a { text-decoration: none; color: inherit; } .crumbs a:hover { color: var(--cobalt); }
+#main:has(> .crumbs) { position: relative; }
+.shots-one { grid-template-columns: minmax(0, 620px); justify-content: center; }
+.section-ink .references + .shots-one { margin-top: clamp(56px, 7vw, 96px); }
+.footer-nav a[aria-current="page"] { color: var(--sun); }
+.hero-slim { min-height: 0; padding-top: calc(var(--header-h) + 72px); padding-bottom: clamp(48px, 6vw, 80px); }
+.hero-slim .hero-copy { max-width: 760px; }
+.cmp-wrap { overflow-x: auto; border-radius: var(--radius-l); border: 1px solid var(--border); background: var(--surface); }
+.cmp-table { width: 100%; border-collapse: collapse; min-width: 620px; font-size: .98rem; }
+.cmp-table th, .cmp-table td { padding: 14px 18px; text-align: center; border-bottom: 1px solid var(--border); }
+.cmp-table tbody tr:last-child th, .cmp-table tbody tr:last-child td { border-bottom: none; }
+.cmp-table tbody th { text-align: left; font-weight: 600; }
+.cmp-table thead th { font: 800 1.15rem/1.2 var(--font-display); padding-top: 22px; padding-bottom: 18px; vertical-align: bottom; }
+.cmp-table thead small { display: block; font: 600 .85rem var(--font-body, inherit); color: var(--text-muted); margin-top: 4px; }
+.cmp-table .cmp-hl, .cmp-table td:nth-child(3) { background: color-mix(in srgb, var(--sun) 14%, transparent); }
+.cmp-table td.yes { color: var(--ok, #1FA67A); font-weight: 800; font-size: 1.1rem; }
+.cmp-table td.no { color: var(--text-muted); }
+@media (max-width: 900px) {
+  .crumbs { display: none; }
+}
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 520px) { .lp-home { display: none; } }
+
+/* Weitere Branchen (Karten) */
+.section-more { background: var(--bg-alt); }
+.branch-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.branch-card { position: relative; display: flex; flex-direction: column; padding: 26px 24px 24px; border-radius: var(--radius-l); background: var(--surface); border: 1px solid var(--border); text-decoration: none; color: inherit; transition: transform .45s var(--ease), box-shadow .45s var(--ease), border-color .3s; }
+.branch-card h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: .4rem; }
+.branch-card p { color: var(--text-muted); margin: 0 0 22px; font-size: .95rem; }
+.branch-card:hover { transform: translateY(-6px); box-shadow: 0 30px 60px -40px var(--shadow); border-color: var(--cobalt); }
+.branch-arrow { margin-top: auto; align-self: flex-start; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: var(--white); transition: transform .3s var(--ease), background .3s; }
+.branch-arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.branch-card:hover .branch-arrow { transform: translateX(4px); background: var(--cobalt); }
+.branch-card-price { background: var(--ink-bg); color: var(--white); border-color: transparent; }
+.branch-card-price p { color: var(--muted-ink); }
+.branch-card-price .branch-arrow { background: var(--sun); color: var(--ink); }
+[data-theme="dark"] .branch-card-price { background: var(--sun); color: var(--ink); }
+[data-theme="dark"] .branch-card-price p { color: rgba(15,37,64,.75); }
+[data-theme="dark"] .branch-card-price .branch-arrow { background: var(--ink); color: var(--white); }
+@media (max-width: 1000px) { .branch-cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .branch-cards { grid-template-columns: 1fr; gap: 12px; } .branch-card { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; column-gap: 14px; padding: 18px; align-items: center; } .branch-card .benefit-icon { grid-row: 1 / 3; width: 44px; height: 44px; margin: 0; } .branch-card h3 { margin: 0; font-size: 1.05rem; } .branch-card p { grid-column: 2; margin: 2px 0 0; font-size: .88rem; } .branch-arrow { grid-column: 3; grid-row: 1 / 3; margin: 0; align-self: center; } }
+
+/* Fußzeile in Spalten */
+.footer-cols { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px 40px; align-items: start; }
+.footer-h { margin: 0 0 12px; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-ink); }
+.footer-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.footer-col a { color: var(--white); text-decoration: none; font-weight: 600; }
+.footer-col a:hover, .footer-col a[aria-current="page"] { color: var(--sun); }
+.footer-bottom { display: flex; justify-content: flex-end; margin-top: 36px; padding-top: 20px; padding-bottom: 24px; border-top: 1px solid rgba(255,255,255,.08); }
+.footer-bottom .footer-copy { margin: 0; }
+@media (max-width: 900px) { .footer-cols { grid-template-columns: 1fr 1fr; } .footer-brand { grid-column: 1 / -1; } }
