@@ -288,7 +288,7 @@ head('Admin – LoggX', true);
 <header class="bar">
   <a class="brand" href="?tab=start"><svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#0F2540"/><path d="M70 375V137H129V375ZM80 375V325H219V375Z" fill="#fff"/><path d="M225 375 294 257 225 137H294L332 226H333L370 137H442L372 256L442 375H370L333 284H333L294 375Z" fill="#FFD166"/></svg>LoggX <span>Admin</span></a>
   <nav class="tabs" aria-label="Bereiche">
-    <?php foreach ($tabs as $k => $t): ?><a href="?tab=<?= $k ?>"<?= $tab === $k ? ' aria-current="page"' : '' ?>><?= icon($k) ?><span><?= $t ?></span><?= $k === 'anfragen' && $newLeads ? '<i class="badge-n">' . $newLeads . '</i>' : '' ?></a><?php endforeach; ?>
+    <?php foreach ($tabs as $k => $t): ?><a href="?tab=<?= $k ?>"<?= $tab === $k ? ' aria-current="page"' : '' ?>><?= icon($k) ?><span><?= $t ?></span><?= $k === 'anfragen' && $newLeads ? '<i class="badge-n">' . $newLeads . '</i>' : '' ?></a><?php endforeach; ?><a href="finanzen.php" title="FinanzKlar – Buchhaltung (nur für dich)"><?= icon('finanzen') ?><span>Finanzen</span></a>
   </nav>
   <nav class="bar-r"><a href="<?= e(lx_url('')) ?>" target="_blank" rel="noopener">Seite ansehen ↗</a><a href="?logout">Abmelden</a></nav>
 </header>
@@ -799,7 +799,8 @@ function icon(string $k): string {
     $p = ['start' => '<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/>',
           'anfragen' => '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/>',
           'statistik' => '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
-          'webseite' => '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/>'][$k] ?? '';
+          'webseite' => '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/>',
+          'finanzen' => '<path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 3 5-6"/>'][$k] ?? '';
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $p . '</svg>';
 }
 
