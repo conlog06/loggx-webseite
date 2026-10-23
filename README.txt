@@ -140,3 +140,10 @@ Tempo (Komprimierung & Browser-Cache, in der .htaccess)
   CSS/JS bekommen automatisch eine Versionsnummer (?v=Änderungsdatum), Änderungen kommen also sofort an.
   Bilder in img/work/ (.webp) werden 1 Jahr zwischengespeichert: Wer dort ein Bild austauscht,
   sollte einen neuen Dateinamen verwenden. Hero-Handys nutzen kleine Extra-Bilder (*-h.webp).
+
+Finanzen (FinanzKlar, nur für dich)
+  Admin → Finanzen öffnet deine Buchhaltungs-App. Sie liegt in _launch/private/finanzklar.html,
+  ist per .htaccess gesperrt und wird nur ausgeliefert, wenn du im Admin eingeloggt bist.
+  Die Datei ist absichtlich NICHT im Git-Repo (öffentlich) – sie liegt nur im Upload-Ordner.
+  Die Buchungen speichert die App im Browser (nicht auf dem Server): regelmäßig ein Backup
+  (Einstellungen → Backup exportieren) machen. Bibliotheken/Schriften liegen in admin/finanzen-assets/.

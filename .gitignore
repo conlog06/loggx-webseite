@@ -4,3 +4,7 @@ _launch/data/*.tmp
 img/*-upload.*
 _launch/data/*.lock
 _launch/data/*.log
+
+# FinanzKlar (private Buchhaltungs-App) nie ins öffentliche Repo
+_launch/private/*
+!_launch/private/.htaccess
