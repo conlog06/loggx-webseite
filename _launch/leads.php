@@ -59,7 +59,7 @@ function lx_lead_temp(int $score): array {
 
 /** Von welcher Seite die Anfrage kam (für die E-Mail) */
 function lx_lead_pages(): array {
-    return ['angebot' => ' (Werbe-Landingpage)', 'praxis' => ' (Seite Praxen)', 'handwerk' => ' (Seite Handwerk)', 'studio' => ' (Seite Studios)', 'gastro' => ' (Seite Gastronomie)', 'preise' => ' (Preise-Seite)'];
+    return ['angebot' => ' (Werbe-Landingpage)', 'praxis' => ' (Seite Praxen)', 'studio' => ' (Seite Studios)', 'agentur' => ' (Seite Agenturen)', 'gastro' => ' (Seite Gastronomie)', 'preise' => ' (Preise-Seite)'];
 }
 
 function lx_leads(): array { return lx_read('leads', []); }
@@ -86,7 +86,7 @@ function lx_lead_create(array $in): array {
     if (strlen((string)preg_replace('/\D+/', '', $d['telefon'])) < 6) return [false, 'Bitte geben Sie Ihre Telefonnummer an.'];
     if (empty($in['consent'])) return [false, 'Bitte bestätigen Sie den Hinweis zum Datenschutz.'];
 
-    $page = in_array($in['page'] ?? '', ['angebot', 'praxis', 'handwerk', 'studio', 'gastro', 'preise'], true) ? (string)$in['page'] : 'start';
+    $page = in_array($in['page'] ?? '', ['angebot', 'praxis', 'studio', 'agentur', 'gastro', 'preise'], true) ? (string)$in['page'] : 'start';
     $c = lx_config();
     $site = $page === 'angebot' ? lx_site_for_lp($c['site']) : $c['site'];
     [$rec, $why] = lx_lead_recommend($d, $site);

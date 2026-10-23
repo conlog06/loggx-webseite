@@ -144,9 +144,14 @@
   var sticky = document.getElementById("lp-sticky");
   var anfrage = document.getElementById("anfrage");
   if (sticky && anfrage && "IntersectionObserver" in window) {
-    new IntersectionObserver(function (entries) {
-      sticky.classList.toggle("is-hidden", entries[0].isIntersecting);
-    }, { rootMargin: "0px 0px -20% 0px" }).observe(anfrage);
+    var seen = {};
+    var stickyIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { seen[en.target === anfrage ? "a" : "f"] = en.isIntersecting; });
+      sticky.classList.toggle("is-hidden", !!(seen.a || seen.f));
+    }, { rootMargin: "0px 0px -20% 0px" });
+    stickyIo.observe(anfrage);
+    var footEl = document.querySelector(".site-footer");
+    if (footEl) stickyIo.observe(footEl);
   }
 
   /* ---------- Referenz-Screenshots: lokales Bild, sonst automatischer Screenshot ---------- */
