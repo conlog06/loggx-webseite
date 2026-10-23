@@ -86,11 +86,28 @@ if ($post && $action === 'fin_setup' && empty($c['fin_totp_on'])) {
     } else { lx_hit('fin'); $error = 'Der Code stimmt nicht. Prüfe, ob du den Eintrag „LoggX Finanzen“ verwendest.'; }
 }
 
+// Alternative zum Authenticator: einmaliger Code per E-Mail (10 Minuten gültig)
+if ($post && $action === 'fin_mailcode' && !empty($c['fin_totp_on'])) {
+    if (lx_throttled('finmail', 3)) $error = 'Es wurden schon mehrere Codes verschickt. Bitte 15 Minuten warten oder die Authenticator-App nehmen.';
+    elseif (!lx_admin_rcpts($c)) $error = 'Keine E-Mail-Adresse hinterlegt (Admin → Webseite → Kontaktdaten).';
+    else {
+        lx_hit('finmail');
+        $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $_SESSION['lx_fin_mail'] = ['h' => password_hash($code, PASSWORD_DEFAULT), 'exp' => time() + 600, 'n' => 0];
+        if (PHP_SAPI === 'cli-server') $_SESSION['lx_fin_mail_test'] = $code;
+        $when = date('d.m.Y H:i');
+        $ok = lx_mail_admin('Dein Code für LoggX Finanzen: ' . $code,
+            "Hallo Constantin,\n\ndein einmaliger Code zum Entsperren von FinanzKlar:\n\n    $code\n\nEr gilt 10 Minuten und nur zusammen mit deinem Finanz-Passwort.\nAngefordert am $when.\n\nWarst du das nicht? Dann kennt jemand dein Admin-Passwort – bitte sofort im Admin unter Webseite → Sicherheit ändern.\n\nLoggX Webseite\n");
+        if (!$ok) { unset($_SESSION['lx_fin_mail']); $error = 'Die E-Mail konnte nicht verschickt werden. Prüfe im Admin unter Anfragen die Absender-Adresse.'; }
+        else { header('Location: ' . $self . '?mail=1', true, 303); exit; }
+    }
+}
+
 if ($post && $action === 'fin_unlock' && !empty($c['fin_totp_on'])) {
     if (lx_throttled('fin', 6)) $error = 'Zu viele Fehlversuche. Bitte 15 Minuten warten.';
     elseif ($c['fin_pw_hash'] !== '' && !password_verify((string)($_POST['password'] ?? ''), $c['fin_pw_hash'])) { lx_hit('fin'); $error = 'Passwort oder Code stimmt nicht.'; }
     else {
-        $res = fin_check_code($c, (string)($_POST['code'] ?? ''));
+        $res = fin_check_code($c, (string)($_POST['code'] ?? '')) ?? fin_mail_check((string)($_POST['code'] ?? ''));
         if ($res) {
             session_regenerate_id(true);
             $_SESSION['lx_fin_until'] = time() + LX_FIN_IDLE;
@@ -159,7 +176,12 @@ if ($unlocked && isset($_GET['codes']) && !empty($_SESSION['lx_fin_codes'])) {
 }
 
 /* ---------- Gesperrt → Passwort + Code abfragen ---------- */
-if (!$unlocked) fin_page('unlock', $error, ['idle' => isset($_GET['idle']), 'pw' => $c['fin_pw_hash'] !== '']);
+if (!$unlocked) {
+    $m = $_SESSION['lx_fin_mail'] ?? null;
+    $mailSent = $m && $m['exp'] > time();
+    fin_page('unlock', $error, ['idle' => isset($_GET['idle']), 'pw' => $c['fin_pw_hash'] !== '', 'mail' => $mailSent,
+        'rcpts' => array_map('fin_mask', lx_admin_rcpts($c)), 'test' => $mailSent ? ($_SESSION['lx_fin_mail_test'] ?? '') : '']);
+}
 
 /* ---------- Noch kein Finanz-Passwort → jetzt festlegen (Pflicht) ---------- */
 if ($c['fin_pw_hash'] === '') fin_page('setpw', $error);
@@ -221,6 +243,19 @@ function fin_check_code(array $c, string $code, bool $allowRecovery = true): ?st
         return null;
     });
 }
+
+/** Prüft den Code aus der E-Mail (einmalig, 10 Minuten, max. 5 Versuche). */
+function fin_mail_check(string $code): ?string {
+    $code = preg_replace('/\D/', '', $code);
+    $m = $_SESSION['lx_fin_mail'] ?? null;
+    if (!$m || strlen($code) !== 6) return null;
+    if ($m['exp'] < time() || $m['n'] >= 5) { unset($_SESSION['lx_fin_mail'], $_SESSION['lx_fin_mail_test']); return null; }
+    if (password_verify($code, $m['h'])) { unset($_SESSION['lx_fin_mail'], $_SESSION['lx_fin_mail_test']); return 'mail'; }
+    $_SESSION['lx_fin_mail']['n']++;
+    return null;
+}
+/** c***@icloud.com */
+function fin_mask(string $mail): string { [$u, $d] = explode('@', $mail, 2) + ['', '']; return mb_substr($u, 0, 1) . '•••@' . $d; }
 
 /** Prüft ein neues Finanz-Passwort. Gibt eine Fehlermeldung zurück oder null. */
 function fin_pw_invalid(array $c, string $pw, string $pw2): ?string {
@@ -336,6 +371,9 @@ function fin_page(string $type, ?string $error, array $v = []): void {
   input.pw{font:500 1rem Inter,sans-serif;letter-spacing:normal;text-align:left;margin-bottom:12px}
   label small{color:var(--muted);font-weight:500}
   button{width:100%;margin-top:14px;border:none;border-radius:12px;padding:14px;font:700 .95rem Inter,sans-serif;color:#fff;background:var(--grad);cursor:pointer;box-shadow:0 12px 30px -12px rgba(124,92,255,.7)}
+  .ok{background:rgba(62,214,196,.1);border:1px solid rgba(62,214,196,.35);color:var(--cyan);border-radius:12px;padding:11px 14px;font-size:.86rem;margin:14px 0 0}
+  button.ghost{background:rgba(147,161,184,.08);border:1px solid var(--line);color:var(--ink);box-shadow:none;font-weight:600}
+  button.ghost:hover{background:rgba(147,161,184,.15)}
   .err{background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.35);color:var(--bad);border-radius:12px;padding:11px 14px;font-size:.88rem;margin:12px 0 0}
   .warn{background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.35);color:var(--amber);border-radius:12px;padding:11px 14px;font-size:.85rem;margin:0 0 16px}
   .qr{background:#fff;border-radius:16px;padding:12px;width:220px;height:220px;margin:4px auto 14px;display:grid;place-items:center}
@@ -411,7 +449,15 @@ function fin_page(string $type, ?string $error, array $v = []): void {
     <?php if ($error): ?><p class="err"><?= e($error) ?></p><?php endif; ?>
     <button>Entsperren</button>
   </form>
-  <p style="font-size:.8rem;margin:14px 0 0">Handy nicht zur Hand? Notfallcode im Format XXXXX-XXXXX eingeben.</p>
+  <?php if (!empty($v['mail'])): ?>
+  <p class="ok">✉️ Code an <?= e(implode(' und ', $v['rcpts'])) ?> geschickt – 10 Minuten gültig. Oben ins Feld „Code“ eintragen.</p>
+  <?php if (!empty($v['test'])): ?><p class="warn">Lokaler Test – dein E-Mail-Code: <strong><?= e($v['test']) ?></strong></p><?php endif; ?>
+  <?php endif; ?>
+  <form method="post" class="alt">
+    <input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="fin_mailcode">
+    <button class="ghost"><?= !empty($v['mail']) ? 'Neuen Code per E-Mail schicken' : 'Kein Handy? Code per E-Mail schicken' ?></button>
+  </form>
+  <p style="font-size:.8rem;margin:12px 0 0">Oder einen Notfallcode im Format XXXXX-XXXXX eingeben.</p>
   <div class="links"><a href="./?tab=start">← Zurück zum Admin</a></div>
 <?php endif; ?>
 </main>

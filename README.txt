@@ -155,7 +155,9 @@ Finanzen (FinanzKlar, nur für dich)
   Faktor (Eintrag "LoggX Finanzen" in der Authenticator-App), beides getrennt vom Admin-Login.
   Beim ersten Öffnen wird beides eingerichtet (Pflicht), danach bei jedem Öffnen abgefragt.
   Finanz-Passwort vergessen: in _launch/data/config.php "fin_pw_hash" auf "" setzen – nach dem
-  Code legst du dann ein neues fest. Nach 30 Minuten ohne Aktivität sperrt sich der Bereich.
+  Code legst du dann ein neues fest.
+  Kein Handy? Auf der Sperrseite "Code per E-Mail schicken": einmaliger Code (10 Minuten gültig)
+  an deine Adresse und die Kopie-Adresse – zusammen mit dem Finanz-Passwort. Nach 30 Minuten ohne Aktivität sperrt sich der Bereich.
   8 eigene Notfallcodes. Notfall ohne Handy und Codes: in _launch/data/config.php
   "fin_totp_on": true auf false setzen – dann wird der Code beim nächsten Öffnen neu eingerichtet.
   Sync zwischen Geräten (Einstellungen → Sync): Die App verschlüsselt alle Daten im Browser
@@ -172,3 +174,13 @@ Zwei-Faktor-Anmeldung (Admin → Webseite → Sicherheit)
   8 Wiederherstellungscodes (je einmal nutzbar) für den Fall, dass das Handy weg ist.
   Notfall ohne Handy und ohne Codes: in _launch/data/config.php "totp_on": true auf false setzen
   (per WinSCP), dann geht der Login wieder nur mit Passwort.
+
+E-Mails an dich (Admin → Anfragen → Einstellungen → "Kopie an")
+  Alle E-Mails an dich (neue Anfragen, Test-E-Mail, Finanz-Codes) gehen an die Kontakt-Adresse
+  UND an die Kopie-Adressen (Standard: info@loggx.de, mehrere mit Komma).
+
+IndexNow (Admin → Webseite → "Bing & Co. sofort informieren")
+  Meldet die Seiten aus der sitemap.xml an Bing, Yandex, Seznam und Naver. Läuft automatisch,
+  wenn du im Admin die Webseite speicherst oder live schaltest (höchstens alle 10 Minuten).
+  Die Schlüsseldatei https://loggx.de/<schlüssel>.txt wird automatisch bereitgestellt
+  (.htaccess + _launch/indexnow.php) – nichts extra hochladen.

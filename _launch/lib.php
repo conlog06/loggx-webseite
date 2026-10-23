@@ -118,6 +118,7 @@ function lx_defaults(): array {
             'bar_badge' => 'Aktion',
             'bar_id' => '',
             'mail_from' => '',             // Absender für E-Mails (leer = noreply@eigene-domain)
+            'mail_cc' => 'info@loggx.de',  // bekommt zusätzlich alle E-Mails an dich (Anfragen, Tests, Codes); mehrere mit Komma
         ],
         // Anfragen über das Formular
         'leads' => [
@@ -139,6 +140,9 @@ function lx_defaults(): array {
         'fin_totp_last' => 0,
         'fin_totp_recovery' => [],
         'fin_pw_hash' => '',              // eigenes Passwort nur für den Finanzbereich
+        // IndexNow (Bing, Yandex, Seznam …): neue/geänderte Seiten sofort melden
+        'indexnow_key' => '',
+        'indexnow_last' => [],
         'schema' => 2,
     ];
 }
@@ -319,6 +323,69 @@ function lx_mail(string $to, string $subject, string $text, string $replyTo = ''
         return true;
     }
     return @mail($to, $b64($subject), str_replace("\n", "\r\n", str_replace("\r\n", "\n", $text)), $headers, '-f' . $from);
+}
+
+/** Alle Adressen, die deine E-Mails bekommen: Kontakt-Adresse + Kopie-Empfänger (z. B. info@loggx.de) */
+function lx_admin_rcpts(?array $c = null): array {
+    $c = $c ?? lx_config();
+    $list = array_merge([(string)($c['site']['email'] ?? '')], preg_split('/[\s,;]+/', (string)($c['site']['mail_cc'] ?? '')) ?: []);
+    $out = [];
+    foreach ($list as $m) { $m = strtolower(trim($m)); if ($m !== '' && filter_var($m, FILTER_VALIDATE_EMAIL) && !in_array($m, $out, true)) $out[] = $m; }
+    return $out;
+}
+/** E-Mail an dich – geht an alle Empfänger aus lx_admin_rcpts(). true, wenn mindestens eine rausging. */
+function lx_mail_admin(string $subject, string $text, string $replyTo = '', string $replyName = ''): bool {
+    $ok = false;
+    foreach (lx_admin_rcpts() as $to) $ok = lx_mail($to, $subject, $text, $replyTo, $replyName) || $ok;
+    return $ok;
+}
+
+/* ---------- IndexNow: Suchmaschinen über neue/geänderte Seiten informieren ---------- */
+function lx_indexnow_key(): string {
+    $c = lx_config();
+    if (!preg_match('/^[a-f0-9]{32}$/', (string)$c['indexnow_key'])) { $c['indexnow_key'] = bin2hex(random_bytes(16)); lx_save_config($c); }
+    return $c['indexnow_key'];
+}
+/** Adressen aus der sitemap.xml */
+function lx_indexnow_urls(): array {
+    $xml = @file_get_contents(lx_root() . '/sitemap.xml');
+    if (!$xml || !preg_match_all('~<loc>\s*([^<\s]+)\s*</loc>~', $xml, $m)) return [];
+    return array_values(array_unique(array_map('html_entity_decode', $m[1])));
+}
+/** Meldet die Seiten an api.indexnow.org. Gibt [ok, Meldung] zurück und merkt sich das Ergebnis. */
+function lx_indexnow_submit(?array $urls = null): array {
+    $urls = $urls ?? lx_indexnow_urls();
+    if (!$urls) return [false, 'Keine Adressen in der sitemap.xml gefunden.'];
+    $host = (string)parse_url($urls[0], PHP_URL_HOST);
+    $key = lx_indexnow_key();
+    $body = json_encode(['host' => $host, 'key' => $key, 'keyLocation' => 'https://' . $host . '/' . $key . '.txt', 'urlList' => $urls], JSON_UNESCAPED_SLASHES);
+    $status = 0; $err = '';
+    if (function_exists('curl_init')) {
+        $ch = curl_init('https://api.indexnow.org/indexnow');
+        curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json; charset=utf-8']]);
+        curl_exec($ch); $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); $err = curl_error($ch); curl_close($ch);
+    } else {
+        $ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => "Content-Type: application/json; charset=utf-8\r\n", 'content' => $body, 'timeout' => 8, 'ignore_errors' => true]]);
+        @file_get_contents('https://api.indexnow.org/indexnow', false, $ctx);
+        if (isset($http_response_header[0]) && preg_match('~\s(\d{3})\s~', $http_response_header[0], $mm)) $status = (int)$mm[1];
+    }
+    $ok = $status === 200 || $status === 202;
+    $msg = $ok ? count($urls) . ' Seite(n) gemeldet – Bing & Co. schauen in Kürze vorbei.'
+        : ($status === 403 ? 'Abgelehnt (403): Der Schlüssel ist unter ' . $host . '/' . $key . '.txt noch nicht erreichbar – ist die neue .htaccess hochgeladen?'
+        : ($status === 422 ? 'Abgelehnt (422): Die Adressen passen nicht zur Domain.' : ($status === 429 ? 'Zu viele Meldungen – später noch einmal.' : 'Keine Antwort von IndexNow (' . ($status ?: $err ?: 'Verbindung fehlgeschlagen') . ').')));
+    lx_locked('config', function () use ($ok, $msg, $urls) { $c = lx_config(); $c['indexnow_last'] = ['ts' => time(), 'ok' => $ok, 'msg' => $msg, 'n' => count($urls)]; lx_save_config($c); });
+    return [$ok, $msg];
+}
+/** Nach dem Speichern automatisch melden (höchstens alle 10 Minuten, nur wenn die Seite live ist) – läuft nach der Antwort */
+function lx_indexnow_later(): void {
+    if (PHP_SAPI === 'cli-server') return;
+    $c = lx_config();
+    if (lx_effective_mode($c) !== 'live' || (int)($c['indexnow_last']['ts'] ?? 0) > time() - 600) return;
+    register_shutdown_function(function () {
+        if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
+        try { lx_indexnow_submit(); } catch (Throwable $e) { error_log('LoggX IndexNow: ' . $e->getMessage()); }
+    });
 }
 
 /** "vor 5 Min." / "gestern" / "12.11." */

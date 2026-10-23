@@ -135,7 +135,7 @@ function lx_lead_mails(array $lead, array $site): void {
     $text .= 'Gekommen über:   ' . $lead['src'] . ($lead['page'] === 'angebot' ? ' (Werbe-Landingpage)' : '') . " · {$lead['device']}\n\n";
     $text .= lx_lead_summary($lead);
     $text .= "\nIm Admin-Bereich ansehen: " . lx_abs_url('admin/?tab=anfragen&id=' . $lead['id']) . "\n";
-    lx_mail((string)$c['site']['email'], "Neue Anfrage: $who – $temp, {$lead['rec']}", $text, $d['email'], $d['name']);
+    lx_mail_admin("Neue Anfrage: $who – $temp, {$lead['rec']}", $text, $d['email'], $d['name']);
 
     if (!empty($c['leads']['autoreply'])) {
         $hours = (int)$site['response_hours'];

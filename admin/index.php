@@ -124,10 +124,15 @@ if ($post) {
             $c['maintenance']['until'] = lx_ts($until) ? $until : '';
             if ($c['mode'] === 'prelaunch' && $c['launch_at'] === '') flash('Gespeichert. Tipp: Ohne Launch-Zeitpunkt zeigt die Landingpage keinen Countdown.', 'warn');
             else flash('Status gespeichert.');
-            lx_save_config($c);
+            lx_save_config($c); lx_indexnow_later();
             break;
         case 'launch_now':
-            $c['mode'] = 'live'; lx_save_config($c); flash('Die Seite ist jetzt öffentlich.'); break;
+            $c['mode'] = 'live'; lx_save_config($c); lx_indexnow_later(); flash('Die Seite ist jetzt öffentlich.'); break;
+        case 'indexnow':
+            if (PHP_SAPI === 'cli-server') { flash('Lokal (Testserver) wird nichts gemeldet – das geht nur auf loggx.de.', 'warn'); break; }
+            if (lx_effective_mode($c) !== 'live') { flash('Die Seite ist noch nicht öffentlich – erst nach dem Launch melden.', 'warn'); break; }
+            [$ok, $msg] = lx_indexnow_submit(); flash($msg, $ok ? 'ok' : 'error');
+            back('#indexnow');
         case 'site':
             $S = $c['site'];
             $str = function (string $k, int $max = 120) { return trim(mb_like_substr((string)($_POST[$k] ?? ''), $max)); };
@@ -155,7 +160,7 @@ if ($post) {
             // Neue Ankündigung → wird auch Besuchern wieder angezeigt, die die alte geschlossen haben
             if ($S['bar_text'] !== ($c['site']['bar_text'] ?? '') || ($S['bar_on'] && !$wasOn)) $S['bar_id'] = bin2hex(random_bytes(4));
             $c['site'] = $S; $c['contact_email'] = $mail;
-            lx_save_config($c); flash('Webseite aktualisiert – die Änderungen sind sofort sichtbar.');
+            lx_save_config($c); lx_indexnow_later(); flash('Webseite aktualisiert – die Änderungen sind sofort sichtbar.');
             break;
         case 'texts':
             foreach (['kicker', 'title', 'text'] as $k) $c['landing'][$k] = trim((string)($_POST['l_' . $k] ?? ''));
@@ -291,11 +296,14 @@ if ($post) {
             $from = trim((string)($_POST['mail_from'] ?? ''));
             if ($from !== '' && !filter_var($from, FILTER_VALIDATE_EMAIL)) { flash('Die Absender-Adresse ist keine gültige E-Mail-Adresse.', 'error'); back(); }
             $c['site']['mail_from'] = $from;
+            $cc = array_filter(array_map('trim', preg_split('/[\s,;]+/', (string)($_POST['mail_cc'] ?? '')) ?: []));
+            foreach ($cc as $m) if (!filter_var($m, FILTER_VALIDATE_EMAIL)) { flash('„' . $m . '“ ist keine gültige E-Mail-Adresse.', 'error'); back(); }
+            $c['site']['mail_cc'] = implode(', ', $cc);
             lx_save_config($c); flash('Einstellungen für Anfragen gespeichert.');
             back();
         case 'test_mail':
-            $ok = lx_mail((string)$c['site']['email'], 'Test-E-Mail von loggx.de', "Hallo Constantin,\n\nwenn du diese E-Mail liest, kommen Anfragen von deiner Webseite richtig bei dir an.\n\nAbsender: " . lx_mail_from() . "\n\nLoggX Webseite\n");
-            flash($ok ? 'Test-E-Mail an ' . $c['site']['email'] . ' verschickt – bitte auch im Spam-Ordner nachsehen.' : 'Versand fehlgeschlagen. Trag als Absender eine Adresse deiner Domain ein (z. B. kontakt@loggx.de) und versuch es noch einmal.', $ok ? 'ok' : 'error');
+            $ok = lx_mail_admin('Test-E-Mail von loggx.de', "Hallo Constantin,\n\nwenn du diese E-Mail liest, kommen Anfragen von deiner Webseite richtig bei dir an.\n\nEmpfänger: " . implode(', ', lx_admin_rcpts($c)) . "\nAbsender: " . lx_mail_from() . "\n\nLoggX Webseite\n");
+            flash($ok ? 'Test-E-Mail an ' . implode(' und ', lx_admin_rcpts($c)) . ' verschickt – bitte auch im Spam-Ordner nachsehen.' : 'Versand fehlgeschlagen. Trag als Absender eine Adresse deiner Domain ein (z. B. kontakt@loggx.de) und versuch es noch einmal.', $ok ? 'ok' : 'error');
             back();
         case 'lead_export':
             $o = lx_lead_options();
@@ -478,6 +486,7 @@ head('Admin – LoggX', true);
       <label class="check"><input type="checkbox" name="autoreply" value="1"<?= !empty($c['leads']['autoreply']) ? ' checked' : '' ?>> Automatische Bestätigung an den Kunden senden (mit Paket-Empfehlung)</label>
       <div class="cols">
         <label>Anfragen gehen an <small>(änderbar unter Webseite → Kontaktdaten)</small><input type="email" value="<?= e($c['site']['email']) ?>" disabled></label>
+        <label>Kopie an <small>(bekommt alle deine E-Mails mit – mehrere mit Komma)</small><input type="text" name="mail_cc" value="<?= e($c['site']['mail_cc'] ?? '') ?>" placeholder="info@loggx.de"></label>
         <label>Absender-Adresse <small>(eine Adresse deiner Domain, z. B. kontakt@loggx.de)</small><input type="email" name="mail_from" value="<?= e($c['site']['mail_from'] ?? '') ?>" placeholder="<?= e(lx_mail_from()) ?>"></label>
         <label>Anfragen automatisch löschen nach <span class="unit-in"><input type="number" name="keep_months" min="0" max="60" value="<?= (int)$c['leads']['keep_months'] ?>"><i>Monaten</i></span><small>0 = nie · „Auftrag erhalten“ bleibt immer</small></label>
       </div>
@@ -615,6 +624,15 @@ head('Admin – LoggX', true);
         <label>Wartung voraussichtlich bis <small>(optional, wird auf der Wartungsseite angezeigt)</small><input type="datetime-local" name="until" value="<?= e($c['maintenance']['until']) ?>"></label>
         <button class="btn">Status speichern</button>
       </form>
+    </section>
+    <!-- IndexNow -->
+    <section class="card" id="indexnow">
+      <h2>Bing &amp; Co. sofort informieren</h2>
+      <?php $inl = $c['indexnow_last'] ?? []; $inKey = lx_indexnow_key(); ?>
+      <p class="hint">Über <strong>IndexNow</strong> erfahren Bing, Yandex, Seznam und Naver direkt von Änderungen – statt Tage auf den nächsten Besuch zu warten. Passiert automatisch, wenn du hier im Admin die Webseite speicherst (höchstens alle 10 Minuten). Google nutzt IndexNow nicht, dafür reicht die Search Console.</p>
+      <p class="hint">Zuletzt: <?= !empty($inl['ts']) ? '<strong>' . e(lx_ago((int)$inl['ts'])) . '</strong> – ' . e((string)$inl['msg']) : 'noch nie gemeldet' ?></p>
+      <p class="hint" style="font-size:.85rem">Schlüsseldatei: <a href="<?= e(lx_url($inKey . '.txt')) ?>" target="_blank" rel="noopener"><?= e($inKey) ?>.txt</a></p>
+      <form method="post"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><input type="hidden" name="action" value="indexnow"><button class="btn btn-ghost">Alle Seiten jetzt melden</button></form>
     </section>
 
     <!-- Zugänge -->
