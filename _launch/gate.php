@@ -117,6 +117,16 @@ if ($mode === 'live' || $isAlways || $bypass) {
             . '</div>';
         $html = preg_replace('~</body>~i', $badge . '</body>', $html, 1) ?? $html;
     }
+    // Für Bing & Google: Änderungen erkennbar machen (ETag/Last-Modified), unveränderte Seiten mit 304 beantworten
+    if (!$admin && !$bypass && $mode === 'live') {
+        $etag = '"' . substr(md5($html), 0, 20) . '"';
+        $mod = max((int)filemtime($file), (int)@filemtime(LX_DATA . '/config.php'));
+        header('ETag: ' . $etag);
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mod) . ' GMT');
+        header('Cache-Control: no-cache');
+        $inm = str_replace('-gzip', '', (string)($_SERVER['HTTP_IF_NONE_MATCH'] ?? ''));
+        if ($inm !== '' && in_array($etag, array_map('trim', explode(',', $inm)), true)) { http_response_code(304); exit; }
+    }
     echo $html;
     if (!$admin && !empty($c['site']['stats_on'])) { if (function_exists('fastcgi_finish_request')) fastcgi_finish_request(); lx_stats_track($rel); }
     exit;

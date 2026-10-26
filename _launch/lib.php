@@ -422,7 +422,12 @@ function lx_site_value(array $s, string $key, bool $de = false): ?string {
 function lx_apply_site(string $html, array $s): string {
     // Seitentitel/Beschreibung im <head> (dort gehen keine data-cms-Elemente)
     $html = preg_replace_callback('~<head>.*?</head>~is', function ($m) use ($s) {
-        $h = str_replace(['ab 790 €', 'ab 790&nbsp;€'], 'ab ' . number_format((int)$s['price_visit'], 0, ',', '.') . ' €', $m[0]);
+        $pv = (int)$s['price_visit']; $pf = (int)$s['price_firm']; $ph = (int)($s['price_hourly'] ?? 70);
+        $h = str_replace(['ab 790 €', 'ab 790&nbsp;€'], 'ab ' . number_format($pv, 0, ',', '.') . ' €', $m[0]);
+        $h = str_replace(['ab 1.890 €', 'ab 1.890&nbsp;€'], 'ab ' . number_format($pf, 0, ',', '.') . ' €', $h);
+        $h = str_replace('ab 70 €/Std.', 'ab ' . $ph . ' €/Std.', $h);
+        // strukturierte Daten (JSON-LD) müssen zum sichtbaren Preis passen
+        $h = str_replace(['"price": "790"', '"price": "1890"'], ['"price": "' . $pv . '"', '"price": "' . $pf . '"'], $h);
         if (trim((string)$s['time_visit']) !== '') $h = str_replace('in 14 Tagen', 'in ' . e((string)$s['time_visit']), $h);
         return $h;
     }, $html, 1) ?? $html;
