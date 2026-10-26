@@ -57,6 +57,8 @@ Options -Indexes
 
   # Kurzbeschreibung für KI-Assistenten (Preise/Kontakt aus dem Admin)
   RewriteRule ^llms\.txt$ _launch/llms.php [L]
+  # Sitemap mit echtem Änderungsdatum
+  RewriteRule ^sitemap\.xml$ _launch/sitemap.php [L]
   # IndexNow-Schlüssel für Bing & Co. (Schlüssel steht im Admin)
   RewriteRule ^([a-f0-9]{32})\.txt$ _launch/indexnow.php?key=$1 [L]
 

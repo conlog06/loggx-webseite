@@ -17,6 +17,7 @@ if (preg_match('#^/admin(/|$)#', $path)) {
     require $root . '/admin/index.php'; return true;
 }
 if ($path !== '/' && substr($path, -1) !== '/' && is_dir($root . $path)) { header('Location: ' . $path . '/', true, 301); return true; }
+if ($path === '/sitemap.xml') { $_SERVER['SCRIPT_NAME'] = '/_launch/sitemap.php'; require $root . '/_launch/sitemap.php'; return true; }
 if ($path === '/llms.txt') { $_SERVER['SCRIPT_NAME'] = '/_launch/llms.php'; require $root . '/_launch/llms.php'; return true; }
 if (preg_match('~^/([a-f0-9]{32})\.txt$~', $path, $m)) { $_GET['key'] = $m[1]; $_SERVER['SCRIPT_NAME'] = '/_launch/indexnow.php'; require $root . '/_launch/indexnow.php'; return true; }
 if ($path === '/_launch/api.php') { $_SERVER['SCRIPT_NAME'] = '/_launch/api.php'; require $root . '/_launch/api.php'; return true; }
