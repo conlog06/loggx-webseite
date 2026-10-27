@@ -269,7 +269,38 @@ function lx_check_csrf(): bool {
 }
 
 /* ---------- Schutz gegen Durchprobieren (Login & Codes) ---------- */
-function lx_ip(): string { return hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . lx_secret()); }
+/** Echte Besucher-IP – hinter Cloudflare aus CF-Connecting-IP, aber nur wenn die Anfrage wirklich von Cloudflare kommt */
+function lx_remote_ip(): string {
+    static $ip = null;
+    if ($ip !== null) return $ip;
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    $cf = trim((string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? ''));
+    if ($cf !== '' && filter_var($cf, FILTER_VALIDATE_IP) && lx_ip_in($ip, lx_cloudflare_ranges())) $ip = $cf;
+    return $ip;
+}
+/** Adressbereiche von Cloudflare (https://www.cloudflare.com/ips/) */
+function lx_cloudflare_ranges(): array {
+    return ['173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22', '141.101.64.0/18', '108.162.192.0/18',
+            '190.93.240.0/20', '188.114.96.0/20', '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+            '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+            '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32', '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32'];
+}
+function lx_ip_in(string $ip, array $ranges): bool {
+    $bin = @inet_pton($ip);
+    if ($bin === false) return false;
+    foreach ($ranges as $r) {
+        [$net, $bits] = explode('/', $r);
+        $nb = @inet_pton($net);
+        if ($nb === false || strlen($nb) !== strlen($bin)) continue;
+        $bits = (int)$bits; $bytes = intdiv($bits, 8); $rest = $bits % 8;
+        if (substr($bin, 0, $bytes) !== substr($nb, 0, $bytes)) continue;
+        if ($rest === 0) return true;
+        $mask = (0xFF << (8 - $rest)) & 0xFF;
+        if ((ord($bin[$bytes]) & $mask) === (ord($nb[$bytes]) & $mask)) return true;
+    }
+    return false;
+}
+function lx_ip(): string { return hash('sha256', lx_remote_ip() . lx_secret()); }
 function lx_throttled(string $bucket, int $max = 8, int $window = 900): bool {
     $t = lx_read('throttle', []);
     $key = $bucket . ':' . lx_ip();

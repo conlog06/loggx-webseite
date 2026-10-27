@@ -143,7 +143,7 @@ function lx_stats_track(string $page): void {
             // Tages-Hash für "Besucher": Zufallswert gilt nur heute und wird danach verworfen
             $today = lx_read('stats-heute', []);
             if (($today['day'] ?? '') !== $day) $today = ['day' => $day, 'salt' => bin2hex(random_bytes(16)), 'seen' => []];
-            $hash = substr(hash('sha256', $today['salt'] . '|' . ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . $ua), 0, 16);
+            $hash = substr(hash('sha256', $today['salt'] . '|' . lx_remote_ip() . '|' . $ua), 0, 16);
             $isNew = !isset($today['seen'][$hash]);
             if ($isNew) { $today['seen'][$hash] = 1; lx_write('stats-heute', $today); }
             $d['v']++;
