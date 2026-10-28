@@ -168,19 +168,35 @@ Finanzen (FinanzKlar, nur für dich)
   gebucht), GiroCode-QR auf Rechnungen (IBAN in den Firmendaten eintragen), Kunden/Angebote direkt
   aus den LoggX-Anfragen (Status im Admin wird mitgeführt), Rechnungen bearbeiten.
 
-Zwei-Faktor-Anmeldung (Admin → Webseite → Sicherheit)
+Zwei-Faktor-Anmeldung (Admin → Einstellungen → Zwei-Faktor)
   Nach dem Passwort zusätzlich ein 6-stelliger Code aus einer Authenticator-App
   (Google/Microsoft Authenticator, 1Password, Bitwarden …). Optional "Diesem Gerät 30 Tage vertrauen".
   8 Wiederherstellungscodes (je einmal nutzbar) für den Fall, dass das Handy weg ist.
   Notfall ohne Handy und ohne Codes: in _launch/data/config.php "totp_on": true auf false setzen
   (per WinSCP), dann geht der Login wieder nur mit Passwort.
 
-E-Mails an dich (Admin → Anfragen → Einstellungen → "Kopie an")
+E-Mails an dich (Admin → Einstellungen → E-Mail → "Kopie an")
   Alle E-Mails an dich (neue Anfragen, Test-E-Mail, Finanz-Codes) gehen an die Kontakt-Adresse
   UND an die Kopie-Adressen (Standard: info@loggx.de, mehrere mit Komma).
 
-IndexNow (Admin → Webseite → "Bing & Co. sofort informieren")
+IndexNow (Admin → Veröffentlichung → "Bing & Co. sofort informieren")
   Meldet die Seiten aus der sitemap.xml an Bing, Yandex, Seznam und Naver. Läuft automatisch,
   wenn du im Admin die Webseite speicherst oder live schaltest (höchstens alle 10 Minuten).
   Die Schlüsseldatei https://loggx.de/<schlüssel>.txt wird automatisch bereitgestellt
   (.htaccess + _launch/indexnow.php) – nichts extra hochladen.
+
+Admin-Bereiche (oben in Gruppen, am Handy unten + „Mehr“)
+  Kunden:   Übersicht (nächste Termine, „Zu erledigen“), Anfragen (mit Wiedervorlage), Termine
+  Webseite: Inhalte (Preise, Kontakt, Bilder, Texte), Veröffentlichung (Status, Zugänge, IndexNow)
+  System:   Statistik, Einstellungen (Zwei-Faktor, E-Mail, Passwort, Anmeldeprotokoll,
+            System-Check, Datensicherung) · Suche oben oder Taste „/“
+
+Terminvorschläge (Admin → Termine)
+  Bis zu 3 Zeiten vorschlagen (oder fest eintragen / nur eintragen). Die Person bekommt eine
+  E-Mail mit Link zu loggx.de/termin?t=… und wählt dort mit einem Klick – beide bekommen danach
+  einen Kalendereintrag (.ics). „Freie Zeiten“ richten sich nach deinen Arbeitszeiten und
+  bestehenden Terminen. Einen Tag vorher geht automatisch eine Erinnerung raus (läuft nebenbei
+  bei Seitenaufrufen, kein Cronjob nötig). Aus jeder Anfrage: „📅 Termin vorschlagen“.
+  Kalender-Abo: Termine → Kalender-Abo – alle Termine automatisch im iPhone-/Google-Kalender.
+  Gespeichert in _launch/data/bookings.php.
+

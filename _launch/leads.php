@@ -106,7 +106,8 @@ function lx_lead_create(array $in): array {
 
 function lx_lead_branche(array $d): string {
     $o = lx_lead_options();
-    return $d['branche'] === 'andere' && $d['branche_text'] !== '' ? $d['branche_text'] : ($o['branche'][$d['branche']] ?? '');
+    $b = (string)($d['branche'] ?? ''); $t = (string)($d['branche_text'] ?? '');
+    return $b === 'andere' && $t !== '' ? $t : ($o['branche'][$b] ?? '');
 }
 
 function lx_lead_summary(array $lead): string {

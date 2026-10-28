@@ -3,6 +3,9 @@
    LoggX – Schnittstelle für die Webseite
    POST ?a=anfrage   Anfrage aus dem Formular (JSON)
    POST ?a=t         Statistik-Signal (gesehene Abschnitte, Klicks, Verweildauer)
+   POST ?a=termin    Antwort auf einen Terminvorschlag (passt / passt nicht)
+   GET  ?a=ics&t=…   Kalender-Datei zu einem Termin
+   GET  ?a=kalender&k=…  Kalender-Abo mit allen Terminen (nur mit geheimem Schlüssel)
    ========================================================================== */
 declare(strict_types=1);
 // PHP-Hinweise/Warnungen dürfen die JSON-Antwort nie kaputt machen (sie landen nur im Fehlerprotokoll)
@@ -18,6 +21,23 @@ set_exception_handler(function (Throwable $e) use ($out) {
     $out(['ok' => false, 'error' => 'Technischer Fehler auf dem Server (' . $e->getMessage() . ').'], 500);
 });
 require __DIR__ . '/lib.php';
+
+/* ---------- Kalender (GET) ---------- */
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && in_array($_GET['a'] ?? '', ['ics', 'kalender'], true)) {
+    while (ob_get_level()) ob_end_clean();
+    header('X-Robots-Tag: noindex');
+    if ($_GET['a'] === 'kalender') {
+        $k = (string)($_GET['k'] ?? '');
+        $key = (string)(lx_config()['booking']['feed_key'] ?? '');
+        if (lx_throttled('feed', 30, 900) || !preg_match('/^[a-f0-9]{40}$/', $key) || !hash_equals($key, $k)) { lx_hit('feed', 900); http_response_code(404); header('Content-Type: text/plain; charset=utf-8'); echo 'Nicht gefunden.'; exit; }
+        header('Content-Type: text/calendar; charset=utf-8'); header('Content-Disposition: inline; filename="loggx-termine.ics"');
+        echo lx_booking_feed(); exit;
+    }
+    $b = lx_booking_find((string)($_GET['t'] ?? ''));
+    if (!$b) { http_response_code(404); header('Content-Type: text/plain; charset=utf-8'); echo 'Termin nicht gefunden.'; exit; }
+    header('Content-Type: text/calendar; charset=utf-8'); header('Content-Disposition: attachment; filename="termin-loggx.ics"');
+    echo lx_booking_ics($b, lx_is_admin()); exit;
+}
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') $out(['ok' => false, 'error' => 'Nur POST erlaubt.'], 405);
 // Nur Anfragen von der eigenen Seite annehmen
@@ -45,5 +65,12 @@ if ($a === 'anfrage') {
     if (!$ok) $out(['ok' => false, 'error' => $res], 400);
     lx_hit('anfrage', 3600);
     $out(['ok' => true, 'rec' => $res['rec'], 'why' => $res['why']]);
+}
+if ($a === 'termin') {
+    if (lx_throttled('termin', 20, 3600)) $out(['ok' => false, 'error' => 'Zu viele Versuche. Bitte später erneut probieren.'], 429);
+    lx_hit('termin', 3600);
+    [$b, $err] = lx_booking_answer((string)($in['t'] ?? ''), ($in['antwort'] ?? '') === 'ja', (int)($in['opt'] ?? 0), (string)($in['nachricht'] ?? ''));
+    if (!$b) $out(['ok' => false, 'error' => $err], 400);
+    $out(['ok' => true, 'status' => $b['status']]);
 }
 $out(['ok' => false, 'error' => 'Unbekannte Aktion.'], 404);

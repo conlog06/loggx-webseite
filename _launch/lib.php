@@ -143,6 +143,8 @@ function lx_defaults(): array {
         // IndexNow (Bing, Yandex, Seznam …): neue/geänderte Seiten sofort melden
         'indexnow_key' => '',
         'indexnow_last' => [],
+        // Terminvorschläge (Admin → Termine)
+        'booking' => lx_bk_defaults(),
         'schema' => 2,
     ];
 }
@@ -338,8 +340,8 @@ function lx_mail_from(): string {
     $host = preg_replace('/^www\./', '', (string)preg_replace('/:\d+$/', '', strtolower((string)($_SERVER['HTTP_HOST'] ?? 'localhost'))));
     return 'noreply@' . $host;
 }
-/** Einfache Text-E-Mail (UTF-8). Lokal (php -S) landet sie in data/mail-test.log. */
-function lx_mail(string $to, string $subject, string $text, string $replyTo = '', string $replyName = ''): bool {
+/** Text-E-Mail (UTF-8), optional mit Anhängen [['name'=>…, 'type'=>…, 'data'=>…]]. Lokal (php -S) landet sie in data/mail-test.log. */
+function lx_mail(string $to, string $subject, string $text, string $replyTo = '', string $replyName = '', array $attach = []): bool {
     if (!filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
     $from = lx_mail_from();
     $clean = fn($s) => str_replace(["\r", "\n"], ' ', (string)$s);
@@ -348,12 +350,27 @@ function lx_mail(string $to, string $subject, string $text, string $replyTo = ''
     if ($replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
         $headers .= 'Reply-To: ' . ($replyName !== '' ? $b64($replyName) . ' ' : '') . "<$replyTo>\r\n";
     }
-    $headers .= "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\nX-Mailer: LoggX\r\n";
+    $text = str_replace("\r\n", "\n", $text);
+    $logAtt = '';
+    if ($attach) {
+        $bd = 'lx-' . bin2hex(random_bytes(8));
+        $headers .= "MIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"$bd\"\r\nX-Mailer: LoggX\r\n";
+        $body = "--$bd\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n" . str_replace("\n", "\r\n", $text) . "\r\n";
+        foreach ($attach as $a) {
+            $name = (string)preg_replace('/[^\w.\-]/', '_', (string)$a['name']);
+            $body .= "--$bd\r\nContent-Type: {$a['type']}; name=\"$name\"\r\nContent-Disposition: attachment; filename=\"$name\"\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode((string)$a['data'])) . "\r\n";
+            $logAtt .= "[Anhang: $name, " . strlen((string)$a['data']) . " Bytes]\n";
+        }
+        $body .= "--$bd--\r\n";
+    } else {
+        $headers .= "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\nX-Mailer: LoggX\r\n";
+        $body = str_replace("\n", "\r\n", $text);
+    }
     if (PHP_SAPI === 'cli-server') {
-        @file_put_contents(LX_DATA . '/mail-test.log', "TO: $to\nSUBJECT: $subject\n$headers\n$text\n\n-----\n", FILE_APPEND);
+        @file_put_contents(LX_DATA . '/mail-test.log', "TO: $to\nSUBJECT: $subject\n$headers\n$text\n$logAtt\n-----\n", FILE_APPEND);
         return true;
     }
-    return @mail($to, $b64($subject), str_replace("\n", "\r\n", str_replace("\r\n", "\n", $text)), $headers, '-f' . $from);
+    return @mail($to, $b64($subject), $body, $headers, '-f' . $from);
 }
 
 /** Alle Adressen, die deine E-Mails bekommen: Kontakt-Adresse + Kopie-Empfänger (z. B. info@loggx.de) */
@@ -365,9 +382,9 @@ function lx_admin_rcpts(?array $c = null): array {
     return $out;
 }
 /** E-Mail an dich – geht an alle Empfänger aus lx_admin_rcpts(). true, wenn mindestens eine rausging. */
-function lx_mail_admin(string $subject, string $text, string $replyTo = '', string $replyName = ''): bool {
+function lx_mail_admin(string $subject, string $text, string $replyTo = '', string $replyName = '', array $attach = []): bool {
     $ok = false;
-    foreach (lx_admin_rcpts() as $to) $ok = lx_mail($to, $subject, $text, $replyTo, $replyName) || $ok;
+    foreach (lx_admin_rcpts() as $to) $ok = lx_mail($to, $subject, $text, $replyTo, $replyName, $attach) || $ok;
     return $ok;
 }
 
@@ -577,3 +594,4 @@ function lx_bar_html(array $s): string {
 require_once __DIR__ . '/stats.php';
 require_once __DIR__ . '/leads.php';
 require_once __DIR__ . '/totp.php';
+require_once __DIR__ . '/booking.php';

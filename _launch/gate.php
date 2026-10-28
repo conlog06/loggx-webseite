@@ -26,7 +26,7 @@ $root = realpath(lx_root());
 $valid = $file && strpos($file, $root . DIRECTORY_SEPARATOR) === 0 && preg_match('/\.html?$/i', $file) && is_file($file);
 
 /* Rechtliche Seiten sind immer erreichbar (Impressumspflicht) */
-$always = ['impressum.html', 'datenschutz.html', 'danke.html'];
+$always = ['impressum.html', 'datenschutz.html', 'danke.html', 'termin.html']; // termin = Antwort auf Terminvorschläge
 $isAlways = in_array(strtolower($rel), $always, true);
 
 /* ---------- Aktionen ---------- */
@@ -102,6 +102,13 @@ if ($mode === 'live' || $isAlways || $bypass) {
     $html = (string)file_get_contents($file);
     $isLp = strtolower($rel) === 'angebot/index.html';
     $html = lx_apply_site($html, $isLp ? lx_site_for_lp($c['site']) : $c['site']);
+    $isTermin = strtolower($rel) === 'termin.html';
+    if ($isTermin) {
+        header('X-Robots-Tag: noindex, nofollow');
+        header('Cache-Control: no-store');
+        header('Referrer-Policy: no-referrer');
+        $html = lx_render_termin($html);
+    }
     if (in_array(strtolower($rel), ['index.html', 'angebot/index.html'], true)) {
         $bar = lx_bar_html($c['site']);
         if ($bar !== '') $html = preg_replace('~(<body\b[^>]*>)~i', '$1' . $bar, $html, 1) ?? $html;
@@ -118,7 +125,7 @@ if ($mode === 'live' || $isAlways || $bypass) {
         $html = preg_replace('~</body>~i', $badge . '</body>', $html, 1) ?? $html;
     }
     // Für Bing & Google: Änderungen erkennbar machen (ETag/Last-Modified), unveränderte Seiten mit 304 beantworten
-    if (!$admin && !$bypass && $mode === 'live') {
+    if (!$admin && !$bypass && $mode === 'live' && !$isTermin) {
         $etag = '"' . substr(md5($html), 0, 20) . '"';
         $mod = max((int)filemtime($file), (int)@filemtime(LX_DATA . '/config.php'));
         header('ETag: ' . $etag);
@@ -128,7 +135,9 @@ if ($mode === 'live' || $isAlways || $bypass) {
         if ($inm !== '' && in_array($etag, array_map('trim', explode(',', $inm)), true)) { http_response_code(304); exit; }
     }
     echo $html;
-    if (!$admin && !empty($c['site']['stats_on'])) { if (function_exists('fastcgi_finish_request')) fastcgi_finish_request(); lx_stats_track($rel); }
+    if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+    if (!$admin && !$isTermin && !empty($c['site']['stats_on'])) lx_stats_track($rel);
+    try { lx_booking_tick(); } catch (Throwable $e) { error_log('LoggX Termine: ' . $e->getMessage()); } // Erinnerungen 24 Std. vorher
     exit;
 }
 
