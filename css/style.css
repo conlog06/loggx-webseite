@@ -755,7 +755,7 @@ body.page-sub { padding-bottom: 0; }
 .spotlight > *:not(.hp):not(.plan-badge) { position: relative; z-index: 1; }
 .plan.spotlight > .plan-badge { position: absolute; z-index: 2; }
 
-@media (prefers-reduced-motion: reduce) { .shiny-text { animation: none; color: inherit; background: none; } }
+@media (prefers-reduced-motion: reduce) { .shiny-text, [data-theme="dark"] .shiny-text { animation: none; color: inherit; background: none; } }
 
 /* ==========================================================================
    Werbe-Landingpage (/angebot/)
