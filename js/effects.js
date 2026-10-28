@@ -28,6 +28,14 @@
   if (hasSplit) gsap.registerPlugin(window.SplitText);
   var ST = window.ScrollTrigger;
 
+  /* Aufruf mit Sprungziel (z. B. /#kontakt von einer Unterseite): erst oben starten,
+     Animationen aufbauen, dann sauber zum Ziel springen – sonst bleiben Inhalte unsichtbar */
+  var hashTarget = null;
+  if (location.hash.length > 1 && document.getElementById("top")) {
+    try { hashTarget = document.querySelector(decodeURIComponent(location.hash)); } catch (e) {}
+    if (hashTarget) { if ("scrollRestoration" in history) history.scrollRestoration = "manual"; window.scrollTo(0, 0); }
+  }
+
   var FX = { active: true, lenis: null };
   window.LoggFX = FX;
   document.documentElement.classList.add("fx");
@@ -138,8 +146,13 @@
     start: "top 88%",
     once: true,
     onEnter: function (batch) {
+      // Schon übersprungene Elemente (z. B. Sprung zu #kontakt) sofort zeigen, nur Sichtbares animieren
+      var skipped = batch.filter(function (el) { return el.getBoundingClientRect().bottom < 0; });
+      skipped.forEach(function (el) { gsap.set(el, { clearProps: "transform,opacity,visibility" }); el.classList.add("is-visible", "is-done"); });
+      batch = batch.filter(function (el) { return skipped.indexOf(el) < 0; });
+      if (!batch.length) return;
       gsap.to(batch, {
-        autoAlpha: 1, x: 0, y: 0, scale: 1, duration: 1, stagger: 0.09, ease: "power3.out", overwrite: true,
+        autoAlpha: 1, x: 0, y: 0, scale: 1, duration: 1, stagger: Math.min(0.09, 0.5 / batch.length), ease: "power3.out", overwrite: true,
         onComplete: function () {
           batch.forEach(function (el) { gsap.set(el, { clearProps: "transform,opacity,visibility" }); el.classList.add("is-done"); });
         }
@@ -187,5 +200,14 @@
 
   /* Positionen neu berechnen, sobald Bilder & Schriften geladen sind */
   window.addEventListener("load", function () { ST.refresh(); });
+  if (hashTarget) {
+    var jump = function () {
+      ST.refresh();
+      if (FX.lenis) FX.lenis.scrollTo(hashTarget, { immediate: true, force: true }); else hashTarget.scrollIntoView();
+      ST.update();
+    };
+    requestAnimationFrame(jump);
+    window.addEventListener("load", function () { requestAnimationFrame(jump); });
+  }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { ST.refresh(); });
 })();
