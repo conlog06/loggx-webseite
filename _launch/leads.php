@@ -176,3 +176,46 @@ function lx_leads_cleanup(): void {
         if (count($n) !== count($l)) lx_save_leads($n);
     });
 }
+
+/* ---------- Antwortvorlagen (Admin → Anfrage → „Antworten“) ---------- */
+function lx_reply_defaults(): array {
+    $sig = "\n\nViele Grüße\nConstantin Moritz Loggen\nLoggX – Webseiten für Unternehmen\nloggx.de";
+    return [
+        ['id' => 'danke', 'name' => 'Danke & Erstgespräch', 'subject' => 'Ihre Anfrage bei LoggX', 'text' => "Guten Tag {name},\n\nvielen Dank für Ihre Anfrage{firma_bei}! Ich habe mir Ihre Angaben angesehen – das Paket „{paket}“ passt sehr wahrscheinlich gut.\n\nAm besten sprechen wir kurz (kostenlos, ca. 30 Minuten) per Telefon, Zoom oder Teams. Wann passt es Ihnen in den nächsten Tagen?" . $sig],
+        ['id' => 'fragen', 'name' => 'Rückfragen', 'subject' => 'Kurze Rückfragen zu Ihrer Webseite', 'text' => "Guten Tag {name},\n\ndanke für Ihre Anfrage! Damit ich Ihnen ein passendes Angebot machen kann, habe ich noch ein paar kurze Fragen:\n\n1. Haben Sie schon eine Domain (z. B. ihre-firma.de)?\n2. Gibt es Texte und Fotos, oder soll ich dabei helfen?\n3. Welche Webseiten gefallen Ihnen (gern 1–2 Beispiele)?\n\nAntworten Sie einfach auf diese E-Mail." . $sig],
+        ['id' => 'angebot', 'name' => 'Angebot kommt', 'subject' => 'Ihr Angebot von LoggX', 'text' => "Guten Tag {name},\n\nvielen Dank für das nette Gespräch! Wie besprochen bekommen Sie Ihr Angebot zum Festpreis in den nächsten 1–2 Tagen per E-Mail.\n\nFalls Ihnen vorher noch etwas einfällt, melden Sie sich gern." . $sig],
+        ['id' => 'nachfassen', 'name' => 'Nachfassen', 'subject' => 'Kurze Nachfrage zu meinem Angebot', 'text' => "Guten Tag {name},\n\nich wollte kurz nachfragen, ob Sie mein Angebot erhalten haben und ob noch Fragen offen sind. Gern passe ich es an oder wir sprechen kurz am Telefon.\n\nIch freue mich auf Ihre Rückmeldung." . $sig],
+        ['id' => 'absage', 'name' => 'Freundliche Absage', 'subject' => 'Ihre Anfrage bei LoggX', 'text' => "Guten Tag {name},\n\nvielen Dank für Ihr Interesse an LoggX. Leider kann ich Ihr Projekt im Moment nicht übernehmen. Ich wünsche Ihnen viel Erfolg – und melden Sie sich gern, wenn es zu einem späteren Zeitpunkt wieder passt." . $sig],
+    ];
+}
+function lx_reply_templates(?array $c = null): array {
+    $c = $c ?? lx_config();
+    $t = (array)($c['leads']['templates'] ?? []);
+    return $t ?: lx_reply_defaults();
+}
+function lx_reply_fill(string $tpl, array $lead): string {
+    $d = $lead['data'];
+    return strtr($tpl, ['{name}' => (string)$d['name'], '{firma}' => (string)$d['firma'], '{firma_bei}' => $d['firma'] !== '' ? ' für ' . $d['firma'] : '',
+        '{paket}' => (string)$lead['rec'], '{ort}' => (string)$d['ort'], '{webseite}' => lx_abs_url('')]);
+}
+/** E-Mail an den Interessenten schicken und als Notiz in der Anfrage speichern */
+function lx_lead_reply(string $id, string $subject, string $text): array {
+    $lead = null; foreach (lx_leads() as $x) if ($x['id'] === $id) $lead = $x;
+    if (!$lead) return [false, 'Anfrage nicht gefunden.'];
+    $subject = lx_cut(str_replace(["\r", "\n"], ' ', $subject), 200); $text = lx_cut(str_replace("\r", '', $text), 8000);
+    if ($subject === '' || trim($text) === '') return [false, 'Bitte Betreff und Text ausfüllen.'];
+    $c = lx_config();
+    $ok = lx_mail($lead['data']['email'], $subject, $text . "\n", (string)$c['site']['email'], 'Constantin Moritz Loggen');
+    if (!$ok) return [false, 'Die E-Mail konnte nicht gesendet werden – prüfe unter Einstellungen → E-Mail den Absender.'];
+    lx_locked('leads', function () use ($id, $subject, $text) {
+        $l = lx_leads();
+        foreach ($l as &$x) if ($x['id'] === $id) {
+            $x['notes'][] = ['ts' => time(), 't' => "✉️ E-Mail gesendet: „{$subject}“\n" . lx_cut($text, 600), 'sys' => true, 'mail' => 1];
+            if ($x['status'] === 'neu') $x['status'] = 'kontakt';
+            $x['seen'] = true;
+        }
+        unset($x); lx_save_leads($l);
+    });
+    return [true, 'E-Mail an ' . $lead['data']['email'] . ' gesendet und in den Notizen gespeichert.'];
+}
+

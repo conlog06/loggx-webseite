@@ -95,7 +95,9 @@ if ($mode === 'live' || $isAlways || $bypass) {
     if (!$valid) {
         http_response_code(404);
         header('Content-Type: text/html; charset=utf-8');
-        echo '<!doctype html><meta charset="utf-8"><title>Seite nicht gefunden</title><p style="font-family:sans-serif;padding:40px">Seite nicht gefunden. <a href="' . e(lx_url('')) . '">Zur Startseite</a></p>';
+        header('X-Robots-Tag: noindex');
+        lx_log_404('/' . ltrim((string)parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/'));
+        require __DIR__ . '/templates/notfound.php';
         exit;
     }
     header('Content-Type: text/html; charset=utf-8');
@@ -137,7 +139,7 @@ if ($mode === 'live' || $isAlways || $bypass) {
     echo $html;
     if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
     if (!$admin && !$isTermin && !empty($c['site']['stats_on'])) lx_stats_track($rel);
-    try { lx_booking_tick(); } catch (Throwable $e) { error_log('LoggX Termine: ' . $e->getMessage()); } // Erinnerungen 24 Std. vorher
+    try { lx_maintenance_tick(); } catch (Throwable $e) { lx_log('fehler', 'Wartung: ' . $e->getMessage()); } // Sicherung, Erinnerungen, Wochenbericht
     exit;
 }
 

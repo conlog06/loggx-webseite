@@ -200,3 +200,20 @@ Terminvorschläge (Admin → Termine)
   Kalender-Abo: Termine → Kalender-Abo – alle Termine automatisch im iPhone-/Google-Kalender.
   Gespeichert in _launch/data/bookings.php.
 
+Stabilität (läuft automatisch, Admin → Einstellungen)
+  - Tägliche Sicherung aller Daten in _launch/data/sicherung/ (14 Tage) + „Jetzt sichern“
+    und „Wiederherstellen“ (mit Admin-Passwort; vorher wird der aktuelle Stand gesichert).
+  - Jede Datei behält beim Speichern ihren vorigen Stand (.bak). Ist eine Datei beschädigt,
+    repariert sich die Seite selbst aus .bak bzw. der letzten Sicherung.
+  - Protokolle: Fehler, alle verschickten E-Mails, kaputte Links (404).
+  - Eigene 404-Seite, Schutz-Header (.htaccess), Health-Check für UptimeRobot:
+    https://loggx.de/_launch/api.php?a=health
+  - Wochenbericht montags per E-Mail (an/aus unter Einstellungen → Wochenbericht).
+  - Antwortvorlagen: in jeder Anfrage „Antworten“ – E-Mail direkt senden, landet in den Notizen.
+
+FinanzKlar – neu
+  Stornorechnung statt Löschen · Mahnstufen (Erinnerung → 1./2./letzte Mahnung als PDF) ·
+  Zahlungseingang mit Datum (Einnahme wird am Zahlungstag gebucht) · Zeiten erfassen mit Timer
+  → „Abrechnen“ erstellt die Rechnung · Abo-Rechnungen (z. B. Hosting monatlich) ·
+  Jahr festschreiben (EÜR) · Kleinunternehmer-Grenzen 25.000 € / 100.000 € (seit 2025).
+

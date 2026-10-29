@@ -22,6 +22,14 @@ set_exception_handler(function (Throwable $e) use ($out) {
 });
 require __DIR__ . '/lib.php';
 
+/* ---------- Health-Check für Überwachungsdienste (z. B. UptimeRobot): GET ?a=health ---------- */
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && ($_GET['a'] ?? '') === 'health') {
+    $okData = is_dir(LX_DATA) && is_writable(LX_DATA);
+    $cfg = lx_read('config', null);
+    $ok = $okData && is_array($cfg);
+    $out(['ok' => $ok, 'status' => $ok ? 'alles in Ordnung' : 'Problem: ' . (!$okData ? 'Datenordner nicht beschreibbar' : 'Einstellungen nicht lesbar'), 'zeit' => date('c')], $ok ? 200 : 503);
+}
+
 /* ---------- Kalender (GET) ---------- */
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && in_array($_GET['a'] ?? '', ['ics', 'kalender'], true)) {
     while (ob_get_level()) ob_end_clean();

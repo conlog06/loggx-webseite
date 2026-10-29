@@ -30,7 +30,7 @@ function tab_for_action(string $a): string {
     if (str_starts_with($a, 'booking') || $a === 'feed_new') return 'termine';
     if (str_starts_with($a, 'stats')) return 'statistik';
     if (in_array($a, ['site', 'texts', 'image', 'image_delete'], true)) return 'inhalte';
-    if (str_starts_with($a, 'totp') || in_array($a, ['admin_pw', 'mail_settings', 'test_mail', 'backup', 'log_clear'], true)) return 'einstellungen';
+    if (str_starts_with($a, 'totp') || str_starts_with($a, 'backup') || str_starts_with($a, 'weekly') || in_array($a, ['admin_pw', 'mail_settings', 'test_mail', 'log_clear', 'log_clear_ch'], true)) return 'einstellungen';
     return 'veroeffentlichung';
 }
 /** Anmeldeprotokoll (letzte 40 Einträge, IP gekürzt) */
@@ -386,6 +386,40 @@ if ($post) {
                 'anfragen' => lx_leads(), 'termine' => lx_bookings(), 'benachrichtigungen' => lx_read('signups', []), 'zugaenge' => lx_codes(), 'einstellungen' => $cfg], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             admin_log('Datensicherung heruntergeladen');
             exit;
+        case 'backup_now':
+            $nm = lx_backup_create('manuell'); admin_log('Sicherung erstellt'); flash('Sicherung erstellt (' . $nm . ').'); back('#sicherungen');
+        case 'backup_restore':
+            if (!password_verify((string)($_POST['password'] ?? ''), $c['admin_hash'])) { flash('Passwort falsch – nichts wurde geändert.', 'error'); back('#sicherungen'); }
+            $ok = lx_backup_restore((string)($_POST['name'] ?? ''));
+            if ($ok) admin_log('Sicherung wiederhergestellt: ' . (string)$_POST['name']);
+            flash($ok ? 'Stand wiederhergestellt. Der vorherige Stand wurde vorher automatisch gesichert („vor Wiederherstellung“).' : 'Diese Sicherung konnte nicht gelesen werden.', $ok ? 'ok' : 'error');
+            back('#sicherungen');
+        case 'backup_download':
+            $d = lx_backup_load((string)($_POST['name'] ?? ''));
+            if (!$d) { flash('Sicherung nicht gefunden.', 'error'); back('#sicherungen'); }
+            header('Content-Type: application/json; charset=utf-8');
+            header('Content-Disposition: attachment; filename="loggx-server-sicherung-' . date('Y-m-d', (int)$d['meta']['ts']) . '.json"');
+            echo json_encode($d, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); admin_log('Server-Sicherung heruntergeladen'); exit;
+        case 'log_clear_ch':
+            $ch = (string)($_POST['ch'] ?? '');
+            if (in_array($ch, ['fehler', 'mail', '404'], true)) lx_log_clear($ch);
+            flash('Protokoll geleert.'); back('&log=' . urlencode($ch) . '#protokolle');
+        case 'weekly':
+            $c['site']['weekly_on'] = !empty($_POST['weekly_on']); lx_save_config($c);
+            flash($c['site']['weekly_on'] ? 'Wochenbericht ist an – jeden Montag ab 7 Uhr.' : 'Wochenbericht ausgeschaltet.'); back('#bericht');
+        case 'weekly_send':
+            $ok = lx_weekly_report(true); flash($ok ? 'Wochenbericht an ' . implode(', ', lx_admin_rcpts($c)) . ' gesendet.' : 'Senden fehlgeschlagen.', $ok ? 'ok' : 'error'); back('#bericht');
+        case 'lead_reply':
+            [$ok, $msg] = lx_lead_reply((string)($_POST['id'] ?? ''), (string)($_POST['subject'] ?? ''), (string)($_POST['text'] ?? ''));
+            flash($msg, $ok ? 'ok' : 'error'); back('&id=' . urlencode((string)($_POST['id'] ?? '')));
+        case 'lead_templates':
+            if (!empty($_POST['reset'])) { $c['leads']['templates'] = []; lx_save_config($c); flash('Vorlagen zurückgesetzt.'); back('#vorlagen'); }
+            $t = [];
+            foreach ((array)($_POST['tpl'] ?? []) as $row) {
+                $nm = lx_cut((string)($row['name'] ?? ''), 60); if ($nm === '') continue;
+                $t[] = ['id' => preg_replace('/[^a-z0-9]/', '', (string)($row['id'] ?? '')) ?: bin2hex(random_bytes(3)), 'name' => $nm, 'subject' => lx_cut((string)($row['subject'] ?? ''), 200), 'text' => lx_cut(str_replace("\r", '', (string)($row['text'] ?? '')), 6000)];
+            }
+            $c['leads']['templates'] = array_slice($t, 0, 12); lx_save_config($c); flash('Antwortvorlagen gespeichert.'); back('#vorlagen');
         case 'log_clear':
             lx_write('adminlog', []); flash('Anmeldeprotokoll geleert.'); back('#protokoll');
         /* ----- Anfragen ----- */
@@ -455,7 +489,7 @@ $modeNames = ['live' => 'Öffentlich', 'prelaunch' => 'Vor dem Launch', 'mainten
 $leads = array_reverse(lx_leads());
 $newLeads = count(array_filter($leads, fn($x) => $x['status'] === 'neu'));
 $bkBadge = count(array_filter(lx_bookings(), fn($b) => $b['status'] === 'abgelehnt' && (int)$b['end'] > time() - 14 * 86400)); // „passt nicht“ → neuer Vorschlag nötig
-try { lx_booking_tick(); } catch (Throwable $e) {}
+try { lx_maintenance_tick(); } catch (Throwable $e) {}
 $range = in_array((int)($_GET['tage'] ?? 30), [7, 30, 90, 365], true) ? (int)($_GET['tage'] ?? 30) : 30;
 $st = in_array($tab, ['start', 'statistik'], true) ? lx_stats_summary($range) : null;
 $hidden = fn(string $a) => '<input type="hidden" name="csrf" value="' . e($csrf) . '"><input type="hidden" name="action" value="' . e($a) . '"><input type="hidden" name="tab" value="' . e($GLOBALS['tab']) . '">';
@@ -503,6 +537,10 @@ head('Admin – LoggX', true);
     $bkAll = lx_bookings(); $today = date('Y-m-d');
     $nextBk = array_slice(array_values(array_filter($bkAll, fn($b) => $b['status'] === 'bestaetigt' && (int)$b['end'] >= time())), 0, 5);
     $todo = [];
+    $errs7 = count(array_filter(lx_read('log-fehler', []), fn($x) => (int)$x['ts'] > time() - 7 * 86400));
+    $mailF = count(array_filter(lx_read('log-mail', []), fn($x) => empty($x['x']['ok']) && (int)$x['ts'] > time() - 7 * 86400));
+    if ($mailF) $todo[] = ['hot', '<a href="?tab=einstellungen&amp;log=mail#protokolle"><b>' . $mailF . ' E-Mail' . ($mailF > 1 ? 's' : '') . '</b> konnte' . ($mailF > 1 ? 'n' : '') . ' nicht gesendet werden – Absender prüfen</a>'];
+    if ($errs7) $todo[] = ['warn', '<a href="?tab=einstellungen&amp;log=fehler#protokolle"><b>' . $errs7 . ' technische Meldung' . ($errs7 > 1 ? 'en' : '') . '</b> in den letzten 7 Tagen ansehen</a>'];
     if ($newLeads) $todo[] = ['hot', '<a href="?tab=anfragen&amp;status=neu"><b>' . $newLeads . ' neue Anfrage' . ($newLeads > 1 ? 'n' : '') . '</b> beantworten</a>'];
     foreach ($leads as $x) if (($x['follow'] ?? '') !== '' && $x['follow'] <= $today && !in_array($x['status'], ['gewonnen', 'verloren'], true))
         $todo[] = ['follow', '<a href="?tab=anfragen&amp;id=' . e($x['id']) . '">Wiedervorlage: <b>' . e($x['data']['firma'] ?: $x['data']['name']) . '</b></a>' . ($x['follow'] < $today ? ' <span class="tag bad">seit ' . e(date('d.m.', (int)strtotime($x['follow']))) . '</span>' : ' <span class="tag warn">heute</span>')];
@@ -603,6 +641,17 @@ head('Admin – LoggX', true);
         <?php if ($d['paket']): ?><dt>Paket geklickt</dt><dd><?= e($d['paket']) ?></dd><?php endif; ?>
       </dl>
       <?php if ($d['nachricht']): ?><h3>Nachricht</h3><p class="msg"><?= nl2br(e($d['nachricht'])) ?></p><?php endif; ?>
+      <?php $tpls = array_map(fn($t) => ['n' => $t['name'], 's' => lx_reply_fill($t['subject'], $one), 't' => lx_reply_fill($t['text'], $one)], lx_reply_templates($c)); $mails = count(array_filter((array)$one['notes'], fn($nt) => !empty($nt['mail']))); ?>
+      <div class="reply" id="antworten">
+        <h3>Antworten <small><?= $mails ? $mails . ' E-Mail' . ($mails > 1 ? 's' : '') . ' gesendet' : 'direkt von hier – wird in den Notizen gespeichert' ?></small></h3>
+        <div class="tpl-pick" data-tpls="<?= e(json_encode($tpls, JSON_UNESCAPED_UNICODE)) ?>"><?php foreach ($tpls as $i => $t): ?><button type="button" class="chip" data-tpl="<?= $i ?>"><?= e($t['n']) ?></button><?php endforeach; ?><a class="more" href="?tab=anfragen#vorlagen">Vorlagen bearbeiten</a></div>
+        <form method="post" class="stack" onsubmit="return confirm('E-Mail jetzt an <?= e($d['email']) ?> senden?')"><?= $hidden('lead_reply') ?><input type="hidden" name="id" value="<?= e($one['id']) ?>">
+          <label>An<input type="email" value="<?= e($d['email']) ?>" disabled></label>
+          <label>Betreff<input type="text" name="subject" value="<?= e($tpls[0]['s'] ?? 'Ihre Anfrage bei LoggX') ?>" maxlength="200" required></label>
+          <label>Text<textarea name="text" rows="9" maxlength="8000" required><?= e($tpls[0]['t'] ?? '') ?></textarea></label>
+          <div class="btnrow"><button class="btn">✉️ E-Mail senden</button><a class="btn btn-ghost" href="<?= e($mailto) ?>">Lieber im Mailprogramm</a></div>
+        </form>
+      </div>
     </section>
     <aside class="card">
       <h2>Status</h2>
@@ -644,6 +693,24 @@ head('Admin – LoggX', true);
   <section class="card flush">
     <?php if (!$shown): ?><p class="empty pad"><?= $leads ? 'Keine Anfragen für diese Auswahl.' : 'Noch keine Anfragen. Sobald jemand das Formular auf der Webseite abschickt, steht sie hier – mit Paket-Empfehlung und Priorität – und du bekommst eine E-Mail.' ?></p><?php endif; ?>
     <ul class="leads"><?php foreach ($shown as $x) echo lead_row($x); ?></ul>
+  </section>
+  <section class="card" id="vorlagen">
+    <h2>Antwortvorlagen</h2>
+    <p class="hint">Erscheinen in jeder Anfrage unter „Antworten“. Platzhalter: <code>{name}</code> <code>{firma}</code> <code>{firma_bei}</code> („ für Firma“) <code>{paket}</code> <code>{ort}</code> <code>{webseite}</code></p>
+    <form method="post" class="stack"><?= $hidden('lead_templates') ?>
+      <div id="tplList" class="tpl-ed"><?php foreach (lx_reply_templates($c) as $i => $t): ?>
+        <details class="tech"><summary><?= e($t['name']) ?></summary><input type="hidden" name="tpl[<?= $i ?>][id]" value="<?= e($t['id']) ?>">
+          <div class="stack"><div class="cols"><label>Name<input type="text" name="tpl[<?= $i ?>][name]" value="<?= e($t['name']) ?>" maxlength="60"></label><label>Betreff<input type="text" name="tpl[<?= $i ?>][subject]" value="<?= e($t['subject']) ?>" maxlength="200"></label></div>
+          <label>Text<textarea name="tpl[<?= $i ?>][text]" rows="8"><?= e($t['text']) ?></textarea></label><small class="hint" style="margin:0">Name leeren = Vorlage löschen</small></div></details>
+      <?php endforeach; ?>
+        <details class="tech"><summary>+ Neue Vorlage</summary><div class="stack"><div class="cols"><label>Name<input type="text" name="tpl[neu][name]" maxlength="60" placeholder="z. B. Termin-Erinnerung"></label><label>Betreff<input type="text" name="tpl[neu][subject]" maxlength="200"></label></div><label>Text<textarea name="tpl[neu][text]" rows="6">Guten Tag {name},
+
+Viele Grüße
+Constantin Moritz Loggen
+LoggX – Webseiten für Unternehmen</textarea></label></div></details>
+      </div>
+      <div class="btnrow"><button class="btn btn-small">Vorlagen speichern</button><button class="btn btn-small btn-ghost" name="reset" value="1" onclick="return confirm('Alle Vorlagen auf Standard zurücksetzen?')">Standard wiederherstellen</button></div>
+    </form>
   </section>
   <section class="card">
     <h2>Einstellungen für Anfragen</h2>
@@ -1174,10 +1241,16 @@ head('Admin – LoggX', true);
       [$c['site']['phone'] !== lx_defaults()['site']['phone'] && trim((string)$c['site']['phone']) !== '', 'Telefonnummer eingetragen', 'Unter Inhalte → Kontaktdaten eintragen.'],
       [trim((string)$c['site']['hoster']) !== '', 'Hosting-Anbieter in der Datenschutzerklärung', 'Unter Inhalte → Impressum & Datenschutz eintragen.'],
   ];
+  $backs = lx_backups();
+  $errCount = count(array_filter(lx_read('log-fehler', []), fn($x) => (int)$x['ts'] > time() - 7 * 86400));
+  $mailFail = count(array_filter(lx_read('log-mail', []), fn($x) => empty($x['x']['ok']) && (int)$x['ts'] > time() - 7 * 86400));
+  $checks[] = [$backs && $backs[0]['ts'] > time() - 2 * 86400, 'Automatische Sicherung aktuell', 'Noch keine Sicherung – „Jetzt sichern“ klicken. Danach läuft es täglich von selbst.'];
+  $checks[] = [!$errCount, 'Keine Fehler in den letzten 7 Tagen', $errCount . ' Fehlermeldung(en) – siehe Protokolle.'];
+  $checks[] = [!$mailFail, 'Alle E-Mails zugestellt (7 Tage)', $mailFail . ' E-Mail(s) gingen nicht raus – Absender prüfen.'];
   $okCount = count(array_filter($checks, fn($x) => $x[0]));
 ?>
   <div class="page-head"><div><h1>Einstellungen</h1><p class="sub">Sicherheit, E-Mail, Datensicherung und ein kurzer Technik-Check.</p></div></div>
-  <nav class="subnav" aria-label="Abschnitte"><a href="#sicherheit">Zwei-Faktor</a><a href="#email">E-Mail</a><a href="#passwort">Passwort</a><a href="#protokoll">Anmeldungen</a><a href="#check">System-Check</a><a href="#sicherung">Datensicherung</a></nav>
+  <nav class="subnav" aria-label="Abschnitte"><a href="#sicherheit">Zwei-Faktor</a><a href="#email">E-Mail</a><a href="#passwort">Passwort</a><a href="#protokoll">Anmeldungen</a><a href="#check">System-Check</a><a href="#sicherungen">Sicherungen</a><a href="#protokolle">Protokolle</a><a href="#bericht">Wochenbericht</a><a href="#ueberwachung">Überwachung</a></nav>
   <div class="grid">
     <!-- Sicherheit: Zwei-Faktor-Anmeldung -->
     <?php $totpOn = !empty($c['totp_on']) && $c['totp_secret'] !== ''; $pending = (string)($_SESSION['lx_totp_pending'] ?? ''); $showCodes = $_SESSION['lx_recovery_show'] ?? null; unset($_SESSION['lx_recovery_show']); ?>
@@ -1255,11 +1328,41 @@ head('Admin – LoggX', true);
       <ul class="checks"><?php foreach ($checks as [$ok, $label, $tip]): ?><li class="<?= $ok ? 'ok' : 'no' ?>"><span><?= $ok ? '✓' : '!' ?></span><div><b><?= $label ?></b><?php if (!$ok): ?><small><?= e($tip) ?></small><?php endif; ?></div></li><?php endforeach; ?></ul>
       <p class="hint mt">Gespeicherte Daten: <?= $n($dataSize / 1024, 0) ?> KB<?= $free ? ' · freier Speicher: ' . $n($free / 1073741824, 1) . ' GB' : '' ?></p>
     </section>
-    <section class="card" id="sicherung">
-      <h2>Datensicherung</h2>
-      <p class="hint">Lädt Anfragen, Termine, Zugänge und Einstellungen als Datei herunter – ohne Passwörter und geheime Schlüssel. Am besten einmal im Monat sichern.</p>
-      <form method="post"><?= $hidden('backup') ?><button class="btn btn-ghost">Sicherung herunterladen</button></form>
-      <p class="hint mt" style="font-size:.85rem">Enthält Kundendaten – sicher aufbewahren und nicht per E-Mail verschicken.</p>
+    <section class="card card-wide" id="sicherungen">
+      <h2>Sicherungen <?= $backs ? '<span class="tag on">zuletzt ' . e(lx_ago($backs[0]['ts'])) . '</span>' : '<span class="tag warn">noch keine</span>' ?></h2>
+      <p class="hint">Jeden Tag sichert die Seite automatisch alle Daten (Anfragen, Termine, Einstellungen, FinanzKlar-Sync) auf dem Server – die letzten 14 Tage bleiben erhalten. Vor dem Wiederherstellen wird der aktuelle Stand zusätzlich gesichert.</p>
+      <div class="btnrow" style="margin-bottom:14px"><form method="post"><?= $hidden('backup_now') ?><button class="btn btn-small">Jetzt sichern</button></form><form method="post"><?= $hidden('backup') ?><button class="btn btn-small btn-ghost">Kundendaten herunterladen (ohne Passwörter)</button></form></div>
+      <?php if ($backs): ?><div class="table-scroll"><table class="tbl"><thead><tr><th>Stand</th><th>Art</th><th>Inhalt</th><th>Größe</th><th></th></tr></thead><tbody>
+      <?php foreach (array_slice($backs, 0, 20) as $i => $bk): $why = ['taeglich' => 'automatisch', 'manuell' => 'von dir', 'vor-wiederherstellung' => 'vor Wiederherstellung'][$bk['why']] ?? $bk['why']; $meta = $i < 5 ? (lx_backup_load($bk['name'])['meta']['n'] ?? []) : []; ?>
+        <tr><td><b><?= e(date('d.m.Y', $bk['ts'])) ?></b> <small><?= e(date('H:i', $bk['ts'])) ?></small></td><td><span class="tag"><?= e($why) ?></span></td>
+          <td><small><?= $meta ? (int)$meta['leads'] . ' Anfragen · ' . (int)$meta['bookings'] . ' Termine' : '–' ?></small></td><td><small><?= $n($bk['size'] / 1024, 0) ?> KB</small></td>
+          <td><details class="restore"><summary>Wiederherstellen</summary><form method="post" class="row" style="margin:8px 0 0"><?= $hidden('backup_restore') ?><input type="hidden" name="name" value="<?= e($bk['name']) ?>"><input type="password" name="password" placeholder="Admin-Passwort" required autocomplete="current-password"><button class="btn btn-small btn-danger">Diesen Stand laden</button></form>
+            <form method="post" style="margin-top:6px"><?= $hidden('backup_download') ?><input type="hidden" name="name" value="<?= e($bk['name']) ?>"><button class="btn btn-small btn-ghost">Herunterladen</button></form></details></td></tr>
+      <?php endforeach; ?></tbody></table></div><?php endif; ?>
+    </section>
+    <section class="card card-wide" id="protokolle">
+      <?php $lg = in_array($_GET['log'] ?? '', ['fehler', 'mail', '404'], true) ? (string)$_GET['log'] : 'fehler'; $logs = $lg === '404' ? array_values(lx_read('log-404', [])) : lx_log_read($lg); if ($lg === '404') usort($logs, fn($a, $b) => $b['n'] <=> $a['n']); ?>
+      <div class="card-h"><h2>Protokolle</h2><nav class="range"><a href="?tab=einstellungen&amp;log=fehler#protokolle"<?= $lg === 'fehler' ? ' aria-current="true"' : '' ?>>Fehler <?= $errCount ? '(' . $errCount . ')' : '' ?></a><a href="?tab=einstellungen&amp;log=mail#protokolle"<?= $lg === 'mail' ? ' aria-current="true"' : '' ?>>E-Mails</a><a href="?tab=einstellungen&amp;log=404#protokolle"<?= $lg === '404' ? ' aria-current="true"' : '' ?>>Kaputte Links</a></nav></div>
+      <p class="hint"><?= ['fehler' => 'Technische Fehler der Webseite (z. B. E-Mail ging nicht raus). Leer = alles gut.', 'mail' => 'Jede E-Mail, die die Seite verschickt hat – an Kunden und an dich.', '404' => 'Adressen, die jemand aufgerufen hat, die es nicht gibt. Häufige Einträge mit Herkunft = irgendwo steht ein falscher Link.'][$lg] ?></p>
+      <?php if (!$logs): ?><p class="empty"><?= $lg === 'fehler' ? 'Keine Fehler. 🎉' : 'Noch keine Einträge.' ?></p><?php else: ?>
+      <ul class="log"><?php foreach (array_slice($logs, 0, 60) as $e): ?>
+        <?php if ($lg === '404'): ?><li class="<?= !empty($e['bot']) ? '' : 'bad' ?>"><span class="lg-i"><?= (int)$e['n'] ?>×</span><span class="lm"><b><?= e($e['p']) ?></b><small><?= !empty($e['bot']) ? 'Suchmaschine/Bot' : 'Besucher' ?><?= ($e['ref'] ?? '') !== '' ? ' · kam von ' . e($e['ref']) : '' ?></small></span><small><?= e(lx_ago((int)$e['ts'])) ?></small></li>
+        <?php elseif ($lg === 'mail'): $okm = !empty($e['x']['ok']); ?><li class="<?= $okm ? '' : 'bad' ?>"><span class="lg-i"><?= $okm ? '✓' : '✕' ?></span><span class="lm"><b><?= e($e['t']) ?></b><small>an <?= e((string)($e['x']['to'] ?? '')) ?><?= !empty($e['x']['att']) ? ' · mit Anhang' : '' ?><?= (int)($e['n'] ?? 1) > 1 ? ' · ' . (int)$e['n'] . '×' : '' ?></small></span><small><?= e(date('d.m. H:i', (int)$e['ts'])) ?></small></li>
+        <?php else: ?><li class="bad"><span class="lg-i"><?= !empty($e['x']['fatal']) ? '‼' : '!' ?></span><span class="lm"><b><?= e($e['t']) ?></b><small><?= e(trim(($e['x']['f'] ?? '') . ' ' . ($e['x']['u'] ?? ''))) ?><?= (int)($e['n'] ?? 1) > 1 ? ' · ' . (int)$e['n'] . '×' : '' ?></small></span><small><?= e(date('d.m. H:i', (int)$e['ts'])) ?></small></li><?php endif; ?>
+      <?php endforeach; ?></ul>
+      <form method="post" class="mt" onsubmit="return confirm('Protokoll leeren?')"><?= $hidden('log_clear_ch') ?><input type="hidden" name="ch" value="<?= e($lg) ?>"><button class="btn btn-ghost btn-small">Leeren</button></form><?php endif; ?>
+    </section>
+    <section class="card" id="bericht">
+      <h2>Wochenbericht</h2>
+      <p class="hint">Jeden Montag ab 7 Uhr eine kurze E-Mail: Besucher, neue Anfragen, fällige Wiedervorlagen, Termine der Woche und ob es Fehler gab.</p>
+      <form method="post" class="stack"><?= $hidden('weekly') ?><label class="check"><input type="checkbox" name="weekly_on" value="1"<?= !empty($c['site']['weekly_on']) ? ' checked' : '' ?> onchange="this.form.submit()"> Wochenbericht per E-Mail</label></form>
+      <form method="post" class="mt"><?= $hidden('weekly_send') ?><button class="btn btn-ghost btn-small">Jetzt einen schicken (Test)</button></form>
+    </section>
+    <section class="card" id="ueberwachung">
+      <h2>Überwachung</h2>
+      <p class="hint">Damit du sofort merkst, wenn die Seite mal nicht erreichbar ist: kostenlos bei <strong>UptimeRobot</strong> (uptimerobot.com) einen „HTTP(s)“-Monitor mit dieser Adresse anlegen. Er meldet sich per E-Mail oder App, sobald etwas nicht stimmt.</p>
+      <div class="feed"><code><?= e(lx_abs_url('_launch/api.php?a=health')) ?></code></div>
+      <div class="btnrow"><button type="button" class="btn btn-ghost btn-small" data-copy="<?= e(lx_abs_url('_launch/api.php?a=health')) ?>">Adresse kopieren</button><a class="btn btn-ghost btn-small" href="<?= e(lx_url('_launch/api.php?a=health')) ?>" target="_blank" rel="noopener">Testen ↗</a></div>
     </section>
   </div>
 
@@ -1357,6 +1460,20 @@ head('Admin – LoggX', true);
     form.querySelectorAll('[name="mode"]').forEach(function (r) { r.addEventListener("change", applyMode); });
     drawChips(); renum();
   });
+  /* Antwortvorlagen in der Anfrage */
+  (function () {
+    var box = document.querySelector(".tpl-pick"); if (!box) return;
+    var t = []; try { t = JSON.parse(box.getAttribute("data-tpls")) || []; } catch (e) {}
+    var f = box.parentNode.querySelector("form"), subj = f.querySelector('[name="subject"]'), txt = f.querySelector('[name="text"]');
+    var mark = function (i) { box.querySelectorAll("[data-tpl]").forEach(function (b) { b.classList.toggle("on", +b.getAttribute("data-tpl") === i); }); };
+    mark(0);
+    box.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-tpl]"); if (!b) return; var i = +b.getAttribute("data-tpl"), x = t[i]; if (!x) return;
+      if (txt.value.trim() && txt.dataset.edited === "1" && !confirm("Deinen geänderten Text ersetzen?")) return;
+      subj.value = x.s; txt.value = x.t; txt.dataset.edited = ""; mark(i); txt.focus();
+    });
+    txt.addEventListener("input", function () { txt.dataset.edited = "1"; });
+  })();
   /* Ankündigungsleiste: Live-Vorschau + Entfernen */
   (function () {
     var fs = document.querySelector(".bar-fs"); if (!fs) return;
@@ -1777,7 +1894,7 @@ function head(string $title, bool $app = false): void { ?>
   .agenda li.today a { background: #FFF6DD; box-shadow: inset 3px 0 0 var(--sun); }
   .ag-d { display: grid; } .ag-d b { font-size: .9rem; } .ag-d small { color: var(--muted); font-size: .8rem; font-weight: 600; }
   .todo a { text-decoration: none; } .todo a:hover { text-decoration: underline; }
-  .in-follow::before { content: "⏰"; } .in-cal::before { content: "📅"; } .in-wait::before { content: "⏳"; } .in-offer::before { content: "📨"; }
+  .in-follow::before { content: "⏰"; } .in-warn::before { content: "⚠️"; } .in-cal::before { content: "📅"; } .in-wait::before { content: "⏳"; } .in-offer::before { content: "📨"; }
   .follow-s { font-size: .76rem; font-weight: 700; color: var(--muted); } .follow-s.due { color: #A3262B; }
   .follow-now { margin: 0 0 8px; font-weight: 700; } .follow-now.due { color: #A3262B; }
   .follow .row { flex-wrap: nowrap; } .follow input[type=date] { flex: 1; }
@@ -1865,6 +1982,13 @@ function head(string $title, bool $app = false): void { ?>
     .hrow { grid-template-columns: 1fr 1fr auto 1fr; } .hrow label { grid-column: 1 / -1; }
     .subnav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: -6px -16px 16px; padding: 0 16px; } .subnav a { white-space: nowrap; }
   }
+  .reply { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .reply h3 small { font: 500 .82rem "Jakarta", sans-serif; color: var(--muted); margin-left: 6px; }
+  .tpl-pick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0 12px; } .tpl-pick .more { margin-left: auto; }
+  .chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .tpl-ed { display: grid; gap: 8px; }
+  details.restore summary { cursor: pointer; font-weight: 700; font-size: .84rem; color: var(--cobalt); white-space: nowrap; }
+  details.restore .row { flex-wrap: nowrap; } details.restore input { min-width: 150px; }
 </style>
 </head>
 <body class="<?= $app ? 'app' : 'auth-page' ?>">

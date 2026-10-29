@@ -57,16 +57,44 @@ function e(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES 
 function lx_read(string $name, $default) {
     $file = LX_DATA . "/$name.php";
     if (!is_file($file)) return $default;
-    $raw = (string)file_get_contents($file);
-    if (strpos($raw, LX_GUARD) === 0) $raw = substr($raw, strlen(LX_GUARD));
-    $data = json_decode($raw, true);
+    $data = lx_decode_file($file);
+    if ($data === null && filesize($file) > strlen(LX_GUARD)) {
+        // Datei beschädigt → letzten guten Stand nehmen (.bak vom letzten Speichern, sonst die neueste Tagessicherung) und Datei reparieren
+        static $tried = [];
+        if (isset($tried[$name])) return $default;
+        $tried[$name] = true;
+        $from = '';
+        $bak = LX_DATA . "/$name.bak.php";
+        if (is_file($bak) && ($data = lx_decode_file($bak)) !== null) $from = 'vom letzten Speichern';
+        if ($data === null && function_exists('lx_backups')) foreach (lx_backups() as $b) {
+            $d = lx_backup_load($b['name']); $raw = (string)($d['files'][$name] ?? '');
+            if ($raw !== '' && is_array($j = json_decode(substr($raw, strlen(LX_GUARD)), true))) { $data = $j; $from = 'aus der Sicherung vom ' . date('d.m.Y H:i', $b['ts']); break; }
+        }
+        if ($data !== null) { @copy($file, LX_DATA . "/$name.kaputt-" . date('Ymd-His') . '.txt'); try { lx_write($name, $data, false); } catch (Throwable $e) {} }
+        if (function_exists('lx_log')) lx_log('fehler', "Datei $name.php war beschädigt – " . ($data !== null ? "automatisch repariert (Stand $from)." : 'kein Ersatz gefunden.'));
+    }
     return is_array($data) ? $data : $default;
 }
-function lx_write(string $name, array $data): void {
+function lx_decode_file(string $file): ?array {
+    $raw = (string)@file_get_contents($file);
+    if (strpos($raw, LX_GUARD) === 0) $raw = substr($raw, strlen(LX_GUARD));
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : null;
+}
+/** Sicher speichern: erst in eine Zwischendatei, dann austauschen. Der vorige Stand bleibt als .bak erhalten. */
+function lx_write(string $name, array $data, bool $bak = true): void {
     if (!is_dir(LX_DATA)) mkdir(LX_DATA, 0750, true);
     $file = LX_DATA . "/$name.php";
+    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+    if ($json === false) throw new RuntimeException("Daten für $name konnten nicht gespeichert werden.");
     $tmp = $file . '.' . bin2hex(random_bytes(4)) . '.tmp';
-    file_put_contents($tmp, LX_GUARD . json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX);
+    $ok = @file_put_contents($tmp, LX_GUARD . $json, LOCK_EX);
+    if ($ok === false || $ok < strlen(LX_GUARD . $json)) {             // z. B. Speicher voll → alten Stand behalten
+        @unlink($tmp);
+        if (function_exists('lx_log') && !str_starts_with($name, 'log-')) lx_log('fehler', "Speichern von $name fehlgeschlagen (Speicherplatz voll?).");
+        throw new RuntimeException("Speichern fehlgeschlagen ($name).");
+    }
+    if ($bak && is_file($file) && filesize($file) > strlen(LX_GUARD)) @copy($file, LX_DATA . "/$name.bak.php");
     rename($tmp, $file);
 }
 
@@ -119,6 +147,8 @@ function lx_defaults(): array {
             'bar_id' => '',
             'mail_from' => '',             // Absender für E-Mails (leer = noreply@eigene-domain)
             'mail_cc' => 'info@loggx.de',  // bekommt zusätzlich alle E-Mails an dich (Anfragen, Tests, Codes); mehrere mit Komma
+            'weekly_on' => true,           // montags Wochenbericht per E-Mail
+            'weekly_last' => '',
         ],
         // Anfragen über das Formular
         'leads' => [
@@ -368,9 +398,13 @@ function lx_mail(string $to, string $subject, string $text, string $replyTo = ''
     }
     if (PHP_SAPI === 'cli-server') {
         @file_put_contents(LX_DATA . '/mail-test.log', "TO: $to\nSUBJECT: $subject\n$headers\n$text\n$logAtt\n-----\n", FILE_APPEND);
+        lx_log('mail', $subject, ['to' => $to, 'ok' => 1, 'att' => $attach ? count($attach) : 0], 200);
         return true;
     }
-    return @mail($to, $b64($subject), $body, $headers, '-f' . $from);
+    $ok = @mail($to, $b64($subject), $body, $headers, '-f' . $from);
+    lx_log('mail', $subject, ['to' => $to, 'ok' => $ok ? 1 : 0, 'att' => $attach ? count($attach) : 0], 200);
+    if (!$ok) lx_log('fehler', 'E-Mail an ' . $to . ' konnte nicht gesendet werden (Absender: ' . $from . ').');
+    return $ok;
 }
 
 /** Alle Adressen, die deine E-Mails bekommen: Kontakt-Adresse + Kopie-Empfänger (z. B. info@loggx.de) */
@@ -595,3 +629,5 @@ require_once __DIR__ . '/stats.php';
 require_once __DIR__ . '/leads.php';
 require_once __DIR__ . '/totp.php';
 require_once __DIR__ . '/booking.php';
+require_once __DIR__ . '/system.php';
+lx_error_handlers();
