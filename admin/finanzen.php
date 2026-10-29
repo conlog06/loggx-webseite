@@ -89,7 +89,7 @@ if ($post && $action === 'fin_setup' && empty($c['fin_totp_on'])) {
 // Alternative zum Authenticator: einmaliger Code per E-Mail (10 Minuten gültig)
 if ($post && $action === 'fin_mailcode' && !empty($c['fin_totp_on'])) {
     if (lx_throttled('finmail', 3)) $error = 'Es wurden schon mehrere Codes verschickt. Bitte 15 Minuten warten oder die Authenticator-App nehmen.';
-    elseif (!lx_admin_rcpts($c)) $error = 'Keine E-Mail-Adresse hinterlegt (Admin → Webseite → Kontaktdaten).';
+    elseif (!lx_admin_rcpts($c)) $error = 'Keine E-Mail-Adresse hinterlegt (Admin → Inhalte → Kontaktdaten).';
     else {
         lx_hit('finmail');
         $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -97,7 +97,7 @@ if ($post && $action === 'fin_mailcode' && !empty($c['fin_totp_on'])) {
         if (PHP_SAPI === 'cli-server') $_SESSION['lx_fin_mail_test'] = $code;
         $when = date('d.m.Y H:i');
         $ok = lx_mail_admin('Dein Code für LoggX Finanzen: ' . $code,
-            "Hallo Constantin,\n\ndein einmaliger Code zum Entsperren von FinanzKlar:\n\n    $code\n\nEr gilt 10 Minuten und nur zusammen mit deinem Finanz-Passwort.\nAngefordert am $when.\n\nWarst du das nicht? Dann kennt jemand dein Admin-Passwort – bitte sofort im Admin unter Webseite → Sicherheit ändern.\n\nLoggX Webseite\n");
+            "Hallo Constantin,\n\ndein einmaliger Code zum Entsperren von FinanzKlar:\n\n    $code\n\nEr gilt 10 Minuten und nur zusammen mit deinem Finanz-Passwort.\nAngefordert am $when.\n\nWarst du das nicht? Dann kennt jemand dein Admin-Passwort – bitte sofort im Admin unter Einstellungen → Passwort ändern.\n\nLoggX Webseite\n");
         if (!$ok) { unset($_SESSION['lx_fin_mail']); $error = 'Die E-Mail konnte nicht verschickt werden. Prüfe im Admin unter Anfragen die Absender-Adresse.'; }
         else { header('Location: ' . $self . '?mail=1', true, 303); exit; }
     }

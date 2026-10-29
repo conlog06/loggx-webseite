@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ihr Termin – LoggX</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon-96.png" sizes="96x96" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    /* Farbschema vor dem ersten Zeichnen setzen (verhindert Aufblitzen) */
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("loggx-theme"); } catch (e) {}
+      if (t !== "dark" && t !== "light") t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", t);
+      document.documentElement.classList.add("js");
+    })();
+  </script>
+</head>
+<body class="page-sub">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></symbol>
+  </svg>
+  <header class="site-header is-scrolled" id="site-header">
+    <div class="container header-inner">
+      <a href="./" class="brand" aria-label="LoggX Startseite">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 512 512" width="32" height="32"><rect width="512" height="512" rx="112" fill="currentColor"/><path d="M70 375V137H129V375ZM80 375V325H219V375Z" fill="#fff"/><path d="M225 375 294 257 225 137H294L332 226H333L370 137H442L372 256L442 375H370L333 284H333L294 375Z" fill="#FFD166"/></svg>
+        </span>
+        <span class="brand-name">LoggX</span>
+      </a>
+      <div class="header-actions">
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Dunkelmodus einschalten" title="Hell/Dunkel umschalten">
+          <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+          <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="legal bk-page">
+    <div class="container bk-grid">
+      <div class="bk-side">
+        <p class="legal-kicker">Ihr Termin</p>
+        <h1>Termin mit LoggX</h1>
+        <p class="bk-lead">Sagen Sie mir hier mit einem Klick, ob der Termin passt. Sie bekommen danach eine Bestätigung mit Kalendereintrag.</p>
+        <div class="bk-person">
+          <span class="bk-pic"><img src="img/portrait.jpg" data-cms-img="portrait" alt="" width="64" height="64" loading="lazy" decoding="async"></span>
+          <span><b>Constantin Moritz Loggen</b><small>Inhaber von LoggX · Fragen? Antworten Sie einfach auf meine E-Mail.</small></span>
+        </div>
+      </div>
+      <div class="bk-card" id="bk" aria-live="polite">
+        <!--cms:termin-->
+        <div class="bk-empty">
+          <span class="bk-ic"><svg><use href="#i-cal"/></svg></span>
+          <h2>Termin öffnen</h2>
+          <p>Bitte öffnen Sie diese Seite über den Link in Ihrer E-Mail von LoggX.</p>
+          <a class="btn btn-primary" href="./#kontakt"><span>Erstgespräch anfragen</span></a>
+        </div>
+        <!--/cms:termin-->
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="brand-name">LoggX</span>
+        <p>Webseiten für Unternehmen.<br>Inhaber: Constantin Moritz Loggen</p>
+      </div>
+      <nav class="footer-nav" aria-label="Rechtliches">
+        <a href="impressum">Impressum</a>
+        <a href="datenschutz">Datenschutz</a>
+      </nav>
+      <p class="footer-copy">© <span id="year"></span> LoggX</p>
+    </div>
+  </footer>
+  <script>
+    /* Antwort auf den Terminvorschlag */
+    (function () {
+      var box = document.getElementById("bk"), card = box && box.querySelector(".bk-prop");
+      if (!card) return;
+      var api = document.documentElement.getAttribute("data-api") || "_launch/api.php";
+      var err = card.querySelector(".bk-error"), busy = false;
+      function send(yes, opt, btn) {
+        if (busy) return; busy = true;
+        var ta = card.querySelector(".bk-no textarea");
+        if (btn) { btn.disabled = true; btn.setAttribute("aria-busy", "true"); }
+        if (err) err.hidden = true;
+        fetch(api + "?a=termin", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin",
+          body: JSON.stringify({ t: card.getAttribute("data-t"), antwort: yes ? "ja" : "nein", opt: opt || 0, nachricht: yes ? "" : (ta ? ta.value : "") }) })
+          .then(function (r) { return r.json().catch(function () { return { ok: false, error: "Unerwartete Antwort vom Server." }; }); })
+          .then(function (d) {
+            if (d.ok) { location.reload(); return; }
+            busy = false; if (btn) { btn.disabled = false; btn.removeAttribute("aria-busy"); }
+            if (err) { err.textContent = d.error || "Das hat leider nicht geklappt. Bitte versuchen Sie es noch einmal."; err.hidden = false; }
+          })
+          .catch(function () { busy = false; if (btn) { btn.disabled = false; btn.removeAttribute("aria-busy"); } if (err) { err.textContent = "Keine Verbindung. Bitte prüfen Sie Ihr Internet und versuchen Sie es noch einmal."; err.hidden = false; } });
+      }
+      card.addEventListener("click", function (e) {
+        var b = e.target.closest("button"); if (!b) return;
+        if (b.hasAttribute("data-show-no")) { var no = card.querySelector(".bk-no"); no.hidden = false; b.hidden = true; no.querySelector("textarea").focus(); return; }
+        if (b.hasAttribute("data-answer")) send(b.getAttribute("data-answer") === "ja", parseInt(b.getAttribute("data-opt") || "0", 10), b);
+      });
+    })();
+  </script>
+  <script src="js/vendor/gsap.min.js" defer></script>
+  <script src="js/vendor/lenis.min.js" defer></script>
+  <script src="js/effects.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>
