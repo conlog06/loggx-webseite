@@ -118,6 +118,7 @@ function lx_defaults(): array {
         // Inhalte der Webseite, die im Admin-Bereich änderbar sind (Elemente mit data-cms="…")
         'site' => [
             'phone' => '+49 (0) 000 000 00 00',
+            'phone_show' => false,         // Telefonnummer auf der Webseite zeigen (aus = nur E-Mail & Formular)
             'email' => 'constantinloggen@icloud.com',
             'street' => 'Zum Himmelreich 5',
             'city' => '49082 Osnabrück',
@@ -489,16 +490,22 @@ function lx_date_de(int $ts, bool $withDay = true): string {
 }
 
 /* ---------- Inhalte der Webseite einsetzen (Preise, Kontaktdaten, Hinweise) ---------- */
+/** Telefonnummer öffentlich zeigen? Nur wenn eingetragen UND im Admin eingeschaltet (Inhalte → Kontaktdaten). */
+function lx_phone_public(?array $s = null): bool {
+    $s = $s ?? lx_config()['site'];
+    $p = trim((string)($s['phone'] ?? ''));
+    return $p !== '' && $p !== lx_defaults()['site']['phone'] && !empty($s['phone_show']);
+}
 function lx_tel(string $phone): string {
     $p = str_replace('(0)', '', $phone);
     $plus = strpos(ltrim($p), '+') === 0;
     $digits = preg_replace('/\D+/', '', $p);
     return ($plus ? '+' : '') . $digits;
 }
-function lx_site_value(array $s, string $key, bool $de = false): ?string {
+function lx_site_value(array $s, string $key, bool $de = false, bool $en = false): ?string {
     if (!array_key_exists($key, $s)) return null;
     $v = $s[$key];
-    if (is_int($v) || is_float($v)) return $de ? number_format((float)$v, 0, ',', '.') : (string)$v;
+    if (is_int($v) || is_float($v)) return $en ? number_format((float)$v, 0, '.', ',') : ($de ? number_format((float)$v, 0, ',', '.') : (string)$v);
     return (string)$v;
 }
 function lx_apply_site(string $html, array $s): string {
@@ -516,7 +523,7 @@ function lx_apply_site(string $html, array $s): string {
     // Markierung: Seite wurde vom Server aufbereitet (main.js räumt sonst Platzhalter selbst auf)
     $html = preg_replace('~<html\b(?![^>]*data-cms-live)~i', '<html data-cms-live data-api="' . e(lx_url('_launch/api.php')) . '"' . (!empty($s['stats_on']) ? ' data-stats' : ''), $html, 1) ?? $html;
     // Telefonnummer noch Platzhalter → Telefon-Links und -Zeilen ausblenden
-    if (trim((string)$s['phone']) === '' || $s['phone'] === lx_defaults()['site']['phone']) {
+    if (!lx_phone_public($s)) {
         $html = preg_replace('~<a\b[^>]*data-cms-href="tel"[^>]*>.*?</a>~is', '', $html) ?? $html;
         $html = preg_replace('~<span data-phone-line>.*?<br></span>~is', '', $html) ?? $html;
     }
@@ -538,11 +545,12 @@ function lx_apply_site(string $html, array $s): string {
         $v = (string)($s['was_' . $m[1]] ?? '');
         return $v === '' ? '' : '<s class="plan-was" aria-label="statt ' . e($v) . ' Euro">' . e($v) . '&nbsp;€</s>';
     }, $html) ?? $html;
-    // Text in Elementen mit data-cms="schlüssel" ersetzen
-    $html = preg_replace_callback('~<([a-z0-9]+)(\b[^>]*?\bdata-cms="([a-z_]+)"[^>]*)>(.*?)</\1>~is', function ($m) use ($s) {
+    // Text in Elementen mit data-cms="schlüssel" ersetzen (englische Seiten: 1,890 statt 1.890)
+    $en = (bool)preg_match('~<html\b[^>]*\blang="en~i', $html);
+    $html = preg_replace_callback('~<([a-z0-9]+)(\b[^>]*?\bdata-cms="([a-z_]+)"[^>]*)>(.*?)</\1>~is', function ($m) use ($s, $en) {
         [$all, $tag, $attrs, $key] = $m;
-        $de = strpos($attrs, 'data-format="de"') !== false || in_array($key, ['price_visit', 'price_firm'], true);
-        $val = lx_site_value($s, $key, $de);
+        $de = strpos($attrs, 'data-format="de"') !== false || strpos($attrs, 'data-format="en"') !== false || in_array($key, ['price_visit', 'price_firm'], true);
+        $val = lx_site_value($s, $key, $de, $en && $de);
         if ($val === null || $val === '') return $all;
         if (preg_match('/data-to="/', $attrs) && is_numeric($s[$key])) $attrs = preg_replace('/data-to="[^"]*"/', 'data-to="' . (int)$s[$key] . '"', $attrs);
         $def = lx_defaults()['site'][$key] ?? null;

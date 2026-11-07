@@ -59,7 +59,7 @@ function lx_lead_temp(int $score): array {
 
 /** Von welcher Seite die Anfrage kam (für die E-Mail) */
 function lx_lead_pages(): array {
-    return ['angebot' => ' (Werbe-Landingpage)', 'praxis' => ' (Seite Praxen)', 'studio' => ' (Seite Studios)', 'agentur' => ' (Seite Agenturen)', 'gastro' => ' (Seite Gastronomie)', 'preise' => ' (Preise-Seite)'];
+    return ['en' => ' (englische Seite)', 'angebot' => ' (Werbe-Landingpage)', 'praxis' => ' (Seite Praxen)', 'studio' => ' (Seite Studios)', 'agentur' => ' (Seite Agenturen)', 'gastro' => ' (Seite Gastronomie)', 'preise' => ' (Preise-Seite)'];
 }
 
 function lx_leads(): array { return lx_read('leads', []); }
@@ -86,14 +86,15 @@ function lx_lead_create(array $in): array {
     if (strlen((string)preg_replace('/\D+/', '', $d['telefon'])) < 6) return [false, 'Bitte geben Sie Ihre Telefonnummer an.'];
     if (empty($in['consent'])) return [false, 'Bitte bestätigen Sie den Hinweis zum Datenschutz.'];
 
-    $page = in_array($in['page'] ?? '', ['angebot', 'praxis', 'studio', 'agentur', 'gastro', 'preise'], true) ? (string)$in['page'] : 'start';
+    $page = in_array($in['page'] ?? '', ['angebot', 'praxis', 'studio', 'agentur', 'gastro', 'preise', 'en'], true) ? (string)$in['page'] : 'start';
+    $lang = ($in['lang'] ?? '') === 'en' || $page === 'en' ? 'en' : 'de';
     $c = lx_config();
     $site = $page === 'angebot' ? lx_site_for_lp($c['site']) : $c['site'];
     [$rec, $why] = lx_lead_recommend($d, $site);
     $ua = (string)($_SERVER['HTTP_USER_AGENT'] ?? '');
     $lead = [
         'id' => bin2hex(random_bytes(6)), 'created' => time(), 'status' => 'neu', 'seen' => false, 'notes' => [], 'data' => $d,
-        'rec' => $rec, 'why' => $why, 'score' => lx_lead_score($d), 'page' => $page,
+        'rec' => $rec, 'why' => $why, 'score' => lx_lead_score($d), 'page' => $page, 'lang' => $lang,
         'src' => lx_cut((string)preg_replace('/[^\w.\-: \/]/u', '', (string)($in['src'] ?? '')), 60) ?: 'direkt',
         'device' => ['m' => 'Handy', 't' => 'Tablet', 'd' => 'Computer'][lx_stats_device($ua)] . ' · ' . lx_stats_os($ua),
     ];
@@ -138,12 +139,28 @@ function lx_lead_mails(array $lead, array $site): void {
     $text  = "Neue Anfrage über loggx.de\n==========================\n\n";
     $text .= "Priorität:       $temp ({$lead['score']}/100)\n";
     $text .= "Empfehlung:      {$lead['rec']}\n";
-    $text .= 'Gekommen über:   ' . $lead['src'] . (lx_lead_pages()[$lead['page']] ?? '') . " · {$lead['device']}\n\n";
+    $text .= 'Gekommen über:   ' . $lead['src'] . (lx_lead_pages()[$lead['page']] ?? '') . " · {$lead['device']}\n";
+    $text .= (($lead['lang'] ?? 'de') === 'en' ? "Sprache:         ENGLISCH – bitte auf Englisch antworten\n" : '') . "\n";
     $text .= lx_lead_summary($lead);
     $text .= "\nIm Admin-Bereich ansehen: " . lx_abs_url('admin/?tab=anfragen&id=' . $lead['id']) . "\n";
-    lx_mail_admin("Neue Anfrage: $who – $temp, {$lead['rec']}", $text, $d['email'], $d['name']);
+    lx_mail_admin('Neue Anfrage' . (($lead['lang'] ?? 'de') === 'en' ? ' (EN)' : '') . ": $who – $temp, {$lead['rec']}", $text, $d['email'], $d['name']);
 
-    if (!empty($c['leads']['autoreply'])) {
+    if (!empty($c['leads']['autoreply']) && ($lead['lang'] ?? 'de') === 'en') {
+        // Englische Bestätigung (Anfrage kam über loggx.de/en/)
+        $hours = (int)$site['response_hours'];
+        $how = ['phone' => "I'll call you within $hours hours.", 'whatsapp' => "I'll get in touch via WhatsApp within $hours hours.",
+                'video' => "I'll get back to you within $hours hours with a suggested time for a video call (Zoom or Teams)."][$d['kontakt']] ?? "I'll get back to you within $hours hours.";
+        $plan = ['Visitenkarte' => 'Business card', 'Firmenwebseite' => 'Business website', 'Individuell' => 'Custom', 'Änderungen & Support' => 'Changes & support'][$lead['rec']] ?? $lead['rec'];
+        $r  = "Hello {$d['name']},\n\nthank you for your enquiry – it has arrived safely. $how\n\n";
+        $r .= "My first assessment: the \"$plan\" package is probably a good fit for you.\n\n";
+        $r .= $d['projekt'] === 'aenderung'
+            ? "If you like, simply reply to this email with what you'd like changed – then I can estimate the effort straight away.\n\n"
+            : "In the free initial consultation we'll look together at what you really need. Afterwards you'll receive a fixed-price quote.\n\n";
+        $r .= "Best regards\nConstantin Moritz Loggen\nLoggX – Websites for businesses\n";
+        if (lx_phone_public($site)) $r .= 'Phone: ' . trim((string)$site['phone']) . "\n";
+        $r .= lx_abs_url('en/') . "\n";
+        lx_mail($d['email'], 'Your enquiry at LoggX', $r, (string)$c['site']['email'], 'Constantin Moritz Loggen');
+    } elseif (!empty($c['leads']['autoreply'])) {
         $hours = (int)$site['response_hours'];
         $how = [
             'phone' => "Ich rufe Sie innerhalb von $hours Stunden an.",
@@ -158,8 +175,7 @@ function lx_lead_mails(array $lead, array $site): void {
             : "Im kostenlosen Erstgespräch schauen wir gemeinsam, was Sie wirklich brauchen. Danach bekommen Sie ein Angebot zum Festpreis.\n\n";
         $r .= "Ihre Angaben im Überblick:\n--------------------------\n" . lx_lead_summary($lead);
         $r .= "\nViele Grüße\nConstantin Moritz Loggen\nLoggX – Webseiten für Unternehmen\n";
-        $phone = trim((string)$site['phone']);
-        if ($phone !== '' && $phone !== lx_defaults()['site']['phone']) $r .= "Telefon: $phone\n";
+        if (lx_phone_public($site)) $r .= 'Telefon: ' . trim((string)$site['phone']) . "\n";
         $r .= lx_abs_url('') . "\n";
         lx_mail($d['email'], 'Ihre Anfrage bei LoggX', $r, (string)$c['site']['email'], 'Constantin Moritz Loggen');
     }

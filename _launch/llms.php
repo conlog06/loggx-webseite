@@ -13,7 +13,7 @@ $s = $c['site'];
 $eur = fn($v) => number_format((int)$v, 0, ',', '.') . ' €';
 $url = rtrim(lx_abs_url(''), '/');
 $phone = trim((string)$s['phone']);
-$hasPhone = $phone !== '' && $phone !== lx_defaults()['site']['phone'];
+$hasPhone = lx_phone_public($s);
 
 header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: public, max-age=3600');
