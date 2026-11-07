@@ -9,6 +9,13 @@
 
   var root = document.documentElement;
   var body = document.body;
+  /* Sprache: englische Seite (/en/) bekommt englische Texte */
+  var EN = (root.getAttribute("lang") || "").slice(0, 2) === "en";
+  var L = function (de, en) { return EN ? en : de; };
+  var PLAN_EN = { "Visitenkarte": "Business card", "Firmenwebseite": "Business website", "Individuell": "Custom", "Änderungen": "Changes & support", "Änderungen & Support": "Changes & support" };
+  var planName = function (p) { return EN ? (PLAN_EN[p] || p) : (p === "Änderungen" ? "Änderungen & Support" : p); };
+  // Pfad zum Webseiten-Stamm (für Bilder), z. B. "../" auf /en/
+  var BASE = (function () { var sc = document.currentScript; var m = sc && /^(.*?)js\/main\.js/.exec(sc.getAttribute("src") || ""); return m ? m[1] : ""; })();
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------- Jahr im Footer ---------- */
@@ -19,7 +26,7 @@
   var themeBtn = document.getElementById("theme-toggle");
   function applyThemeLabel() {
     var dark = root.getAttribute("data-theme") === "dark";
-    if (themeBtn) themeBtn.setAttribute("aria-label", dark ? "Hellen Modus einschalten" : "Dunkelmodus einschalten");
+    if (themeBtn) themeBtn.setAttribute("aria-label", dark ? L("Hellen Modus einschalten", "Switch to light mode") : L("Dunkelmodus einschalten", "Switch to dark mode"));
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", dark ? "#0A1628" : "#0F2540");
   }
@@ -75,7 +82,7 @@
     nav.classList.toggle("is-open", open);
     body.classList.toggle("nav-open", open);
     toggle.setAttribute("aria-expanded", String(open));
-    toggle.setAttribute("aria-label", open ? "Menü schließen" : "Menü öffnen");
+    toggle.setAttribute("aria-label", open ? L("Menü schließen", "Close menu") : L("Menü öffnen", "Open menu"));
     lockScroll(open);
   }
   if (toggle && nav) {
@@ -208,7 +215,7 @@
 
     var shotSources = function (url, device) {
       var slug = url.replace(/^https?:\/\/(www\.)?/, "").replace(/[^a-z0-9]+/gi, "-").replace(/-$/, "").toLowerCase();
-      var local = "img/" + slug + (device === "phone" ? "-full-mobile.jpg" : "-full.jpg");
+      var local = BASE + "img/" + slug + (device === "phone" ? "-full-mobile.jpg" : "-full.jpg");
       var remote = device === "phone"
         ? "https://image.thum.io/get/fullpage/width/390/viewportWidth/390/" + url
         : "https://image.thum.io/get/fullpage/width/1200/" + url;
@@ -255,17 +262,17 @@
       stage.setAttribute("data-device", startPhone ? "phone" : "desktop");
       deskBtn.classList.toggle("is-active", !startPhone); deskBtn.setAttribute("aria-pressed", String(!startPhone));
       phoneBtn.classList.toggle("is-active", startPhone); phoneBtn.setAttribute("aria-pressed", String(startPhone));
-      titleEl.textContent = title || "Vorschau";
+      titleEl.textContent = title || L("Vorschau", "Preview");
       urlEl.textContent = url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
       openEl.href = url;
       loader.classList.remove("is-hidden");
       if (embed) {
         shotBox.hidden = true; frame.hidden = false; frame.src = url;
-        noteEl.textContent = "Live-Ansicht der Webseite. Sie können darin scrollen und klicken.";
+        noteEl.textContent = L("Live-Ansicht der Webseite. Sie können darin scrollen und klicken.", "Live view of the website. You can scroll and click inside it.");
       } else {
         frame.src = "about:blank"; frame.hidden = true; shotBox.hidden = false;
         loadShot(stage.getAttribute("data-device"));
-        noteEl.textContent = "Screenshot der Webseite – zum Scrollen. Für die Live-Seite „Neuer Tab“ nutzen.";
+        noteEl.textContent = L("Screenshot der Webseite – zum Scrollen. Für die Live-Seite „Neuer Tab“ nutzen.", "Screenshot of the website – scroll to explore. Use \u201cNew tab\u201d for the live site.");
       }
       preview.hidden = false;
       fitDevice();
@@ -330,23 +337,23 @@
     lb.innerHTML =
       '<div class="lightbox-backdrop" data-lb-close></div>' +
       '<div class="lightbox-panel">' +
-        '<button type="button" class="lightbox-close" data-lb-close aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
+        '<button type="button" class="lightbox-close" data-lb-close aria-label="' + L("Schließen", "Close") + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
         '<div class="lightbox-view" data-device="desktop">' +
           '<div class="lightbox-browser"><span class="shot-bar"><i></i><i></i><i></i><em class="lb-url"></em></span>' +
-          '<div class="lightbox-scroll" tabindex="0" aria-label="Seite zum Scrollen" data-lenis-prevent><img class="lb-img" alt=""></div></div>' +
-          '<span class="scroll-cue">Scrollen ↓</span>' +
+          '<div class="lightbox-scroll" tabindex="0" aria-label="' + L("Seite zum Scrollen", "Scrollable page") + '" data-lenis-prevent><img class="lb-img" alt=""></div></div>' +
+          '<span class="scroll-cue">' + L("Scrollen", "Scroll") + ' ↓</span>' +
         '</div>' +
         '<aside class="lightbox-side" data-lenis-prevent>' +
           '<h3 id="lb-title"></h3>' +
-          '<div class="preview-devices" role="group" aria-label="Ansicht wählen">' +
+          '<div class="preview-devices" role="group" aria-label="' + L("Ansicht wählen", "Choose view") + '">' +
             '<button type="button" class="device-btn is-active" data-lb-device="desktop" aria-pressed="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Desktop</button>' +
             '<button type="button" class="device-btn" data-lb-device="tablet" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M11 18h2"/></svg>Tablet</button>' +
-            '<button type="button" class="device-btn" data-lb-device="phone" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Handy</button>' +
+            '<button type="button" class="device-btn" data-lb-device="phone" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>' + L("Handy", "Phone") + '</button>' +
           '</div>' +
           '<p class="lb-desc"></p><ul class="lb-features"></ul>' +
-          '<p class="lightbox-note">Designbeispiel für einen fiktiven Betrieb. Inhalte, Farben und Funktionen passe ich an Ihren Betrieb an.</p>' +
-          '<a href="#kontakt" class="btn btn-primary lb-cta" data-lb-close data-plan="Firmenwebseite"><span class="lb-cta-long">So etwas für meinen Betrieb</span><span class="lb-cta-short">Anfragen</span></a>' +
-          '<button type="button" class="lb-close-m" data-lb-close aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
+          '<p class="lightbox-note">' + L("Designbeispiel für einen fiktiven Betrieb. Inhalte, Farben und Funktionen passe ich an Ihren Betrieb an.", "Design example for a fictional business. I adapt content, colours and features to your business.") + '</p>' +
+          '<a href="#kontakt" class="btn btn-primary lb-cta" data-lb-close data-plan="Firmenwebseite"><span class="lb-cta-long">' + L("So etwas für meinen Betrieb", "I want something like this") + '</span><span class="lb-cta-short">' + L("Anfragen", "Enquire") + '</span></a>' +
+          '<button type="button" class="lb-close-m" data-lb-close aria-label="' + L("Schließen", "Close") + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
         '</aside>' +
       '</div>';
     body.appendChild(lb);
@@ -372,7 +379,7 @@
       lb.querySelector(".lb-url").textContent = shot.getAttribute("data-url");
       lb.querySelector(".lb-desc").textContent = shot.getAttribute("data-desc");
       lb.querySelector(".lb-features").innerHTML = shot.getAttribute("data-features").split("|").map(function (f) { return "<li>" + f + "</li>"; }).join("");
-      lbImg.alt = "Designbeispiel " + shot.querySelector("strong").textContent + " – komplette Seite";
+      lbImg.alt = L("Designbeispiel ", "Design example ") + shot.querySelector("strong").textContent + L(" – komplette Seite", " – full page");
       setDevice(window.innerWidth < 700 ? "phone" : window.innerWidth < 1100 ? "tablet" : "desktop");
       lb.hidden = false;
       lockScroll(true);
@@ -401,7 +408,7 @@
       advisor.querySelectorAll(".adv-step").forEach(function (s) { s.classList.toggle("is-active", s.getAttribute("data-step") === String(n)); });
     };
     var showResult = function (plan) {
-      document.getElementById("adv-result").textContent = plan;
+      document.getElementById("adv-result").textContent = planName(plan);
       document.getElementById("adv-cta").setAttribute("data-plan", plan);
       showStep(3);
     };
@@ -488,14 +495,15 @@
   var form = document.getElementById("lead-form");
   if (form) {
     var stepsEl = form.querySelectorAll(".lf-step");
-    var labels = ["Ihr Vorhaben", "Umfang & Zeitplan", "Ihre Kontaktdaten"];
+    var labels = EN ? ["Your project", "Scope & timing", "Your contact details"] : ["Ihr Vorhaben", "Umfang & Zeitplan", "Ihre Kontaktdaten"];
     var step = 1, started = 0;
     var val = function (n) { var el = form.elements[n]; return el && el.value ? String(el.value).trim() : ""; };
     var radio = function (n) { var el = form.querySelector('input[name="' + n + '"]:checked'); return el ? el.value : ""; };
     var checks = function (n) { return Array.prototype.map.call(form.querySelectorAll('input[name="' + n + '"]:checked'), function (i) { return i.value; }); };
     var label = function (n) { var el = form.querySelector('input[name="' + n + '"]:checked + span'); return el ? el.textContent.trim() : "–"; };
     var price = function (k) { var el = form.querySelector('.lf-prices [data-cms="' + k + '"]'); return el ? el.textContent.trim() : ""; };
-    var eur = function (k) { var n = parseInt(price(k).replace(/\D/g, ""), 10) || 0; return n.toLocaleString("de-DE") + " €"; };
+    var eur = function (k) { var n = parseInt(price(k).replace(/\D/g, ""), 10) || 0; return EN ? "€" + n.toLocaleString("en-GB") : n.toLocaleString("de-DE") + " €"; };
+    var timeTxt = function (k) { return EN ? (k === "time_visit" ? "14 days" : "3–4 weeks") : price(k); };
     var markStart = function () { if (!started) { started = Date.now(); track("form-start"); } };
     // Branchenseiten: passende Branche schon vorauswählen
     var preB = form.getAttribute("data-branche");
@@ -505,11 +513,11 @@
     var recommend = function () {
       var p = radio("projekt"), pages = radio("seiten"), x = checks("extras");
       var has = function (a) { return a.some(function (k) { return x.indexOf(k) >= 0; }); };
-      var visit = ["Visitenkarte", "Eine schlanke Seite mit allem Wichtigen auf einen Blick – ab " + eur("price_visit") + ", online in " + price("time_visit") + "."];
-      if (p === "aenderung") return ["Änderungen & Support", "Abrechnung nach Aufwand ab " + eur("price_hourly") + " pro Stunde. Kein Abo, keine Grundgebühr."];
-      if (p === "shop" || pages === "many" || has(["shop", "termin", "sprachen"])) return ["Individuell", "Für Sonderfunktionen wie Shop, Terminbuchung oder mehrere Sprachen. Sie bekommen vorher ein Angebot zum Festpreis."];
+      var visit = ["Visitenkarte", L("Eine schlanke Seite mit allem Wichtigen auf einen Blick – ab " + eur("price_visit") + ", online in " + timeTxt("time_visit") + ".", "A lean page with everything important at a glance – from " + eur("price_visit") + ", online in " + timeTxt("time_visit") + ".")];
+      if (p === "aenderung") return ["Änderungen & Support", L("Abrechnung nach Aufwand ab " + eur("price_hourly") + " pro Stunde. Kein Abo, keine Grundgebühr.", "Billed by time spent, from " + eur("price_hourly") + " per hour. No subscription, no base fee.")];
+      if (p === "shop" || pages === "many" || has(["shop", "termin", "sprachen"])) return ["Individuell", L("Für Sonderfunktionen wie Shop, Terminbuchung oder mehrere Sprachen. Sie bekommen vorher ein Angebot zum Festpreis.", "For special features like a shop, booking or multiple languages. You get a fixed-price quote up front.")];
       if (pages === "one" || p === "landing") return visit;
-      if (pages === "few" || p === "relaunch" || x.length >= 3) return ["Firmenwebseite", "Mehrere Unterseiten für Leistungen, Team und Referenzen – ab " + eur("price_firm") + ", online in " + price("time_firm") + "."];
+      if (pages === "few" || p === "relaunch" || x.length >= 3) return ["Firmenwebseite", L("Mehrere Unterseiten für Leistungen, Team und Referenzen – ab " + eur("price_firm") + ", online in " + timeTxt("time_firm") + ".", "Several sub-pages for services, team and references – from " + eur("price_firm") + ", online in " + timeTxt("time_firm") + ".")];
       return visit;
     };
     var updateRec = function () {
@@ -518,7 +526,7 @@
       box.hidden = !any;
       if (!any) return;
       var r = recommend();
-      document.getElementById("lf-rec-name").textContent = r[0];
+      document.getElementById("lf-rec-name").textContent = EN ? planName(r[0]) : r[0];
       document.getElementById("lf-rec-why").textContent = r[1];
     };
     // Felder je nach Auswahl ein-/ausblenden: data-if="projekt=neu|relaunch|" (leerer Wert = noch nichts gewählt)
@@ -537,7 +545,7 @@
       step = n;
       stepsEl.forEach(function (s) { s.hidden = +s.getAttribute("data-step") !== n; });
       document.getElementById("lf-bar").style.width = (n / 3 * 100) + "%";
-      document.getElementById("lf-label").textContent = "Schritt " + n + " von 3 · " + labels[n - 1];
+      document.getElementById("lf-label").textContent = L("Schritt " + n + " von 3 · ", "Step " + n + " of 3 · ") + labels[n - 1];
       if (n === 2) updateRec();
       if (n >= 2) track("form-step" + n);
       if (focus !== false) {
@@ -573,7 +581,7 @@
           firma.closest(".field").classList.toggle("is-invalid", noF);
           ort.closest(".field").classList.toggle("is-invalid", noO);
           if (noP || noF || noO) {
-            err1.textContent = noP ? "Bitte wählen Sie kurz aus, was Sie vorhaben." : noF ? "Bitte geben Sie Ihre Firma an." : "Bitte geben Sie Ihren Ort an.";
+            err1.textContent = noP ? L("Bitte wählen Sie kurz aus, was Sie vorhaben.", "Please choose what you are planning.") : noF ? L("Bitte geben Sie Ihre Firma an.", "Please enter your company.") : L("Bitte geben Sie Ihren Ort an.", "Please enter your city.");
             err1.hidden = false;
             if (!noP) (noF ? firma : ort).focus();
             return;
@@ -602,7 +610,7 @@
       var isPlan = !!planTrack[plan];
       form.elements.paket.value = isPlan ? plan : "";
       var chip = document.getElementById("lf-paket");
-      chip.textContent = "Paket: " + (plan === "Änderungen" ? "Änderungen & Support" : plan); chip.hidden = !isPlan;
+      chip.textContent = L("Paket: ", "Package: ") + planName(plan); chip.hidden = !isPlan;
       form.querySelector('[data-required="projekt"]').classList.remove("is-err");
       form.querySelector('[data-err="1"]').hidden = true;
       applyIf(); updateRec();
@@ -620,16 +628,16 @@
       mail.closest(".field").classList.toggle("is-invalid", badMail);
       tel.closest(".field").classList.toggle("is-invalid", badTel);
       consent.closest(".consent").classList.toggle("is-err", !consent.checked);
-      if (badName) { showErr("Bitte geben Sie Ihren Namen an."); return name.focus(); }
-      if (badMail) { showErr("Bitte geben Sie eine gültige E-Mail-Adresse an."); return mail.focus(); }
-      if (badTel) { showErr("Bitte geben Sie Ihre Telefonnummer an."); return tel.focus(); }
-      if (!consent.checked) return showErr("Bitte bestätigen Sie noch kurz den Hinweis zum Datenschutz.");
+      if (badName) { showErr(L("Bitte geben Sie Ihren Namen an.", "Please enter your name.")); return name.focus(); }
+      if (badMail) { showErr(L("Bitte geben Sie eine gültige E-Mail-Adresse an.", "Please enter a valid email address.")); return mail.focus(); }
+      if (badTel) { showErr(L("Bitte geben Sie Ihre Telefonnummer an.", "Please enter your phone number.")); return tel.focus(); }
+      if (!consent.checked) return showErr(L("Bitte bestätigen Sie noch kurz den Hinweis zum Datenschutz.", "Please confirm the privacy notice."));
 
       var data = {
         name: val("name"), email: val("email"), telefon: val("telefon"), firma: val("firma"), ort: val("ort"), webseite: val("webseite"),
         nachricht: val("nachricht"), projekt: radio("projekt"), branche: radio("branche"), branche_text: val("branche_text"),
         seiten: radio("seiten"), extras: checks("extras"), start: radio("start"), budget: radio("budget"), kontakt: radio("kontakt"),
-        paket: val("paket"), consent: 1, website: val("website"), t: started ? Date.now() - started : 0, src: source(), page: PAGE
+        paket: val("paket"), consent: 1, website: val("website"), t: started ? Date.now() - started : 0, src: source(), page: PAGE, lang: EN ? "en" : "de"
       };
       var rec = recommend();
       var btn = document.getElementById("lf-submit"), btnText = btn.querySelector("span");
@@ -637,26 +645,26 @@
         stepsEl.forEach(function (s) { s.hidden = true; });
         form.querySelector(".lf-progress").hidden = true;
         document.getElementById("lf-paket").hidden = true;
-        document.getElementById("lf-label").textContent = "Anfrage gesendet";
+        document.getElementById("lf-label").textContent = L("Anfrage gesendet", "Enquiry sent");
         document.getElementById("lf-done-name").textContent = data.name ? ", " + data.name.split(" ")[0] : "";
         var r = document.getElementById("lf-done-rec");
-        r.hidden = false; r.querySelector("b").textContent = recName; r.querySelector("span:last-child").textContent = recWhy;
+        r.hidden = false; r.querySelector("b").textContent = EN ? planName(recName) : recName; r.querySelector("span:last-child").textContent = recWhy;
         var d = document.getElementById("lf-done"); d.hidden = false; d.focus({ preventScroll: true });
       };
       if (data.website) return done(rec[0], rec[1]); // Spam-Falle
-      if (location.protocol === "file:") return showErr("Vorschau-Modus: Das Formular sendet erst, wenn die Seite online liegt.");
+      if (location.protocol === "file:") return showErr(L("Vorschau-Modus: Das Formular sendet erst, wenn die Seite online liegt.", "Preview mode: the form only sends once the site is online."));
 
-      btn.disabled = true; btn.classList.add("is-loading"); btnText.textContent = "Wird gesendet …";
+      btn.disabled = true; btn.classList.add("is-loading"); btnText.textContent = L("Wird gesendet …", "Sending …");
       var fail = function (msg) {
-        showErr((msg || "Senden hat nicht geklappt.") + " Sie können mir auch direkt eine E-Mail schreiben.");
-        btn.disabled = false; btn.classList.remove("is-loading"); btnText.textContent = "Anfrage senden";
+        showErr(EN ? "Sorry, that didn't work. Please try again or simply email me directly." : (msg || "Senden hat nicht geklappt.") + " Sie können mir auch direkt eine E-Mail schreiben.");
+        btn.disabled = false; btn.classList.remove("is-loading"); btnText.textContent = L("Anfrage senden", "Send enquiry");
       };
       if (LIVE) {
         fetch(API + "?a=anfrage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
           .then(function (res) { return res.json().catch(function () { return {}; }).then(function (j) { return { ok: res.ok, status: res.status, j: j }; }); })
           .then(function (r) {
             if (!r.ok || !r.j.ok) throw new Error(r.j.error || (r.ok ? "Unerwartete Antwort vom Server." : "Server-Fehler " + r.status + "."));
-            done(r.j.rec || rec[0], r.j.why || rec[1]);
+            done(r.j.rec || rec[0], EN ? rec[1] : (r.j.why || rec[1]));
           })
           .catch(function (err) { fail(err.message); });
         return;
@@ -719,13 +727,13 @@
   /* ---------- Preise hochzählen (einmalig, wenn sichtbar) ---------- */
   function countUp(el) {
     var to = parseFloat(el.getAttribute("data-to"));
-    var de = el.getAttribute("data-format") === "de";
+    var fm = el.getAttribute("data-format"), de = fm === "de" || fm === "en", loc = fm === "en" ? "en-GB" : "de-DE";
     var start = null, dur = 1200;
     function frame(t) {
       if (!start) start = t;
       var p = Math.min(1, (t - start) / dur);
       var n = Math.round(to * (1 - Math.pow(1 - p, 3)));
-      el.textContent = de ? n.toLocaleString("de-DE") : n;
+      el.textContent = de ? n.toLocaleString(loc) : n;
       if (p < 1) requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);

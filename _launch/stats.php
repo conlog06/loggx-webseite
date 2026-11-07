@@ -17,6 +17,7 @@ const LX_STATS_KEEP_MONTHS = 14;
 function lx_stats_pages(): array {
     return [
         'index.html' => 'Startseite',
+        'en/index.html' => 'Englische Startseite',
         'angebot/index.html' => 'Werbe-Landingpage',
         'webseite-praxis.html' => 'Branche: Praxen',
         'webseite-studio.html' => 'Branche: Studios',

@@ -88,12 +88,12 @@
   /* ---------- CountUp (React Bits) ---------- */
   function countUp(el, delay) {
     var to = parseFloat(el.getAttribute("data-to"));
-    var de = el.getAttribute("data-format") === "de";
+    var fm = el.getAttribute("data-format"), de = fm === "de" || fm === "en", loc = fm === "en" ? "en-GB" : "de-DE";
     var o = { v: 0 };
     el.textContent = "0";
     gsap.to(o, {
       v: to, duration: 1.8, delay: delay || 0, ease: "power2.out",
-      onUpdate: function () { var n = Math.round(o.v); el.textContent = de ? n.toLocaleString("de-DE") : n; }
+      onUpdate: function () { var n = Math.round(o.v); el.textContent = de ? n.toLocaleString(loc) : n; }
     });
   }
   document.querySelectorAll(".hero-facts .count").forEach(function (el, i) { countUp(el, 0.6 + i * 0.12); });

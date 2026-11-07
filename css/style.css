@@ -996,3 +996,29 @@ body.page-sub { padding-bottom: 0; }
   .bk-actions .btn { flex-basis: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .bk-status.st-offen i { animation: none; } }
+
+/* ---------- Referenzen: „Bald online“-Hinweis ---------- */
+.ref-soon { display: grid; grid-template-columns: minmax(0, 300px) 1fr; gap: clamp(22px, 4vw, 48px); align-items: center; padding: clamp(18px, 3vw, 28px); border-radius: var(--radius-l); border: 1.5px dashed rgba(255,255,255,.22); background: rgba(255,255,255,.03); }
+.ref-soon-frame { border-radius: 14px; overflow: hidden; background: var(--ink-2); border: 1px solid rgba(255,255,255,.1); }
+.ref-soon-frame .frame-bar { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: rgba(255,255,255,.06); }
+.ref-soon-frame .frame-bar i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.25); }
+.ref-soon-frame .frame-bar em { margin-left: 8px; font-style: normal; font-size: .75rem; color: rgba(255,255,255,.55); }
+.ref-soon-body { display: grid; gap: 9px; padding: 22px 20px 24px; }
+.ref-soon-body b { font: 800 1.7rem/1 var(--font-display); letter-spacing: -0.03em; color: var(--white); filter: blur(.4px); }
+.sk { display: block; height: 9px; border-radius: 6px; background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.2), rgba(255,255,255,.08)); background-size: 200% 100%; animation: skShine 2.2s linear infinite; }
+.sk-1 { width: 85%; } .sk-2 { width: 62%; } .sk-3 { width: 40%; height: 26px; border-radius: 999px; margin-top: 6px; background-color: rgba(255,209,102,.25); }
+@keyframes skShine { to { background-position: -200% 0; } }
+.soon-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 13px; border-radius: 999px; background: rgba(255,209,102,.14); color: var(--sun); font-weight: 700; font-size: .85rem; }
+.soon-badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--sun); animation: soonPulse 1.8s infinite; }
+@keyframes soonPulse { 0% { box-shadow: 0 0 0 0 rgba(255,209,102,.6); } 70% { box-shadow: 0 0 0 8px rgba(255,209,102,0); } 100% { box-shadow: 0 0 0 0 rgba(255,209,102,0); } }
+.ref-soon-copy h3 { margin: .8rem 0 .5rem; font-size: clamp(1.3rem, 2.2vw, 1.7rem); }
+.ref-soon-copy p { margin: 0; color: rgba(255,255,255,.72); max-width: 36em; }
+@media (max-width: 760px) { .ref-soon { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .sk, .soon-badge i { animation: none; } }
+
+/* ---------- Sprachumschalter DE / EN ---------- */
+.lang-switch { display: inline-grid; place-items: center; min-width: 44px; height: 44px; background: var(--surface); padding: 0 10px; border-radius: 999px; border: 1.5px solid var(--border); font: 700 .82rem/1 var(--font-body); letter-spacing: .06em; color: var(--text); text-decoration: none; transition: border-color .2s, background-color .2s, color .2s; }
+.lang-switch:hover, .lang-switch:focus-visible { border-color: var(--sun); background: var(--sun); color: var(--ink); }
+.site-header.is-hero .lang-switch { color: inherit; }
+.footer-col small { opacity: .7; }
+.ref-soon-frame .frame-bar em { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); padding: 3px 10px; border-radius: 6px; }

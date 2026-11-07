@@ -175,6 +175,7 @@ if ($post) {
             foreach (['tax_number' => 40, 'tax_office' => 60, 'hoster' => 160] as $k => $max) $S[$k] = $str($k, $max);
             $S['stats_text'] = $str('stats_text', 800);
             $S['thumio'] = !empty($_POST['thumio']);
+            $S['phone_show'] = !empty($_POST['phone_show']);
             foreach (['phone' => 40, 'street' => 80, 'city' => 80, 'time_visit' => 30, 'time_firm' => 30, 'kicker_home' => 90, 'kicker_angebot' => 90, 'bar_text' => 160, 'bar_link_text' => 40, 'bar_badge' => 20] as $k => $max) $S[$k] = $str($k, $max);
             $S['price_visit'] = $num('price_visit', 0, 99999, (int)$S['price_visit']);
             $S['price_firm'] = $num('price_firm', 0, 99999, (int)$S['price_firm']);
@@ -1026,12 +1027,12 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
         </fieldset>
         <fieldset><legend>Kontaktdaten</legend>
           <div class="cols">
-            <label>Telefon<input type="text" name="phone" maxlength="40" value="<?= e($S['phone']) ?>" placeholder="+49 (0) 541 123456"></label>
+            <label>Telefon <small>(nur für dich, wenn unten aus)</small><input type="text" name="phone" maxlength="40" value="<?= e($S['phone']) ?>" placeholder="+49 (0) 541 123456"></label>
             <label>E-Mail <small>(auch Empfänger der Anfragen)</small><input type="email" name="email" required value="<?= e($S['email']) ?>"></label>
             <label>Straße<input type="text" name="street" maxlength="80" value="<?= e($S['street']) ?>"></label>
             <label>PLZ und Ort<input type="text" name="city" maxlength="80" value="<?= e($S['city']) ?>"></label>
           </div>
-          <?php if ($S['phone'] === lx_defaults()['site']['phone']): ?><p class="flash warn" style="margin:10px 0 0">Die Telefonnummer ist noch der Platzhalter – bitte vor dem Livegang eintragen.</p><?php endif; ?>
+          <label class="check" style="margin-top:10px"><input type="checkbox" name="phone_show" value="1"<?= !empty($S['phone_show']) ? ' checked' : '' ?>> Telefonnummer auf der Webseite zeigen <small>(Kontakt, Impressum, E-Mails) – aus: nur E-Mail und Formular</small></label>
         </fieldset>
         <fieldset><legend>Hinweis über der Überschrift</legend>
           <p class="hint">Kurzer Satz mit leuchtendem Punkt, z. B. „Noch 2 Projektplätze im November frei“.</p>
@@ -1238,7 +1239,6 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
       [$fromHost !== '' && ($fromHost === $host || str_ends_with($host, '.' . $fromHost) || str_ends_with($fromHost, $host)), 'Absender passt zur Domain (' . e(lx_mail_from()) . ')', 'Absender sollte eine Adresse deiner Domain sein, sonst landen Mails im Spam.'],
       [!empty($c['totp_on']), 'Zwei-Faktor-Anmeldung', 'Noch nicht eingerichtet – siehe oben.'],
       [$cf || PHP_SAPI === 'cli-server' || !preg_match('/loggx\.de$/', $host), 'Cloudflare davor', 'Anfragen kommen nicht über Cloudflare – ist der Proxy (orange Wolke) an?'],
-      [$c['site']['phone'] !== lx_defaults()['site']['phone'] && trim((string)$c['site']['phone']) !== '', 'Telefonnummer eingetragen', 'Unter Inhalte → Kontaktdaten eintragen.'],
       [trim((string)$c['site']['hoster']) !== '', 'Hosting-Anbieter in der Datenschutzerklärung', 'Unter Inhalte → Impressum & Datenschutz eintragen.'],
   ];
   $backs = lx_backups();
