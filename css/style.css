@@ -1015,10 +1015,4 @@ body.page-sub { padding-bottom: 0; }
 .ref-soon-copy p { margin: 0; color: rgba(255,255,255,.72); max-width: 36em; }
 @media (max-width: 760px) { .ref-soon { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .sk, .soon-badge i { animation: none; } }
-
-/* ---------- Sprachumschalter DE / EN ---------- */
-.lang-switch { display: inline-grid; place-items: center; min-width: 44px; height: 44px; background: var(--surface); padding: 0 10px; border-radius: 999px; border: 1.5px solid var(--border); font: 700 .82rem/1 var(--font-body); letter-spacing: .06em; color: var(--text); text-decoration: none; transition: border-color .2s, background-color .2s, color .2s; }
-.lang-switch:hover, .lang-switch:focus-visible { border-color: var(--sun); background: var(--sun); color: var(--ink); }
-.site-header.is-hero .lang-switch { color: inherit; }
-.footer-col small { opacity: .7; }
 .ref-soon-frame .frame-bar em { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); padding: 3px 10px; border-radius: 6px; }
