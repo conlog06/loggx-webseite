@@ -1016,3 +1016,22 @@ body.page-sub { padding-bottom: 0; }
 @media (max-width: 760px) { .ref-soon { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .sk, .soon-badge i { animation: none; } }
 .ref-soon-frame .frame-bar em { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); padding: 3px 10px; border-radius: 6px; }
+
+/* ---------- Social Media: Instagram, Facebook, TikTok ---------- */
+.soc { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: inherit; transition: background-color .25s, color .25s, transform .3s var(--ease); }
+.soc svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.soc svg .fill { fill: currentColor; stroke: none; }
+.soc:hover, .soc:focus-visible { background: var(--sun); color: var(--ink); transform: translateY(-2px); }
+.site-nav .nav-social { display: flex; align-items: center; gap: 2px; margin-left: 6px; padding-left: 10px; border-left: 1.5px solid var(--border); }
+.site-nav .nav-social .soc { display: grid !important; place-items: center; padding: 0 !important; line-height: 0 !important; font-size: 0 !important; }
+.site-nav .nav-social .soc svg { display: block; margin: 0; }
+.site-nav .nav-social .soc::after { display: none !important; }
+.footer-social { display: flex; gap: 6px; margin-top: 16px; }
+.footer-social .soc { border: 1.5px solid rgba(255,255,255,.2); color: var(--white); }
+.footer-social .soc:hover { border-color: var(--sun); }
+@media (max-width: 1240px) and (min-width: 1081px) { .site-nav .nav-social { display: none; } }
+@media (max-width: 1080px) {
+  .site-nav .nav-social { margin: 26px 0 0; padding: 0; border: 0; justify-content: center; gap: 12px; }
+  .site-nav .nav-social .soc { width: 52px; height: 52px; border: 1.5px solid rgba(255,255,255,.25); color: var(--white); }
+  .site-nav .nav-social .soc svg { width: 22px; height: 22px; }
+}
