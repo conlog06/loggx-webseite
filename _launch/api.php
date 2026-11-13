@@ -74,6 +74,15 @@ if ($a === 'anfrage') {
     lx_hit('anfrage', 3600);
     $out(['ok' => true, 'rec' => $res['rec'], 'why' => $res['why']]);
 }
+if ($a === 'check') {
+    if (!empty($in['website'])) $out(['ok' => true]);                                                       // Spam-Falle
+    if ((int)($in['t'] ?? 0) > 0 && (int)$in['t'] < 2500) $out(['ok' => false, 'error' => 'Das ging zu schnell – bitte versuchen Sie es noch einmal.'], 400);
+    if (lx_throttled('check', 4, 3600)) $out(['ok' => false, 'error' => 'Zu viele Anfragen in kurzer Zeit. Bitte später erneut versuchen.'], 429);
+    [$ok, $res] = lx_check_create($in);
+    if (!$ok) $out(['ok' => false, 'error' => $res], 400);
+    lx_hit('check', 3600);
+    $out(['ok' => true, 'host' => lx_check_host($res['data']['webseite'])]);
+}
 if ($a === 'termin') {
     if (lx_throttled('termin', 20, 3600)) $out(['ok' => false, 'error' => 'Zu viele Versuche. Bitte später erneut probieren.'], 429);
     lx_hit('termin', 3600);

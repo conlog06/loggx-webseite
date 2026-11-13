@@ -29,7 +29,7 @@ function tab_for_action(string $a): string {
     if (str_starts_with($a, 'lead_')) return 'anfragen';
     if (str_starts_with($a, 'booking') || $a === 'feed_new') return 'termine';
     if (str_starts_with($a, 'stats')) return 'statistik';
-    if (in_array($a, ['site', 'texts', 'image', 'image_delete'], true)) return 'inhalte';
+    if (in_array($a, ['site', 'texts', 'image', 'image_delete'], true) || str_starts_with($a, 'review')) return 'inhalte';
     if (str_starts_with($a, 'totp') || str_starts_with($a, 'backup') || str_starts_with($a, 'weekly') || in_array($a, ['admin_pw', 'mail_settings', 'test_mail', 'log_clear', 'log_clear_ch'], true)) return 'einstellungen';
     return 'veroeffentlichung';
 }
@@ -176,6 +176,8 @@ if ($post) {
             $S['stats_text'] = $str('stats_text', 800);
             $S['thumio'] = !empty($_POST['thumio']);
             $S['phone_show'] = !empty($_POST['phone_show']);
+            $S['check_on'] = !empty($_POST['check_on']);
+            $S['check_time'] = $str('check_time', 30) ?: '3 Werktagen';
             foreach (['phone' => 40, 'street' => 80, 'city' => 80, 'time_visit' => 30, 'time_firm' => 30, 'kicker_home' => 90, 'kicker_angebot' => 90, 'bar_text' => 160, 'bar_link_text' => 40, 'bar_badge' => 20] as $k => $max) $S[$k] = $str($k, $max);
             $S['price_visit'] = $num('price_visit', 0, 99999, (int)$S['price_visit']);
             $S['price_firm'] = $num('price_firm', 0, 99999, (int)$S['price_firm']);
@@ -410,10 +412,60 @@ if ($post) {
             flash($c['site']['weekly_on'] ? 'Wochenbericht ist an – jeden Montag ab 7 Uhr.' : 'Wochenbericht ausgeschaltet.'); back('#bericht');
         case 'weekly_send':
             $ok = lx_weekly_report(true); flash($ok ? 'Wochenbericht an ' . implode(', ', lx_admin_rcpts($c)) . ' gesendet.' : 'Senden fehlgeschlagen.', $ok ? 'ok' : 'error'); back('#bericht');
+        case 'lead_reprobe':
+            $ok = lx_check_reprobe((string)($_POST['id'] ?? ''));
+            flash($ok ? 'Vorprüfung neu durchgeführt.' : 'Anfrage nicht gefunden.', $ok ? 'ok' : 'error'); back('&id=' . urlencode((string)($_POST['id'] ?? '')) . '#vorpruefung');
+        /* ----- Kundenstimmen ----- */
+        case 'review_save':
+        case 'review_delete':
+        case 'review_up':
+        case 'review_img_delete':
+            $R = array_values((array)($c['reviews'] ?? []));
+            $rid = preg_replace('/[^a-f0-9]/', '', (string)($_POST['rid'] ?? ''));
+            $idx = null; foreach ($R as $i => $r) if (($r['id'] ?? '') === $rid && $rid !== '') $idx = $i;
+            $delImg = function (?array $r) { $f = $r ? (string)($r['img'] ?? '') : ''; if ($f !== '' && str_starts_with($f, 'img/review-')) { $p = lx_root() . '/' . strtok($f, '?'); if (is_file($p)) @unlink($p); } };
+            if ($action === 'review_delete') {
+                if ($idx !== null) { $delImg($R[$idx]); array_splice($R, $idx, 1); $c['reviews'] = $R; lx_save_config($c); flash('Kundenstimme gelöscht.'); }
+                back('#stimmen');
+            }
+            if ($action === 'review_up') {
+                if ($idx) { [$R[$idx - 1], $R[$idx]] = [$R[$idx], $R[$idx - 1]]; $c['reviews'] = $R; lx_save_config($c); }
+                back('#stimmen');
+            }
+            if ($action === 'review_img_delete') {
+                if ($idx !== null) { $delImg($R[$idx]); $R[$idx]['img'] = ''; $c['reviews'] = $R; lx_save_config($c); flash('Foto entfernt.'); }
+                back('#stimmen');
+            }
+            $text = trim(lx_cut(str_replace("\r", '', (string)($_POST['text'] ?? '')), 600));
+            $name = trim(lx_cut(str_replace(["\r", "\n"], ' ', (string)($_POST['name'] ?? '')), 80));
+            if ($text === '' || $name === '') { flash('Bitte Text und Name ausfüllen.', 'error'); back('#stimmen'); }
+            $row = $idx !== null ? $R[$idx] : ['id' => bin2hex(random_bytes(4)), 'img' => '', 'ts' => time()];
+            $row['text'] = $text; $row['name'] = $name;
+            $row['role'] = trim(lx_cut(str_replace(["\r", "\n"], ' ', (string)($_POST['role'] ?? '')), 60));
+            $row['firma'] = trim(lx_cut(str_replace(["\r", "\n"], ' ', (string)($_POST['firma'] ?? '')), 80));
+            $pj = (string)($_POST['projekt'] ?? ''); $row['projekt'] = isset(lx_review_projects()[$pj]) ? $pj : '';
+            $row['on'] = !empty($_POST['on']);
+            $up = $_FILES['img'] ?? null; $imgMsg = '';
+            if ($up && ($up['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $info = ($up['error'] ?? 1) === UPLOAD_ERR_OK && is_uploaded_file($up['tmp_name']) && $up['size'] <= 8 * 1024 * 1024 ? @getimagesize($up['tmp_name']) : false;
+                $ext = $info ? ([IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'][$info[2]] ?? null) : null;
+                if (!$ext) $imgMsg = ' Foto nicht übernommen (nur JPG, PNG oder WebP bis 8 MB).';
+                else {
+                    $rel = 'img/review-' . $row['id'] . '.' . $ext;
+                    $delImg($row);
+                    if (@move_uploaded_file($up['tmp_name'], lx_root() . '/' . $rel)) { @chmod(lx_root() . '/' . $rel, 0644); $row['img'] = $rel . '?v=' . time(); }
+                    else $imgMsg = ' Foto konnte nicht gespeichert werden – hat der Ordner img/ Schreibrechte?';
+                }
+            }
+            if ($idx !== null) $R[$idx] = $row; else $R[] = $row;
+            $c['reviews'] = array_slice($R, 0, 20); lx_save_config($c); lx_indexnow_later();
+            flash(($idx !== null ? 'Kundenstimme gespeichert.' : 'Kundenstimme hinzugefügt.') . ($row['on'] ? '' : ' (ausgeblendet)') . $imgMsg, $imgMsg ? 'warn' : 'ok');
+            back('#stimmen');
         case 'lead_reply':
             [$ok, $msg] = lx_lead_reply((string)($_POST['id'] ?? ''), (string)($_POST['subject'] ?? ''), (string)($_POST['text'] ?? ''));
             flash($msg, $ok ? 'ok' : 'error'); back('&id=' . urlencode((string)($_POST['id'] ?? '')));
         case 'lead_templates':
+            $c['leads']['tpl_v'] = 2;
             if (!empty($_POST['reset'])) { $c['leads']['templates'] = []; lx_save_config($c); flash('Vorlagen zurückgesetzt.'); back('#vorlagen'); }
             $t = [];
             foreach ((array)($_POST['tpl'] ?? []) as $row) {
@@ -606,14 +658,14 @@ head('Admin – LoggX', true);
   $id = (string)($_GET['id'] ?? ''); $one = null;
   foreach ($leads as $x) if ($x['id'] === $id) $one = $x;
   if ($one && empty($one['seen'])) lx_locked('leads', function () use ($id) { $l = lx_leads(); foreach ($l as &$x) if ($x['id'] === $id) $x['seen'] = true; unset($x); lx_save_leads($l); });
-  if ($one): $d = $one['data']; [$tk, $tl] = lx_lead_temp((int)$one['score']);
+  if ($one): $d = $one['data']; [$tk, $tl] = lx_lead_temp((int)$one['score']); $isCheck = ($one['type'] ?? '') === 'check';
     $mailBody = "Guten Tag {$d['name']},\n\nvielen Dank für Ihre Anfrage bei LoggX!\n\n";
     $mailto = 'mailto:' . rawurlencode($d['email']) . '?subject=' . rawurlencode('Ihre Anfrage bei LoggX') . '&body=' . rawurlencode($mailBody);
 ?>
   <a href="?tab=anfragen" class="backlink">← Alle Anfragen</a>
   <div class="page-head">
     <div><h1><?= e($d['firma'] ?: $d['name']) ?></h1><p class="sub"><?= e(lx_date_de((int)$one['created'])) ?> · über <?= e($one['src']) ?><?= e(lx_lead_pages()[$one['page'] ?? ''] ?? '') ?> · <?= e($one['device']) ?></p></div>
-    <div class="head-tags"><span class="temp t-<?= $tk ?>"><?= $tl ?> · <?= (int)$one['score'] ?></span><span class="pill-s"><i class="dot st-<?= e($one['status']) ?>"></i><?= e($stat[$one['status']] ?? '') ?></span></div>
+    <div class="head-tags"><?php if ($isCheck): ?><span class="pill-s pill-check">🔎 Webseiten-Check</span><?php endif; ?><span class="temp t-<?= $tk ?>"><?= $tl ?> · <?= (int)$one['score'] ?></span><span class="pill-s"><i class="dot st-<?= e($one['status']) ?>"></i><?= e($stat[$one['status']] ?? '') ?></span></div>
   </div>
   <div class="cols-2-1">
     <section class="card">
@@ -624,6 +676,26 @@ head('Admin – LoggX', true);
         <a class="btn btn-ghost" href="https://wa.me/<?= e(lead_wa($d['telefon'])) ?>?text=<?= rawurlencode('Guten Tag ' . $d['name'] . ', hier ist Constantin von LoggX – danke für Ihre Anfrage!') ?>" target="_blank" rel="noopener">💬 WhatsApp</a><?php endif; ?>
         <?php if ($d['webseite']): $u = preg_match('~^https?://~i', $d['webseite']) ? $d['webseite'] : 'https://' . $d['webseite']; ?><a class="btn btn-ghost" href="<?= e($u) ?>" target="_blank" rel="noopener noreferrer">🌐 Jetzige Seite</a><?php endif; ?>
       </div>
+      <?php if ($isCheck): $pr = (array)($one['probe'] ?? []); $pn = lx_check_counts($pr); ?>
+      <div class="rec-box"><span>Kostenloser Webseiten-Check</span><b><?= e(lx_check_host($d['webseite'])) ?></b><small><?= e($one['why']) ?></small></div>
+      <div class="probe" id="vorpruefung">
+        <div class="probe-head"><h3>Automatische Vorprüfung <small><?= !empty($pr['ts']) ? e(lx_ago((int)$pr['ts'])) : '' ?><?= !empty($pr['system']) ? ' · System: ' . e($pr['system']) : '' ?></small></h3>
+          <form method="post"><?= $hidden('lead_reprobe') ?><input type="hidden" name="id" value="<?= e($one['id']) ?>"><button class="btn btn-ghost btn-small">Neu prüfen</button></form></div>
+        <?php if (empty($pr['ok'])): ?><p class="flash warn" style="margin:0"><?= e($pr['error'] ?? 'Noch keine Vorprüfung.') ?></p>
+        <?php else: ?>
+        <p class="probe-sum"><span class="pb bad"><?= $pn['bad'] ?> Probleme</span><span class="pb warn"><?= $pn['warn'] ?> Hinweise</span><span class="pb ok"><?= $pn['ok'] ?> in Ordnung</span></p>
+        <ul class="probe-list"><?php foreach (['bad', 'warn', 'info', 'ok'] as $lv) foreach ($pr['items'] as $x) if ($x[0] === $lv): ?><li class="pv-<?= $lv ?>"><i aria-hidden="true"><?= ['ok' => '✓', 'warn' => '!', 'bad' => '✕', 'info' => 'i'][$lv] ?></i><?= e($x[1]) ?></li><?php endif; ?></ul>
+        <p class="hint" style="margin:8px 0 0">Nur für dich – eine automatische Grundlage. Schau dir die Seite trotzdem selbst an (vor allem auf dem Handy), bevor du antwortest.</p>
+        <?php endif; ?>
+      </div>
+      <dl class="facts">
+        <dt>Webseite</dt><dd><a href="<?= e($d['webseite']) ?>" target="_blank" rel="noopener noreferrer"><?= e($d['webseite']) ?></a></dd>
+        <dt>Name</dt><dd><?= e($d['name']) ?></dd>
+        <dt>E-Mail</dt><dd><a href="mailto:<?= e($d['email']) ?>"><?= e($d['email']) ?></a></dd>
+        <dt>Firma</dt><dd><?= e($d['firma'] ?: '–') ?></dd>
+      </dl>
+      <?php if ($d['nachricht']): ?><h3>Worauf achten?</h3><p class="msg"><?= nl2br(e($d['nachricht'])) ?></p><?php endif; ?>
+      <?php else: ?>
       <div class="rec-box"><span>Empfehlung der Webseite</span><b><?= e($one['rec']) ?></b><small><?= e($one['why']) ?></small></div>
       <dl class="facts">
         <dt>Name</dt><dd><?= e($d['name']) ?></dd>
@@ -642,7 +714,8 @@ head('Admin – LoggX', true);
         <?php if ($d['paket']): ?><dt>Paket geklickt</dt><dd><?= e($d['paket']) ?></dd><?php endif; ?>
       </dl>
       <?php if ($d['nachricht']): ?><h3>Nachricht</h3><p class="msg"><?= nl2br(e($d['nachricht'])) ?></p><?php endif; ?>
-      <?php $tpls = array_map(fn($t) => ['n' => $t['name'], 's' => lx_reply_fill($t['subject'], $one), 't' => lx_reply_fill($t['text'], $one)], lx_reply_templates($c)); $mails = count(array_filter((array)$one['notes'], fn($nt) => !empty($nt['mail']))); ?>
+      <?php endif; ?>
+      <?php $tpls = array_map(fn($t) => ['n' => $t['name'], 's' => lx_reply_fill($t['subject'], $one), 't' => lx_reply_fill($t['text'], $one)], lx_reply_templates($c)); if ($isCheck) { $ti = array_search('Ergebnis Webseiten-Check', array_column($tpls, 'n'), true); if ($ti !== false) array_unshift($tpls, ...array_splice($tpls, (int)$ti, 1)); } $mails = count(array_filter((array)$one['notes'], fn($nt) => !empty($nt['mail']))); ?>
       <div class="reply" id="antworten">
         <h3>Antworten <small><?= $mails ? $mails . ' E-Mail' . ($mails > 1 ? 's' : '') . ' gesendet' : 'direkt von hier – wird in den Notizen gespeichert' ?></small></h3>
         <div class="tpl-pick" data-tpls="<?= e(json_encode($tpls, JSON_UNESCAPED_UNICODE)) ?>"><?php foreach ($tpls as $i => $t): ?><button type="button" class="chip" data-tpl="<?= $i ?>"><?= e($t['n']) ?></button><?php endforeach; ?><a class="more" href="?tab=anfragen#vorlagen">Vorlagen bearbeiten</a></div>
@@ -697,7 +770,7 @@ head('Admin – LoggX', true);
   </section>
   <section class="card" id="vorlagen">
     <h2>Antwortvorlagen</h2>
-    <p class="hint">Erscheinen in jeder Anfrage unter „Antworten“. Platzhalter: <code>{name}</code> <code>{firma}</code> <code>{firma_bei}</code> („ für Firma“) <code>{paket}</code> <code>{ort}</code> <code>{webseite}</code></p>
+    <p class="hint">Erscheinen in jeder Anfrage unter „Antworten“. Platzhalter: <code>{name}</code> <code>{firma}</code> <code>{firma_bei}</code> („ für Firma“) <code>{paket}</code> <code>{ort}</code> <code>{webseite}</code> (loggx.de) <code>{ihre_seite}</code> (Seite des Kunden)</p>
     <form method="post" class="stack"><?= $hidden('lead_templates') ?>
       <div id="tplList" class="tpl-ed"><?php foreach (lx_reply_templates($c) as $i => $t): ?>
         <details class="tech"><summary><?= e($t['name']) ?></summary><input type="hidden" name="tpl[<?= $i ?>][id]" value="<?= e($t['id']) ?>">
@@ -994,7 +1067,7 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
 
 <?php /* ======================= INHALTE ======================= */ elseif ($tab === 'inhalte'): ?>
   <div class="page-head"><div><h1>Inhalte</h1><p class="sub">Preise, Kontaktdaten, Bilder und Texte – nach dem Speichern sofort auf loggx.de sichtbar.</p></div><a class="btn btn-ghost btn-small" href="<?= e(lx_url('')) ?>" target="_blank" rel="noopener">Seite ansehen ↗</a></div>
-  <nav class="subnav" aria-label="Abschnitte"><a href="#kontakt">Preise &amp; Kontakt</a><a href="#bilder">Bilder</a><a href="#texte">Texte</a></nav>
+  <nav class="subnav" aria-label="Abschnitte"><a href="#kontakt">Preise &amp; Kontakt</a><a href="#stimmen">Kundenstimmen</a><a href="#bilder">Bilder</a><a href="#texte">Texte</a></nav>
   <div class="grid">
     <!-- Webseite: Preise, Kontakt, Hinweise -->
     <section class="card card-wide" id="kontakt">
@@ -1024,6 +1097,13 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
             <label>Firmenwebseite online in<input type="text" name="time_firm" maxlength="30" value="<?= e($S['time_firm']) ?>" placeholder="3–4 Wochen"></label>
             <label>Antwort innerhalb von <span class="unit-in"><input type="number" name="response_hours" min="1" max="168" value="<?= (int)$S['response_hours'] ?>"><i>Std.</i></span></label>
           </div>
+        </fieldset>
+        <fieldset><legend>Kostenloser Webseiten-Check <?= !empty($S['check_on']) ? '<span class="tag on">sichtbar</span>' : '<span class="tag no">aus</span>' ?></legend>
+          <p class="hint">Abschnitt auf der Startseite: Besucher tragen ihre Webseite ein, du bekommst eine automatische Vorprüfung und schickst eine kurze Einschätzung (Vorlage „Ergebnis Webseiten-Check“).</p>
+          <div class="cols">
+            <label>Einschätzung kommt innerhalb von<input type="text" name="check_time" maxlength="30" value="<?= e($S['check_time']) ?>" placeholder="3 Werktagen"></label>
+          </div>
+          <label class="check"><input type="checkbox" name="check_on" value="1"<?= !empty($S['check_on']) ? ' checked' : '' ?>> Webseiten-Check auf der Startseite anbieten</label>
         </fieldset>
         <fieldset><legend>Kontaktdaten</legend>
           <div class="cols">
@@ -1073,6 +1153,46 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
         </fieldset>
         <button class="btn">Webseite speichern</button>
       </form>
+    </section>
+
+    <!-- Kundenstimmen -->
+    <section class="card card-wide" id="stimmen">
+      <?php $R = lx_reviews($c); $pjs = lx_review_projects(); $vis = count(array_filter($R, fn($r) => !empty($r['on']))); ?>
+      <h2>Kundenstimmen <?= $vis ? '<span class="tag on">' . $vis . ' sichtbar</span>' : '<span class="tag no">noch keine</span>' ?></h2>
+      <p class="hint">Erscheinen auf der Startseite unter „Referenzen“ (bis zu 6) und auf der passenden Projektseite. Solange keine sichtbar ist, bleibt der Abschnitt ausgeblendet.
+        <strong>Nur echte Rückmeldungen eintragen – mit Einverständnis der Person</strong> (Name, Text, Foto). Die Vorlage „Bitte um Kundenstimme“ unter <a href="?tab=anfragen#vorlagen">Anfragen → Antwortvorlagen</a> hilft beim Fragen.</p>
+      <?php $revForm = function (?array $r) use ($hidden, $pjs) { ob_start(); $new = $r === null; $r = $r ?? ['id' => '', 'text' => '', 'name' => '', 'role' => '', 'firma' => '', 'projekt' => '', 'on' => true, 'img' => '']; ?>
+        <form method="post" enctype="multipart/form-data" class="stack rev-form"><?= $hidden('review_save') ?><input type="hidden" name="rid" value="<?= e($r['id']) ?>">
+          <label>Was sagt die Person? <small>(2–4 Sätze, max. 600 Zeichen)</small><textarea name="text" rows="3" maxlength="600" required placeholder="Wörtlich, wie die Person es geschrieben hat"><?= e($r['text']) ?></textarea></label>
+          <div class="cols">
+            <label>Name *<input type="text" name="name" maxlength="80" required value="<?= e($r['name']) ?>" placeholder="z. B. Dr. Frank Loggen"></label>
+            <label>Funktion <small>(optional)</small><input type="text" name="role" maxlength="60" value="<?= e($r['role']) ?>" placeholder="z. B. Inhaber"></label>
+            <label>Firma <small>(optional)</small><input type="text" name="firma" maxlength="80" value="<?= e($r['firma']) ?>" placeholder="z. B. Zahnarztpraxis Dr. Loggen"></label>
+            <label>Gehört zum Projekt<select name="projekt"><option value="">– keins –</option><?php foreach ($pjs as $k => $pj): ?><option value="<?= e($k) ?>"<?= $r['projekt'] === $k ? ' selected' : '' ?>><?= e($pj[0]) ?><?= $pj[1] === '' ? ' (noch ohne Projektseite)' : '' ?></option><?php endforeach; ?></select></label>
+          </div>
+          <div class="rev-foot">
+            <label class="btn btn-small btn-ghost file-btn"><?= $r['img'] ? 'Foto ersetzen' : 'Foto wählen (optional)' ?><input type="file" name="img" accept="image/jpeg,image/png,image/webp" onchange="this.closest('label').firstChild.textContent=this.files[0]?this.files[0].name:'Foto wählen'"></label>
+            <label class="check"><input type="checkbox" name="on" value="1"<?= !empty($r['on']) ? ' checked' : '' ?>> Auf der Webseite zeigen</label>
+            <button class="btn btn-small"><?= $new ? 'Hinzufügen' : 'Speichern' ?></button>
+          </div>
+        </form>
+      <?php return ob_get_clean(); }; ?>
+      <?php if ($R): ?><ul class="rev-list"><?php foreach ($R as $i => $r): ?>
+        <li class="<?= empty($r['on']) ? 'off' : '' ?>">
+          <div class="rev-head">
+            <span class="rev-pic"><?php if (!empty($r['img'])): ?><img src="<?= e(lx_url((string)$r['img'])) ?>" alt=""><?php else: ?><?= e(lx_review_initials((string)$r['name'])) ?><?php endif; ?></span>
+            <span class="lm"><b><?= e($r['name']) ?></b><small><?= e(implode(' · ', array_filter([$r['role'] ?? '', $r['firma'] ?? '', isset($pjs[$r['projekt'] ?? '']) ? 'Projekt: ' . $pjs[$r['projekt']][0] : '', empty($r['on']) ? 'ausgeblendet' : '']))) ?></small></span>
+            <span class="rev-acts">
+              <?php if ($i > 0): ?><form method="post"><?= $hidden('review_up') ?><input type="hidden" name="rid" value="<?= e($r['id']) ?>"><button class="btn btn-ghost btn-small" title="Nach oben">↑</button></form><?php endif; ?>
+              <?php if (!empty($r['img'])): ?><form method="post"><?= $hidden('review_img_delete') ?><input type="hidden" name="rid" value="<?= e($r['id']) ?>"><button class="btn btn-ghost btn-small">Foto entfernen</button></form><?php endif; ?>
+              <form method="post" onsubmit="return confirm('Kundenstimme löschen?')"><?= $hidden('review_delete') ?><input type="hidden" name="rid" value="<?= e($r['id']) ?>"><button class="btn btn-small btn-danger">Löschen</button></form>
+            </span>
+          </div>
+          <p class="rev-text">„<?= e($r['text']) ?>“</p>
+          <details class="tech"><summary>Bearbeiten</summary><?= $revForm($r) ?></details>
+        </li>
+      <?php endforeach; ?></ul><?php endif; ?>
+      <details class="tech"<?= $R ? '' : ' open' ?>><summary>+ Neue Kundenstimme</summary><?= $revForm(null) ?></details>
     </section>
 
     <!-- Bilder -->
@@ -1549,7 +1669,7 @@ function lead_row(array $x): string {
     $sub = implode(' · ', array_filter([$d['firma'] ? $d['name'] : '', lx_lead_branche($d), $d['ort']]));
     return '<li class="lead' . (empty($x['seen']) && $x['status'] === 'neu' ? ' unread' : '') . '"><a href="?tab=anfragen&amp;id=' . e($x['id']) . '">'
         . '<span class="temp t-' . $tk . '" title="Priorität ' . (int)$x['score'] . '/100">' . $tl . '</span>'
-        . '<span class="lm"><b>' . e($d['firma'] ?: $d['name']) . '</b><small>' . e($sub !== '' ? $sub : $d['email']) . '</small></span>'
+        . '<span class="lm"><b>' . (($x['type'] ?? '') === 'check' ? '🔎 ' : '') . e(($x['type'] ?? '') === 'check' ? lx_check_host($d['webseite']) : ($d['firma'] ?: $d['name'])) . '</b><small>' . e($sub !== '' ? $sub : $d['email']) . '</small></span>'
         . '<span class="lr"><span class="pill-s"><i class="dot st-' . e($x['status']) . '"></i>' . e(lx_lead_status()[$x['status']] ?? '') . '</span>'
         . (($x['follow'] ?? '') !== '' ? '<span class="follow-s' . ($x['follow'] <= date('Y-m-d') ? ' due' : '') . '">⏰ ' . e(date('d.m.', (int)strtotime($x['follow']))) . '</span>' : '<span class="rec-s">' . e($x['rec']) . '</span>')
         . '<small>' . e(lx_ago((int)$x['created'])) . '</small></span></a></li>';
@@ -1989,6 +2109,31 @@ function head(string $title, bool $app = false): void { ?>
   .tpl-ed { display: grid; gap: 8px; }
   details.restore summary { cursor: pointer; font-weight: 700; font-size: .84rem; color: var(--cobalt); white-space: nowrap; }
   details.restore .row { flex-wrap: nowrap; } details.restore input { min-width: 150px; }
+  /* Kundenstimmen */
+  .rev-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 10px; }
+  .rev-list > li { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: #fff; }
+  .rev-list > li.off { opacity: .62; }
+  .rev-head { display: flex; align-items: center; gap: 12px; }
+  .rev-head .lm { flex: 1; min-width: 0; display: grid; } .rev-head .lm small { color: var(--muted); }
+  .rev-pic { width: 42px; height: 42px; flex: none; border-radius: 50%; background: var(--ink); color: var(--sun); display: grid; place-items: center; font: 800 .9rem/1 "Jakarta", sans-serif; overflow: hidden; }
+  .rev-pic img { width: 100%; height: 100%; object-fit: cover; }
+  .rev-acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; } .rev-acts form { margin: 0; }
+  .rev-text { margin: 10px 0 6px; color: var(--ink); font-style: italic; line-height: 1.55; }
+  .rev-form { padding-top: 10px; }
+  .rev-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; } .rev-foot .check { margin: 0; }
+  /* Webseiten-Check */
+  .pill-check { background: #FFF1C2 !important; color: var(--ink); border-color: #F5D77A !important; }
+  .probe { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 0 0 18px; background: var(--paper); }
+  .probe-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .probe-head h3 { margin: 0; } .probe-head h3 small { font-weight: 500; color: var(--muted); font-size: .8rem; margin-left: 6px; } .probe-head form { margin: 0; }
+  .probe-sum { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+  .pb { padding: 3px 10px; border-radius: 999px; font: 700 .76rem/1.4 "Jakarta", sans-serif; }
+  .pb.bad { background: #FDE8E9; color: #A3262B; } .pb.warn { background: #FFF1C2; color: #7A5B00; } .pb.ok { background: #E4F6EF; color: #0F6B4E; }
+  .probe-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .9rem; }
+  .probe-list li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; line-height: 1.45; }
+  .probe-list i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font: 800 .72rem/1 "Jakarta", sans-serif; font-style: normal; margin-top: 1px; }
+  .pv-ok i { background: #E4F6EF; color: #0F6B4E; } .pv-warn i { background: #FFF1C2; color: #7A5B00; } .pv-bad i { background: #FDE8E9; color: #A3262B; } .pv-info i { background: #E8EDF5; color: var(--muted); }
+  .pv-ok { color: var(--muted); }
 </style>
 </head>
 <body class="<?= $app ? 'app' : 'auth-page' ?>">

@@ -694,6 +694,56 @@
     });
   }
 
+  /* ---------- Kostenloser Webseiten-Check ---------- */
+  var cform = document.getElementById("check-form");
+  if (cform) {
+    var cStarted = 0;
+    var cv = function (n) { var el = cform.elements[n]; return el && el.value ? String(el.value).trim() : ""; };
+    var cErr = function (msg) { var el = document.getElementById("cf-error"); el.textContent = msg; el.hidden = !msg; };
+    var looksUrl = function (u) { return /^(https?:\/\/)?(([a-z0-9-]+\.)+[a-z]{2,}|\d{1,3}(\.\d{1,3}){3})(:\d+)?(\/\S*)?$/i.test(u.replace(/\s+/g, "")); };
+    cform.addEventListener("focusin", function () { if (!cStarted) { cStarted = Date.now(); track("check-start"); } });
+    cform.addEventListener("input", function (e) { var f = e.target.closest && e.target.closest(".field.is-invalid"); if (f && e.target.value.trim()) f.classList.remove("is-invalid"); });
+    cform.addEventListener("change", function (e) { if (e.target.name === "consent") e.target.closest(".consent").classList.remove("is-err"); });
+    cform.addEventListener("submit", function (e) {
+      e.preventDefault(); cErr("");
+      var web = cform.elements.webseite, name = cform.elements.name, mail = cform.elements.email, consent = cform.elements.consent;
+      var badW = !looksUrl(web.value.trim()), badN = !name.value.trim(), badM = !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail.value.trim());
+      web.closest(".field").classList.toggle("is-invalid", badW);
+      name.closest(".field").classList.toggle("is-invalid", badN);
+      mail.closest(".field").classList.toggle("is-invalid", badM);
+      consent.closest(".consent").classList.toggle("is-err", !consent.checked);
+      if (badW) { cErr("Bitte geben Sie die Adresse Ihrer Webseite an, z. B. ihre-firma.de."); return web.focus(); }
+      if (badN) { cErr("Bitte geben Sie Ihren Namen an."); return name.focus(); }
+      if (badM) { cErr("Bitte geben Sie eine gültige E-Mail-Adresse an."); return mail.focus(); }
+      if (!consent.checked) return cErr("Bitte bestätigen Sie noch kurz den Hinweis zum Datenschutz.");
+      var data = { webseite: cv("webseite"), name: cv("name"), email: cv("email"), firma: cv("firma"), nachricht: cv("nachricht"), consent: 1,
+        website: cv("website"), t: cStarted ? Date.now() - cStarted : 0, src: source(), page: PAGE };
+      var host = data.webseite.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split(/[\/?#]/)[0].toLowerCase();
+      var done = function (h) {
+        cform.querySelector(".cf-body").hidden = true;
+        cform.querySelector(".lf-label").textContent = "Anfrage gesendet";
+        document.getElementById("cf-done-name").textContent = data.name ? ", " + data.name.split(" ")[0] : "";
+        document.getElementById("cf-done-host").textContent = h || host;
+        var d = document.getElementById("cf-done"); d.hidden = false; d.focus({ preventScroll: true });
+        track("check-sent");
+      };
+      if (data.website) return done(host); // Spam-Falle
+      if (!LIVE) return cErr("Vorschau-Modus: Der Check kann erst gesendet werden, wenn die Seite online liegt.");
+      var btn = document.getElementById("cf-submit"), bt = btn.querySelector("span");
+      btn.disabled = true; btn.classList.add("is-loading"); bt.textContent = "Ich sehe kurz nach …";
+      fetch(API + "?a=check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+        .then(function (res) { return res.json().catch(function () { return {}; }).then(function (j) { return { ok: res.ok, status: res.status, j: j }; }); })
+        .then(function (r) {
+          if (!r.ok || !r.j.ok) throw new Error(r.j.error || (r.ok ? "Unerwartete Antwort vom Server." : "Server-Fehler " + r.status + "."));
+          done(r.j.host);
+        })
+        .catch(function (err) {
+          cErr((err.message || "Senden hat nicht geklappt.") + (/Adresse|Namen|E-Mail|Datenschutz|eigene Seite/.test(err.message) ? "" : " Sie können mir auch direkt eine E-Mail schreiben."));
+          btn.disabled = false; btn.classList.remove("is-loading"); bt.textContent = "Kostenlosen Check anfordern";
+        });
+    });
+  }
+
   /* ---------- Einblenden ohne Animations-Modul (Fallback) ---------- */
   var reveals = document.querySelectorAll(".reveal");
   if (FX) {

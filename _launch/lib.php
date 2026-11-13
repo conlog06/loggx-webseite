@@ -148,6 +148,8 @@ function lx_defaults(): array {
             'bar_id' => '',
             'mail_from' => '',             // Absender für E-Mails (leer = noreply@eigene-domain)
             'mail_cc' => 'info@loggx.de',  // bekommt zusätzlich alle E-Mails an dich (Anfragen, Tests, Codes); mehrere mit Komma
+            'check_on' => true,            // Abschnitt „Kostenloser Webseiten-Check“ auf der Startseite
+            'check_time' => '3 Werktagen', // so schnell kommt die Einschätzung
             'weekly_on' => true,           // montags Wochenbericht per E-Mail
             'weekly_last' => '',
         ],
@@ -174,6 +176,8 @@ function lx_defaults(): array {
         // IndexNow (Bing, Yandex, Seznam …): neue/geänderte Seiten sofort melden
         'indexnow_key' => '',
         'indexnow_last' => [],
+        // Kundenstimmen (Admin → Inhalte → Kundenstimmen) – nur echte Rückmeldungen
+        'reviews' => [],
         // Terminvorschläge (Admin → Termine)
         'booking' => lx_bk_defaults(),
         'schema' => 2,
@@ -563,6 +567,12 @@ function lx_apply_site(string $html, array $s): string {
         if ($m[1] === '!') $on = !$on;
         return $on ? $m[3] : '';
     }, $html) ?? $html;
+    // Größere Bereiche ein-/ausblenden: <!--cms-if:schlüssel--> … <!--/cms-if:schlüssel-->
+    $html = preg_replace_callback('~<!--cms-if:(!?)([a-z_]+)-->(.*?)<!--/cms-if:\\1\\2-->~is', function ($m) use ($s) {
+        $on = !empty($s[$m[2]]) && trim((string)$s[$m[2]]) !== '';
+        if ($m[1] === '!') $on = !$on;
+        return $on ? $m[3] : '';
+    }, $html) ?? $html;
     // Links und Formular-Ziel
     $tel = lx_tel((string)$s['phone']);
     $mail = (string)$s['email'];
@@ -580,7 +590,69 @@ function lx_apply_site(string $html, array $s): string {
     }, $html) ?? $html;
     // Hinweis "gelb markierte Felder" nur zeigen, solange noch Platzhalter übrig sind
     if (strpos($html, 'class="placeholder"') === false) $html = preg_replace('~<p data-placeholder-note>.*?</p>\s*~is', '', $html) ?? $html;
+    // Kundenstimmen (Admin → Inhalte → Kundenstimmen)
+    if (strpos($html, '<!--cms:reviews') !== false) $html = lx_reviews_apply($html);
+    // Häufige Fragen als strukturierte Daten (FAQPage) – immer passend zum sichtbaren Text
+    $html = lx_faq_schema($html);
     return $html;
+}
+
+/** Text aus HTML für strukturierte Daten */
+function lx_plain(string $h): string {
+    return trim((string)preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags(str_replace(['<br>', '<br/>', '<br />'], ' ', $h)), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+}
+
+/* ---------- Kundenstimmen ---------- */
+/** Projekte, denen eine Kundenstimme zugeordnet werden kann: key => [Name, Seite] */
+function lx_review_projects(): array {
+    return ['dr-loggen' => ['Zahnarztpraxis Dr. Loggen', 'projekt-dr-loggen'], '4fun' => ['4 fun Fitness & Beauty', 'projekt-4fun'], 'reserved' => ['Reserved.', '']];
+}
+function lx_reviews(?array $c = null): array {
+    $c = $c ?? lx_config();
+    return array_values(array_filter((array)($c['reviews'] ?? []), fn($r) => is_array($r) && trim((string)($r['text'] ?? '')) !== ''));
+}
+function lx_review_initials(string $name): string {
+    $p = preg_split('/\s+/u', trim($name)) ?: [];
+    $i = ''; foreach ([reset($p), count($p) > 1 ? end($p) : ''] as $w) if ($w) $i .= mb_strtoupper(mb_substr($w, 0, 1));
+    return $i ?: '★';
+}
+function lx_review_card(array $r, bool $withLink): string {
+    $pr = lx_review_projects()[$r['projekt'] ?? ''] ?? null;
+    $who = implode(', ', array_filter([trim((string)($r['role'] ?? '')), trim((string)($r['firma'] ?? ''))]));
+    $pic = trim((string)($r['img'] ?? '')) !== ''
+        ? '<img src="' . e(lx_url((string)$r['img'])) . '" alt="" width="52" height="52" loading="lazy" decoding="async">'
+        : '<span aria-hidden="true">' . e(lx_review_initials((string)$r['name'])) . '</span>';
+    $h  = '<figure class="review spotlight reveal"><svg class="review-q" viewBox="0 0 48 36" aria-hidden="true"><path d="M0 36V22C0 9.6 6.4 2.3 19.2 0l2 5.4C14 7.4 10.6 11.5 10.4 18H20v18zm27 0V22C27 9.6 33.4 2.3 46.2 0l1.8 5.4C41 7.4 37.6 11.5 37.4 18H47v18z"/></svg>';
+    $h .= '<blockquote><p>' . nl2br(e(trim((string)$r['text']))) . '</p></blockquote>';
+    $h .= '<figcaption><span class="review-pic">' . $pic . '</span><span class="review-who"><b>' . e((string)$r['name']) . '</b>' . ($who !== '' ? '<small>' . e($who) . '</small>' : '') . '</span>';
+    if ($withLink && $pr && $pr[1] !== '') $h .= '<a class="review-link" href="' . e($pr[1]) . '">Projekt ansehen<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a>';
+    return $h . '</figcaption></figure>';
+}
+/** <!--cms:reviews-->…<!--/cms:reviews--> (alle) bzw. <!--cms:reviews:projekt-->…<!--/cms:reviews--> (nur dieses Projekt) */
+function lx_reviews_apply(string $html): string {
+    $all = array_values(array_filter(lx_reviews(), fn($r) => !empty($r['on'])));
+    return preg_replace_callback('~<!--cms:reviews(?::([a-z0-9-]+))?-->(.*?)<!--/cms:reviews-->~is', function ($m) use ($all) {
+        $f = (string)($m[1] ?? '');
+        $list = $f === '' ? array_slice($all, 0, 6) : array_values(array_filter($all, fn($r) => ($r['projekt'] ?? '') === $f));
+        if (!$list) return '';
+        $cards = implode('', array_map(fn($r) => lx_review_card($r, $f === ''), $list));
+        return str_replace(['{{reviews}}', '{{n}}'], [$cards, (string)count($list)], $m[2]);
+    }, $html) ?? $html;
+}
+
+/** FAQPage-JSON-LD aus allen <details class="faq">-Blöcken einer Seite */
+function lx_faq_schema(string $html): string {
+    if (stripos($html, '"FAQPage"') !== false) return $html;
+    if (!preg_match_all('~<details\b[^>]*class="faq\b[^"]*"[^>]*>\s*<summary\b[^>]*>(.*?)</summary>(.*?)</details>~is', $html, $m, PREG_SET_ORDER)) return $html;
+    $items = [];
+    foreach ($m as $x) {
+        $q = lx_plain($x[1]); $a = lx_plain($x[2]);
+        if ($q === '' || $a === '') continue;
+        $items[] = ['@type' => 'Question', 'name' => $q, 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $a]];
+    }
+    if (!$items) return $html;
+    $json = json_encode(['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $items], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG);
+    return preg_replace('~</head>~i', '  <script type="application/ld+json">' . $json . "</script>\n</head>", $html, 1) ?? $html;
 }
 
 /** Bilder, die im Admin-Bereich ersetzt werden können: slot => [Name, Hinweis, Standarddatei] */

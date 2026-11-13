@@ -59,13 +59,14 @@ Praxen und Gesundheitsberufe, Studios (Beauty, Fitness), Handwerksbetriebe, Gast
 
 ## Referenzen
 
-- [Zahnarztpraxis Dr. Frank Loggen](https://www.dr-loggen.de/)
-- [4 fun Fitness & Beauty](https://www.fitness4fun.de/)
+- [Zahnarztpraxis Dr. Frank Loggen](https://www.dr-loggen.de/) – Projektbeschreibung: $url/projekt-dr-loggen
+- [4 fun Fitness & Beauty](https://www.fitness4fun.de/) – Projektbeschreibung: $url/projekt-4fun
 
 ## Links
 
 - [Startseite]($url/): Leistungen, Designbeispiele, Preise, Ablauf, häufige Fragen
 - [Anfrage stellen]($url/#kontakt): Formular mit Paket-Empfehlung in drei Schritten
+- [Kostenloser Webseiten-Check]($url/#check): Einschätzung der bestehenden Webseite (Handy, Tempo, Google, Kontaktwege, Pflichtangaben) innerhalb von {$s['check_time']}
 - [Impressum]($url/impressum)
 
 ## Kontakt
