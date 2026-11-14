@@ -443,7 +443,6 @@ if ($post) {
             $row['text'] = $text; $row['name'] = $name;
             $row['role'] = trim(lx_cut(str_replace(["\r", "\n"], ' ', (string)($_POST['role'] ?? '')), 60));
             $row['firma'] = trim(lx_cut(str_replace(["\r", "\n"], ' ', (string)($_POST['firma'] ?? '')), 80));
-            $pj = (string)($_POST['projekt'] ?? ''); $row['projekt'] = isset(lx_review_projects()[$pj]) ? $pj : '';
             $row['on'] = !empty($_POST['on']);
             $up = $_FILES['img'] ?? null; $imgMsg = '';
             if ($up && ($up['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
@@ -1157,18 +1156,17 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
 
     <!-- Kundenstimmen -->
     <section class="card card-wide" id="stimmen">
-      <?php $R = lx_reviews($c); $pjs = lx_review_projects(); $vis = count(array_filter($R, fn($r) => !empty($r['on']))); ?>
+      <?php $R = lx_reviews($c); $vis = count(array_filter($R, fn($r) => !empty($r['on']))); ?>
       <h2>Kundenstimmen <?= $vis ? '<span class="tag on">' . $vis . ' sichtbar</span>' : '<span class="tag no">noch keine</span>' ?></h2>
-      <p class="hint">Erscheinen auf der Startseite unter „Referenzen“ (bis zu 6) und auf der passenden Projektseite. Solange keine sichtbar ist, bleibt der Abschnitt ausgeblendet.
+      <p class="hint">Erscheinen auf der Startseite unter „Referenzen“ (bis zu 6). Solange keine sichtbar ist, bleibt der Abschnitt ausgeblendet.
         <strong>Nur echte Rückmeldungen eintragen – mit Einverständnis der Person</strong> (Name, Text, Foto). Die Vorlage „Bitte um Kundenstimme“ unter <a href="?tab=anfragen#vorlagen">Anfragen → Antwortvorlagen</a> hilft beim Fragen.</p>
-      <?php $revForm = function (?array $r) use ($hidden, $pjs) { ob_start(); $new = $r === null; $r = $r ?? ['id' => '', 'text' => '', 'name' => '', 'role' => '', 'firma' => '', 'projekt' => '', 'on' => true, 'img' => '']; ?>
+      <?php $revForm = function (?array $r) use ($hidden) { ob_start(); $new = $r === null; $r = $r ?? ['id' => '', 'text' => '', 'name' => '', 'role' => '', 'firma' => '', 'on' => true, 'img' => '']; ?>
         <form method="post" enctype="multipart/form-data" class="stack rev-form"><?= $hidden('review_save') ?><input type="hidden" name="rid" value="<?= e($r['id']) ?>">
           <label>Was sagt die Person? <small>(2–4 Sätze, max. 600 Zeichen)</small><textarea name="text" rows="3" maxlength="600" required placeholder="Wörtlich, wie die Person es geschrieben hat"><?= e($r['text']) ?></textarea></label>
           <div class="cols">
             <label>Name *<input type="text" name="name" maxlength="80" required value="<?= e($r['name']) ?>" placeholder="z. B. Dr. Frank Loggen"></label>
             <label>Funktion <small>(optional)</small><input type="text" name="role" maxlength="60" value="<?= e($r['role']) ?>" placeholder="z. B. Inhaber"></label>
             <label>Firma <small>(optional)</small><input type="text" name="firma" maxlength="80" value="<?= e($r['firma']) ?>" placeholder="z. B. Zahnarztpraxis Dr. Loggen"></label>
-            <label>Gehört zum Projekt<select name="projekt"><option value="">– keins –</option><?php foreach ($pjs as $k => $pj): ?><option value="<?= e($k) ?>"<?= $r['projekt'] === $k ? ' selected' : '' ?>><?= e($pj[0]) ?><?= $pj[1] === '' ? ' (noch ohne Projektseite)' : '' ?></option><?php endforeach; ?></select></label>
           </div>
           <div class="rev-foot">
             <label class="btn btn-small btn-ghost file-btn"><?= $r['img'] ? 'Foto ersetzen' : 'Foto wählen (optional)' ?><input type="file" name="img" accept="image/jpeg,image/png,image/webp" onchange="this.closest('label').firstChild.textContent=this.files[0]?this.files[0].name:'Foto wählen'"></label>
@@ -1181,7 +1179,7 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
         <li class="<?= empty($r['on']) ? 'off' : '' ?>">
           <div class="rev-head">
             <span class="rev-pic"><?php if (!empty($r['img'])): ?><img src="<?= e(lx_url((string)$r['img'])) ?>" alt=""><?php else: ?><?= e(lx_review_initials((string)$r['name'])) ?><?php endif; ?></span>
-            <span class="lm"><b><?= e($r['name']) ?></b><small><?= e(implode(' · ', array_filter([$r['role'] ?? '', $r['firma'] ?? '', isset($pjs[$r['projekt'] ?? '']) ? 'Projekt: ' . $pjs[$r['projekt']][0] : '', empty($r['on']) ? 'ausgeblendet' : '']))) ?></small></span>
+            <span class="lm"><b><?= e($r['name']) ?></b><small><?= e(implode(' · ', array_filter([$r['role'] ?? '', $r['firma'] ?? '', empty($r['on']) ? 'ausgeblendet' : '']))) ?></small></span>
             <span class="rev-acts">
               <?php if ($i > 0): ?><form method="post"><?= $hidden('review_up') ?><input type="hidden" name="rid" value="<?= e($r['id']) ?>"><button class="btn btn-ghost btn-small" title="Nach oben">↑</button></form><?php endif; ?>
               <?php if (!empty($r['img'])): ?><form method="post"><?= $hidden('review_img_delete') ?><input type="hidden" name="rid" value="<?= e($r['id']) ?>"><button class="btn btn-ghost btn-small">Foto entfernen</button></form><?php endif; ?>

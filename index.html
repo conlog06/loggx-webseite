@@ -182,7 +182,6 @@
               <ul class="reference-tags"><li>Praxiswebseite</li><li>Online-Termine</li><li>6 Unterseiten</li></ul>
               <div class="reference-actions">
                 <button type="button" class="btn btn-yellow" data-preview="https://www.dr-loggen.de/" data-title="Zahnarztpraxis Dr. Loggen"><span>Live-Vorschau</span></button>
-                <a href="projekt-dr-loggen" class="reference-link reference-case">Projekt im Detail →</a>
                 <a href="https://www.dr-loggen.de/" target="_blank" rel="noopener" class="reference-link">dr-loggen.de ↗</a>
               </div>
             </div>
@@ -204,11 +203,41 @@
               <ul class="reference-tags"><li>Studio-Webseite</li><li>Kursplan</li><li>Angebotsformular</li></ul>
               <div class="reference-actions">
                 <button type="button" class="btn btn-yellow" data-preview="https://www.fitness4fun.de/" data-title="4 fun Fitness &amp; Beauty" data-embed="false" data-phone="false"><span>Vorschau</span></button>
-                <a href="projekt-4fun" class="reference-link reference-case">Projekt im Detail →</a>
                 <a href="https://www.fitness4fun.de/" target="_blank" rel="noopener" class="reference-link">fitness4fun.de ↗</a>
               </div>
             </div>
           </article>
+
+          <!-- Vorher / Nachher -->
+          <div class="ref-ba reveal" id="vorher-nachher">
+            <div class="ref-ba-head">
+              <div><h3>Vorher &amp; nachher</h3><p>Ziehen Sie den Regler: links die alte Startseite, rechts die neue.</p></div>
+              <div class="ref-ba-tabs" role="tablist" aria-label="Projekt wählen">
+                <button type="button" role="tab" id="bt-dr-loggen" aria-controls="ba-dr-loggen" aria-selected="true">Dr. Loggen</button>
+                <button type="button" role="tab" id="bt-4fun" aria-controls="ba-4fun" aria-selected="false" tabindex="-1">4 fun Fitness</button>
+              </div>
+            </div>
+            <div class="ref-ba-panel" id="ba-dr-loggen" role="tabpanel" aria-labelledby="bt-dr-loggen">
+              <div class="ba" style="--pos:50%">
+                <img class="ba-after" src="img/dr-loggen.jpg" data-cms-img="dr-loggen" alt="Neue Startseite von Zahnarztpraxis Dr. Loggen" width="1548" height="894" loading="lazy" decoding="async">
+                <div class="ba-before"><img src="img/vorher-dr-loggen.jpg" alt="Alte Startseite von Zahnarztpraxis Dr. Loggen (Stand Dezember 2025)" width="1548" height="894" loading="lazy" decoding="async"></div>
+                <span class="ba-tag ba-tag-l" aria-hidden="true">Vorher · 2025</span><span class="ba-tag ba-tag-r" aria-hidden="true">Nachher</span>
+                <span class="ba-line" aria-hidden="true"><span class="ba-knob"><svg viewBox="0 0 24 24"><path d="m9 6-6 6 6 6M15 6l6 6-6 6"/></svg></span></span>
+                <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Vergleich Zahnarztpraxis Dr. Loggen verschieben: links vorher, rechts nachher">
+              </div>
+              <p class="ref-ba-cap">Vorher (Stand Dezember 2025): schmale Spalte, kleine Schrift, Termine nur per Telefon. Jetzt: Online-Terminbuchung gleich oben, Sprechzeiten auf einen Blick.</p>
+            </div>
+            <div class="ref-ba-panel" id="ba-4fun" role="tabpanel" aria-labelledby="bt-4fun" hidden>
+              <div class="ba" style="--pos:50%">
+                <img class="ba-after" src="img/fitness4fun.jpg" data-cms-img="fitness4fun" alt="Neue Startseite von 4 fun Fitness &amp; Beauty" width="1548" height="894" loading="lazy" decoding="async">
+                <div class="ba-before"><img src="img/vorher-4fun.jpg" alt="Alte Startseite von 4 fun Fitness &amp; Beauty (Stand 2016)" width="1548" height="894" loading="lazy" decoding="async"></div>
+                <span class="ba-tag ba-tag-l" aria-hidden="true">Vorher · 2016</span><span class="ba-tag ba-tag-r" aria-hidden="true">Nachher</span>
+                <span class="ba-line" aria-hidden="true"><span class="ba-knob"><svg viewBox="0 0 24 24"><path d="m9 6-6 6 6 6M15 6l6 6-6 6"/></svg></span></span>
+                <input class="ba-range" type="range" min="0" max="100" value="50" step="0.5" aria-label="Vergleich 4 fun Fitness &amp; Beauty verschieben: links vorher, rechts nachher">
+              </div>
+              <p class="ref-ba-cap">Vorher (Stand 2016): Werbefoto statt Studio, Aktion nur als PDF. Jetzt: echtes Studiofoto und „Persönliches Angebot anfordern“ als großer Button.</p>
+            </div>
+          </div>
 
           <!-- Demnächst: drittes Beispiel -->
           <aside class="ref-soon reveal" aria-label="Demnächst: neue Referenz">

@@ -744,6 +744,24 @@
     });
   }
 
+  /* ---------- Vorher/Nachher: Projekt wechseln ---------- */
+  document.querySelectorAll(".ref-ba-tabs").forEach(function (tl) {
+    var tabs = [].slice.call(tl.querySelectorAll('[role="tab"]'));
+    var pick = function (t, focus) {
+      tabs.forEach(function (x) {
+        var on = x === t; x.setAttribute("aria-selected", on ? "true" : "false"); x.tabIndex = on ? 0 : -1;
+        var pnl = document.getElementById(x.getAttribute("aria-controls")); if (pnl) pnl.hidden = !on;
+      });
+      if (focus) t.focus();
+    };
+    tabs.forEach(function (t, i) {
+      t.addEventListener("click", function () { pick(t); });
+      t.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); pick(tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length], true); }
+      });
+    });
+  });
+
   /* ---------- Vorher/Nachher-Regler ---------- */
   document.querySelectorAll(".ba").forEach(function (ba) {
     var r = ba.querySelector(".ba-range"); if (!r) return;

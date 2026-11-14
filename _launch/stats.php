@@ -17,8 +17,6 @@ const LX_STATS_KEEP_MONTHS = 14;
 function lx_stats_pages(): array {
     return [
         'index.html' => 'Startseite',
-        'projekt-dr-loggen.html' => 'Projekt: Dr. Loggen',
-        'projekt-4fun.html' => 'Projekt: 4 fun',
         'angebot/index.html' => 'Werbe-Landingpage',
         'webseite-praxis.html' => 'Branche: Praxen',
         'webseite-studio.html' => 'Branche: Studios',
@@ -36,7 +34,7 @@ function lx_stats_pages(): array {
 /** Abschnitte in Reihenfolge (für "Wie weit wird gescrollt?") – Startseite und Landingpage (lp-…) */
 function lx_stats_sections(): array {
     return ['top' => 'Start', 'referenzen' => 'Referenzen', 'stimmen' => 'Kundenstimmen', 'leistungen' => 'Leistungen', 'beispiele' => 'Beispiele', 'ablauf' => 'Ablauf',
-            'preise' => 'Preise', 'ueber' => 'Über mich', 'check' => 'Webseiten-Check', 'vorher-nachher' => 'Vorher/Nachher', 'faq' => 'Fragen', 'kontakt' => 'Anfrage'];
+            'preise' => 'Preise', 'ueber' => 'Über mich', 'check' => 'Webseiten-Check', 'faq' => 'Fragen', 'kontakt' => 'Anfrage'];
 }
 function lx_stats_sections_lp(): array {
     return ['lp-top' => 'Start', 'lp-vorteile' => 'Vorteile', 'lp-beispiele' => 'Beispiele', 'lp-ablauf' => 'Ablauf',
@@ -50,8 +48,7 @@ function lx_stats_clicks(): array {
             'example' => 'Beispielseite angesehen', 'example-cta' => 'Beispiel → „So etwas für meinen Betrieb“', 'ref' => 'Referenz-Webseite besucht',
             'mail' => 'E-Mail-Adresse geklickt', 'tel' => 'Telefonnummer geklickt',
             'form-start' => 'Anfrage begonnen', 'form-step2' => 'Anfrage: Schritt 2', 'form-step3' => 'Anfrage: Schritt 3',
-            'check-hero' => 'Startseite: Link „Webseiten-Check“', 'check-start' => 'Webseiten-Check begonnen', 'check-sent' => 'Webseiten-Check angefordert',
-            'case-cta' => 'Projektseite: Anfrage-Button', 'ba-use' => 'Projektseite: Vorher/Nachher benutzt'];
+            'check-hero' => 'Startseite: Link „Webseiten-Check“', 'check-start' => 'Webseiten-Check begonnen', 'check-sent' => 'Webseiten-Check angefordert', 'ba-use' => 'Vorher/Nachher benutzt'];
 }
 
 function lx_stats_is_bot(string $ua): bool {
