@@ -744,6 +744,30 @@
     });
   }
 
+  /* ---------- Vorher/Nachher-Regler ---------- */
+  document.querySelectorAll(".ba").forEach(function (ba) {
+    var r = ba.querySelector(".ba-range"); if (!r) return;
+    var set = function (v) { ba.style.setProperty("--pos", v + "%"); };
+    r.addEventListener("input", function () { set(r.value); if (!ba._used) { ba._used = 1; track("ba-use"); } });
+    r.addEventListener("pointerdown", function () { ba.classList.add("is-drag"); });
+    window.addEventListener("pointerup", function () { ba.classList.remove("is-drag"); });
+    // Kleiner Hinweis beim ersten Sichtbarwerden, dass man ziehen kann
+    if (!("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var io = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return; io.disconnect();
+      var t0 = null, keys = [[0, 50], [700, 28], [1500, 70], [2200, 50]];
+      var step = function (ts) {
+        if (ba._used) return;
+        if (t0 === null) t0 = ts;
+        var t = ts - t0 - 600, v = 50;
+        if (t > 0) { for (var i = 1; i < keys.length; i++) if (t <= keys[i][0]) { var a = keys[i - 1], b = keys[i], k = (t - a[0]) / (b[0] - a[0]); k = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; v = a[1] + (b[1] - a[1]) * k; break; } if (t > keys[keys.length - 1][0]) { set(50); r.value = 50; return; } }
+        set(v); r.value = v; requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }, { threshold: .6 });
+    io.observe(ba);
+  });
+
   /* ---------- Einblenden ohne Animations-Modul (Fallback) ---------- */
   var reveals = document.querySelectorAll(".reveal");
   if (FX) {
