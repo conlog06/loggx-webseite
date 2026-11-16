@@ -160,6 +160,23 @@ if ($post) {
             break;
         case 'launch_now':
             $c['mode'] = 'live'; lx_save_config($c); lx_indexnow_later(); flash('Die Seite ist jetzt öffentlich.'); break;
+        case 'search_verify':
+            // Code aus dem eingefügten <meta …>-Tag oder direkt übernehmen
+            $code = function (string $k): string {
+                $v = trim((string)($_POST[$k] ?? ''));
+                if (preg_match('/content\s*=\s*["\']([^"\']+)/i', $v, $m)) $v = $m[1];
+                $v = trim($v);
+                return preg_match('/^[A-Za-z0-9_\-=+\/.]{6,120}$/', $v) ? $v : '';
+            };
+            $bad = [];
+            foreach (['verify_google' => 'Google', 'verify_bing' => 'Bing', 'verify_yandex' => 'Yandex', 'verify_facebook' => 'Facebook'] as $k => $t) {
+                $raw = trim((string)($_POST[$k] ?? ''));
+                $c['site'][$k] = $code($k);
+                if ($raw !== '' && $c['site'][$k] === '') $bad[] = $t;
+            }
+            lx_save_config($c);
+            flash($bad ? 'Gespeichert, aber nicht erkannt: ' . implode(', ', $bad) . ' – bitte den Code bzw. das ganze <meta>-Tag einfügen.' : 'Gespeichert. Jetzt in der jeweiligen Suchmaschine auf „Bestätigen“ klicken.', $bad ? 'warn' : 'ok');
+            back('#suchmaschinen');
         case 'indexnow':
             if (PHP_SAPI === 'cli-server') { flash('Lokal (Testserver) wird nichts gemeldet – das geht nur auf loggx.de.', 'warn'); break; }
             if (lx_effective_mode($c) !== 'live') { flash('Die Seite ist noch nicht öffentlich – erst nach dem Launch melden.', 'warn'); break; }
@@ -1295,7 +1312,7 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
       <button class="btn btn-sun" onclick="return confirm('Seite jetzt für alle freischalten?')">Jetzt veröffentlichen</button></form>
     <?php endif; ?>
   </section>
-  <nav class="subnav" aria-label="Abschnitte"><a href="#status">Status &amp; Launch</a><a href="#zugang">Zugänge</a><a href="#benachrichtigungen">Benachrichtigungen</a><a href="#indexnow">Suchmaschinen</a></nav>
+  <nav class="subnav" aria-label="Abschnitte"><a href="#status">Status &amp; Launch</a><a href="#zugang">Zugänge</a><a href="#benachrichtigungen">Benachrichtigungen</a><a href="#suchmaschinen">Suchmaschinen</a></nav>
   <div class="grid">
     <!-- Status & Launch -->
     <section class="card" id="status">
@@ -1371,6 +1388,32 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
       <?php endif; ?>
 
     </section>
+    <!-- Suchmaschinen -->
+    <?php $S = $c['site']; $sm = rtrim(lx_abs_url(''), '/') . '/sitemap.xml'; $vOk = fn($k) => !empty($S[$k]) ? '<span class="tag on">Code hinterlegt</span>' : '<span class="tag no">offen</span>'; ?>
+    <section class="card card-wide" id="suchmaschinen">
+      <h2>Bei allen Suchmaschinen anmelden</h2>
+      <p class="hint">Mit Google und Bing deckst du praktisch alle Suchmaschinen ab: <strong>Yahoo, DuckDuckGo und Ecosia</strong> zeigen Ergebnisse von Bing. Einmal einrichten, danach läuft es von selbst.<?= $eff !== 'live' ? ' <strong>Achtung: Die Seite ist noch nicht öffentlich – Suchmaschinen sehen sie erst nach dem Launch.</strong>' : '' ?></p>
+      <form method="post" class="stack se-form"><?= $hidden('search_verify') ?>
+        <ol class="se-steps">
+          <li><div class="se-h"><b>Google Search Console</b> <?= $vOk('verify_google') ?></div>
+            <p><a href="https://search.google.com/search-console" target="_blank" rel="noopener">search.google.com/search-console ↗</a> öffnen → „Property hinzufügen“ → rechts <b>URL-Präfix</b> mit <code><?= e(rtrim(lx_abs_url(''), '/') . '/') ?></code> → Bestätigungsmethode <b>HTML-Tag</b> → das Tag kopieren und hier einfügen → speichern → bei Google „Bestätigen“. Danach links unter <b>Sitemaps</b> <code>sitemap.xml</code> eintragen.</p>
+            <input type="text" name="verify_google" value="<?= e($S['verify_google']) ?>" placeholder='<meta name="google-site-verification" content="…"> oder nur der Code' autocomplete="off" spellcheck="false"></li>
+          <li><div class="se-h"><b>Bing Webmaster Tools</b> <span class="se-sub">(auch Yahoo, DuckDuckGo, Ecosia)</span> <?= $vOk('verify_bing') ?></div>
+            <p><a href="https://www.bing.com/webmasters" target="_blank" rel="noopener">bing.com/webmasters ↗</a> öffnen. Am einfachsten: <b>„Aus Google Search Console importieren“</b> – dann ist alles übernommen, auch die Sitemap, und du brauchst hier nichts einzutragen. Sonst Methode „HTML-Meta-Tag“ wählen und das Tag hier einfügen.</p>
+            <input type="text" name="verify_bing" value="<?= e($S['verify_bing']) ?>" placeholder='<meta name="msvalidate.01" content="…"> (nur ohne Import nötig)' autocomplete="off" spellcheck="false"></li>
+          <li><div class="se-h"><b>Google-Unternehmensprofil</b> <span class="se-sub">(Google Maps)</span></div>
+            <p>Unter <a href="https://www.google.com/business/" target="_blank" rel="noopener">google.com/business ↗</a> bei „Website“ diesen Link eintragen – so siehst du in der Statistik, wer über das Profil kommt:</p>
+            <div class="se-copy"><code><?= e(rtrim(lx_abs_url(''), '/') . '/?utm_source=google-profil&utm_campaign=profil') ?></code><button type="button" class="btn btn-ghost btn-small" data-copy="<?= e(rtrim(lx_abs_url(''), '/') . '/?utm_source=google-profil&utm_campaign=profil') ?>">Kopieren</button></div></li>
+          <li><div class="se-h"><b>Weitere</b> <span class="se-sub">(optional)</span></div>
+            <div class="cols">
+              <label>Yandex <?= $vOk('verify_yandex') ?><input type="text" name="verify_yandex" value="<?= e($S['verify_yandex']) ?>" placeholder="yandex-verification" autocomplete="off" spellcheck="false"></label>
+              <label>Facebook-Domain <?= $vOk('verify_facebook') ?><input type="text" name="verify_facebook" value="<?= e($S['verify_facebook']) ?>" placeholder="facebook-domain-verification" autocomplete="off" spellcheck="false"></label>
+            </div></li>
+        </ol>
+        <div class="btnrow"><button class="btn">Codes speichern</button><span class="hint" style="margin:0">Sitemap: <code><?= e($sm) ?></code> <button type="button" class="btn btn-ghost btn-small" data-copy="<?= e($sm) ?>">Kopieren</button></span></div>
+      </form>
+    </section>
+
     <!-- IndexNow -->
     <section class="card" id="indexnow">
       <h2>Bing &amp; Co. sofort informieren</h2>
@@ -2269,6 +2312,14 @@ function head(string $title, bool $app = false): void { ?>
   .utm-row span { font-weight: 700; font-size: .9rem; }
   .utm-row code { font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
   @media (max-width: 760px) { .visits li { grid-template-columns: 1fr; gap: 6px; } .v-when { display: flex; align-items: baseline; gap: 10px; } .cols-2in { grid-template-columns: 1fr; } .utm-row { grid-template-columns: 1fr auto; } .utm-row code { grid-column: 1 / -1; grid-row: 2; } .live-upd { margin-left: 0; } }
+  .se-steps { margin: 0; padding: 0 0 0 1.3rem; display: grid; gap: 18px; }
+  .se-steps li { padding-left: 4px; } .se-steps li::marker { font-weight: 800; color: var(--ink); }
+  .se-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .se-sub { color: var(--muted); font-size: .86rem; }
+  .se-steps label .tag { justify-self: start; width: max-content; margin: 2px 0 4px; }
+  .se-steps p { margin: 0 0 8px; color: var(--muted); font-size: .92rem; line-height: 1.55; }
+  .se-steps input[type=text] { width: 100%; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85rem; }
+  .se-copy { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .se-copy code { font-size: .8rem; overflow-wrap: anywhere; }
 </style>
 </head>
 <body class="<?= $app ? 'app' : 'auth-page' ?>">

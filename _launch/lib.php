@@ -148,6 +148,7 @@ function lx_defaults(): array {
             'bar_id' => '',
             'mail_from' => '',             // Absender für E-Mails (leer = noreply@eigene-domain)
             'mail_cc' => 'info@loggx.de',  // bekommt zusätzlich alle E-Mails an dich (Anfragen, Tests, Codes); mehrere mit Komma
+            'verify_google' => '', 'verify_bing' => '', 'verify_yandex' => '', 'verify_facebook' => '', // Bestätigungscodes der Suchmaschinen
             'check_on' => true,            // Abschnitt „Kostenloser Webseiten-Check“ auf der Startseite
             'check_time' => '3 Werktagen', // so schnell kommt die Einschätzung
             'weekly_on' => true,           // montags Wochenbericht per E-Mail
@@ -592,6 +593,11 @@ function lx_apply_site(string $html, array $s): string {
     if (strpos($html, 'class="placeholder"') === false) $html = preg_replace('~<p data-placeholder-note>.*?</p>\s*~is', '', $html) ?? $html;
     // Kundenstimmen (Admin → Inhalte → Kundenstimmen)
     if (strpos($html, '<!--cms:reviews') !== false) $html = lx_reviews_apply($html);
+    // Bestätigungscodes für Google Search Console, Bing Webmaster Tools usw.
+    $vm = ['verify_google' => 'google-site-verification', 'verify_bing' => 'msvalidate.01', 'verify_yandex' => 'yandex-verification', 'verify_facebook' => 'facebook-domain-verification'];
+    $tags = '';
+    foreach ($vm as $k => $name) { $v = (string)($s[$k] ?? ''); if ($v !== '' && preg_match('/^[A-Za-z0-9_\-=+\/.]{6,120}$/', $v)) $tags .= '  <meta name="' . $name . '" content="' . $v . '">' . "\n"; }
+    if ($tags !== '' && stripos($html, 'name="google-site-verification"') === false) $html = preg_replace('~</head>~i', $tags . '</head>', $html, 1) ?? $html;
     // Häufige Fragen als strukturierte Daten (FAQPage) – immer passend zum sichtbaren Text
     $html = lx_faq_schema($html);
     return $html;
