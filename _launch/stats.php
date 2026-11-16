@@ -85,7 +85,7 @@ function lx_stats_browser(string $ua): string {
 /** Herkunft: Suchmaschine, soziales Netzwerk (auch In-App-Browser ohne Referrer), andere Seite oder direkt */
 function lx_stats_source(string $ua = ''): string {
     $utm = trim((string)($_GET['utm_source'] ?? ''));
-    if ($utm !== '') return mb_strtolower(mb_substr((string)preg_replace('/[^\w.\- ]/u', '', $utm), 0, 40));
+    if ($utm !== '') return lx_stats_source_name($utm);
     $ref = (string)($_SERVER['HTTP_REFERER'] ?? '');
     $host = strtolower((string)parse_url($ref, PHP_URL_HOST));
     if ($host === '') {
@@ -98,13 +98,75 @@ function lx_stats_source(string $ua = ''): string {
     $own = (string)preg_replace('/:\d+$/', '', strtolower((string)($_SERVER['HTTP_HOST'] ?? '')));
     $own = (string)preg_replace('/^www\./', '', $own);
     if ($host === $own || ($own !== '' && str_ends_with($host, '.' . $own))) return 'intern';
-    $map = ['maps.google' => 'Google Maps', 'google.' => 'Google', 'bing.' => 'Bing', 'duckduckgo.' => 'DuckDuckGo', 'ecosia.' => 'Ecosia', 'yahoo.' => 'Yahoo',
-            'instagram.' => 'Instagram', 'facebook.' => 'Facebook', 'fb.' => 'Facebook', 'linkedin.' => 'LinkedIn', 'lnkd.' => 'LinkedIn',
-            'tiktok.' => 'TikTok', 'youtube.' => 'YouTube', 'pinterest.' => 'Pinterest', 'whatsapp.' => 'WhatsApp', 'linktr.ee' => 'Linktree',
-            't.co' => 'X / Twitter', 'twitter.' => 'X / Twitter', 'x.com' => 'X / Twitter', 'github.' => 'GitHub', 'reserved' => 'Reserved.'];
-    foreach ($map as $needle => $name) if (strpos($host, $needle) !== false) return $name;
-    return (string)preg_replace('/^www\./', '', $host);
+    return lx_stats_source_name($host);
 }
+/** Einheitlicher Name für eine Quelle (Domain, utm_source oder Angabe aus dem Formular) */
+function lx_stats_source_name(string $raw): string {
+    $raw = mb_strtolower(trim((string)preg_replace('/[^\w.\- \/]/u', '', $raw)));
+    if ($raw === '' || $raw === 'direkt') return 'direkt';
+    $raw = (string)preg_replace('~^https?://~', '', $raw);
+    $raw = (string)preg_replace('~^www\.~', '', explode('/', $raw)[0]);
+    $map = ['maps.google' => 'Google Maps', 'google' => 'Google', 'bing' => 'Bing', 'duckduckgo' => 'DuckDuckGo', 'ecosia' => 'Ecosia', 'yahoo' => 'Yahoo',
+            'instagram' => 'Instagram', 'l.instagram' => 'Instagram', 'ig' => 'Instagram', 'facebook' => 'Facebook', 'fb' => 'Facebook', 'linkedin' => 'LinkedIn', 'lnkd' => 'LinkedIn',
+            'tiktok' => 'TikTok', 'youtube' => 'YouTube', 'pinterest' => 'Pinterest', 'whatsapp' => 'WhatsApp', 'wa.me' => 'WhatsApp', 'linktr.ee' => 'Linktree',
+            't.co' => 'X / Twitter', 'twitter' => 'X / Twitter', 'x.com' => 'X / Twitter', 'github' => 'GitHub', 'reserved' => 'Reserved.', 'chatgpt' => 'ChatGPT', 'openai' => 'ChatGPT',
+            'perplexity' => 'Perplexity', 'google-profil' => 'Google-Profil', 'gbp' => 'Google-Profil', 'email-signatur' => 'E-Mail-Signatur', 'email' => 'E-Mail', 'mail' => 'E-Mail', 'signatur' => 'E-Mail', 'qr' => 'QR-Code', 'flyer' => 'Flyer / QR-Code', 'visitenkarte' => 'Visitenkarte'];
+    if (isset($map[$raw])) return $map[$raw];
+    $labels = explode('.', $raw);
+    foreach ($map as $needle => $name) {
+        $hit = strpos($needle, '.') !== false ? ($raw === $needle || str_starts_with($raw, $needle . '.') || str_starts_with($raw, $needle) && str_contains($needle, '.') && strlen($needle) > 4 || str_ends_with($raw, '.' . $needle))
+                                              : in_array($needle, $labels, true);
+        if ($hit) return $name;
+    }
+    return mb_substr($raw, 0, 40);
+}
+/** Ungefährer Standort aus den Cloudflare-Kopfzeilen (nur wenn die Anfrage wirklich über Cloudflare kam) */
+function lx_stats_geo(): array {
+    $viaCf = lx_ip_in((string)($_SERVER['REMOTE_ADDR'] ?? ''), lx_cloudflare_ranges()) || (getenv('LX_PROBE_LOCAL') === '1' && PHP_SAPI === 'cli-server');
+    if (!$viaCf) return ['', ''];
+    $cc = strtoupper(trim((string)($_SERVER['HTTP_CF_IPCOUNTRY'] ?? '')));
+    if (!preg_match('/^[A-Z]{2}$/', $cc) || in_array($cc, ['XX', 'T1'], true)) $cc = '';
+    $city = trim((string)($_SERVER['HTTP_CF_IPCITY'] ?? ''));
+    if ($city !== '' && !mb_check_encoding($city, 'UTF-8')) $city = mb_convert_encoding($city, 'UTF-8', 'ISO-8859-1');
+    $city = mb_substr((string)preg_replace('/[^\p{L}\p{M} .\'\-()]/u', '', $city), 0, 40);
+    return [$cc, $city];
+}
+function lx_stats_country(string $cc): string {
+    static $m = ['DE' => 'Deutschland', 'AT' => 'Österreich', 'CH' => 'Schweiz', 'NL' => 'Niederlande', 'BE' => 'Belgien', 'LU' => 'Luxemburg', 'FR' => 'Frankreich',
+        'PL' => 'Polen', 'DK' => 'Dänemark', 'CZ' => 'Tschechien', 'IT' => 'Italien', 'ES' => 'Spanien', 'PT' => 'Portugal', 'GB' => 'Großbritannien', 'IE' => 'Irland',
+        'SE' => 'Schweden', 'NO' => 'Norwegen', 'FI' => 'Finnland', 'TR' => 'Türkei', 'GR' => 'Griechenland', 'US' => 'USA', 'CA' => 'Kanada', 'RU' => 'Russland',
+        'UA' => 'Ukraine', 'RO' => 'Rumänien', 'HU' => 'Ungarn', 'HR' => 'Kroatien', 'IN' => 'Indien', 'CN' => 'China', 'SG' => 'Singapur', 'BR' => 'Brasilien', 'AU' => 'Australien', 'JP' => 'Japan'];
+    if ($cc === '') return 'Unbekannt';
+    $flag = mb_chr(0x1F1E6 + ord($cc[0]) - 65) . mb_chr(0x1F1E6 + ord($cc[1]) - 65);
+    return $flag . ' ' . ($m[$cc] ?? $cc);
+}
+/** Anonymer Tages-Prüfwert des aktuellen Besuchers (gleiches Verfahren wie beim Zählen) */
+function lx_stats_hash(?array $today = null): ?string {
+    $today = $today ?? lx_read('stats-heute', []);
+    if (($today['day'] ?? '') !== date('Y-m-d') || empty($today['salt'])) return null;
+    return substr(hash('sha256', $today['salt'] . '|' . lx_remote_ip() . '|' . (string)($_SERVER['HTTP_USER_AGENT'] ?? '')), 0, 16);
+}
+
+/* ---------- Letzte Besuche (für „Live“ im Admin, höchstens 3 Tage, ohne IP-Adresse) ---------- */
+const LX_LIVE_KEEP = 72 * 3600;
+function lx_stats_live_update(string $hash, callable $fn): void {
+    $L = lx_read('stats-live', []);
+    $now = time();
+    $L = array_filter($L, fn($v) => is_array($v) && (int)($v['t'] ?? 0) > $now - LX_LIVE_KEEP);
+    $e = $L[$hash] ?? null;
+    $e = $fn($e);
+    if ($e === null) return;
+    $L[$hash] = $e;
+    if (count($L) > 120) { uasort($L, fn($a, $b) => $b['t'] <=> $a['t']); $L = array_slice($L, 0, 100, true); }
+    lx_write('stats-live', $L, false);
+}
+/** Liste der letzten Besuche, neueste zuerst */
+function lx_stats_live(int $limit = 30): array {
+    $L = array_filter(lx_read('stats-live', []), fn($v) => is_array($v) && (int)($v['t'] ?? 0) > time() - LX_LIVE_KEEP);
+    uasort($L, fn($a, $b) => $b['t'] <=> $a['t']);
+    return array_slice(array_values($L), 0, $limit);
+}
+
 function lx_stats_skip(string $ua): bool {
     return lx_stats_is_bot($ua)
         || ($_SERVER['HTTP_DNT'] ?? '') === '1' || ($_SERVER['HTTP_SEC_GPC'] ?? '') === '1'
@@ -113,7 +175,7 @@ function lx_stats_skip(string $ua): bool {
 
 function lx_stats_empty_day(): array {
     return ['v' => 0, 'u' => 0, 'a' => 0, 'p' => [], 'r' => [], 'g' => ['m' => 0, 't' => 0, 'd' => 0], 'os' => [], 'br' => [],
-            'h' => array_fill(0, 24, 0), 'cp' => [], 's' => [], 'c' => [], 't' => 0, 'e' => 0, 'ev' => 0];
+            'h' => array_fill(0, 24, 0), 'cp' => [], 's' => [], 'c' => [], 't' => 0, 'e' => 0, 'ev' => 0, 'ct' => [], 'ci' => []];
 }
 /** Mit Dateisperre lesen, ändern und schreiben (älterer Name, wird noch benutzt) */
 function lx_stats_locked(callable $fn) { return lx_locked('stats', $fn); }
@@ -140,13 +202,25 @@ function lx_stats_track(string $page): void {
         $day = date('Y-m-d');
         $source = lx_stats_source($ua);
         $camp = mb_substr((string)preg_replace('/[^\w.\- ]/u', '', (string)($_GET['utm_campaign'] ?? '')), 0, 40);
-        lx_stats_update(function (array &$d) use ($page, $day, $source, $ua, $camp) {
+        [$cc, $city] = lx_stats_geo();
+        lx_stats_update(function (array &$d) use ($page, $day, $source, $ua, $camp, $cc, $city) {
             // Tages-Hash für "Besucher": Zufallswert gilt nur heute und wird danach verworfen
             $today = lx_read('stats-heute', []);
             if (($today['day'] ?? '') !== $day) $today = ['day' => $day, 'salt' => bin2hex(random_bytes(16)), 'seen' => []];
             $hash = substr(hash('sha256', $today['salt'] . '|' . lx_remote_ip() . '|' . $ua), 0, 16);
             $isNew = !isset($today['seen'][$hash]);
-            if ($isNew) { $today['seen'][$hash] = 1; lx_write('stats-heute', $today); }
+            if ($isNew) { $today['seen'][$hash] = 1; lx_write('stats-heute', $today, false); }
+            // Letzte Besuche: Weg durch die Seite
+            lx_stats_live_update($hash, function (?array $e) use ($page, $source, $ua, $camp, $cc, $city) {
+                $now = time();
+                if ($e === null) $e = ['t0' => $now, 'p' => [], 'src' => $source, 'cp' => $camp, 'dev' => lx_stats_device($ua), 'os' => lx_stats_os($ua),
+                                       'br' => lx_stats_browser($ua), 'cc' => $cc, 'city' => $city, 'c' => [], 'd' => 0, 'lead' => 0];
+                if ($e['src'] === 'intern' && $source !== 'intern') $e['src'] = $source;
+                if (end($e['p']) !== $page || !$e['p']) $e['p'][] = $page;
+                $e['p'] = array_slice($e['p'], -12);
+                $e['t'] = $now;
+                return $e;
+            });
             $d['v']++;
             if ($page === 'danke.html') $d['a']++; // alte Formular-Variante (ohne Server)
             $d['p'][$page] = ($d['p'][$page] ?? 0) + 1;
@@ -158,6 +232,8 @@ function lx_stats_track(string $page): void {
                 $br = lx_stats_browser($ua); $d['br'][$br] = ($d['br'][$br] ?? 0) + 1;
                 if ($source !== 'intern') $d['r'][$source] = ($d['r'][$source] ?? 0) + 1;
                 if ($camp !== '') $d['cp'][$camp] = ($d['cp'][$camp] ?? 0) + 1;
+                $ctk = $cc ?: '??'; $d['ct'][$ctk] = ($d['ct'][$ctk] ?? 0) + 1;
+                if ($city !== '') { $d['ci'][$city] = ($d['ci'][$city] ?? 0) + 1; if (count($d['ci']) > 80) { arsort($d['ci']); $d['ci'] = array_slice($d['ci'], 0, 60, true); } }
                 if (count($d['r']) > 60) { arsort($d['r']); $d['r'] = array_slice($d['r'], 0, 50, true); }
             }
         });
@@ -183,12 +259,26 @@ function lx_stats_event(array $in): void {
         $d['t'] += $dur;
         if ($engaged) $d['e']++;
         $d['ev']++;
+        $h = lx_stats_hash();
+        if ($h) lx_stats_live_update($h, function (?array $e) use ($clicks, $dur) {
+            if ($e === null) return null;
+            $e['c'] = array_values(array_unique(array_merge($e['c'], array_slice($clicks, 0, 20))));
+            $e['d'] = min(7200, (int)$e['d'] + $dur);
+            $e['t'] = max((int)$e['t'], time() - 5);
+            return $e;
+        });
     });
 }
 
 /** Anfrage zählen (aus leads.php) */
 function lx_stats_lead(): void {
-    try { lx_stats_update(function (array &$d) { $d['a']++; }); } catch (Throwable $e) {}
+    try {
+        lx_stats_update(function (array &$d) {
+            $d['a']++;
+            $h = lx_stats_hash();
+            if ($h) lx_stats_live_update($h, function (?array $e) { if ($e === null) return null; $e['lead'] = 1; $e['t'] = time(); return $e; });
+        });
+    } catch (Throwable $e) {}
 }
 
 function lx_stats_cleanup(): void {
@@ -221,7 +311,7 @@ function lx_stats_summary(int $days): array {
         $out['days'][] = ['day' => $day, 'u' => (int)($d['u'] ?? 0), 'v' => (int)($d['v'] ?? 0), 'a' => (int)($d['a'] ?? 0)];
         if (!$d) continue;
         foreach (['v', 'u', 'a', 't', 'e', 'ev'] as $k) $out[$k] += (int)($d[$k] ?? 0);
-        foreach (['p', 'r', 'g', 'os', 'br', 'cp', 's', 'c'] as $k) $sum($out[$k], (array)($d[$k] ?? []));
+        foreach (['p', 'r', 'g', 'os', 'br', 'cp', 's', 'c', 'ct', 'ci'] as $k) $sum($out[$k], (array)($d[$k] ?? []));
         foreach ((array)($d['h'] ?? []) as $h => $n) $out['h'][(int)$h] += (int)$n;
         $out['wd'][(int)date('N', strtotime($day)) - 1] += (int)($d['v'] ?? 0);
     }
@@ -229,6 +319,6 @@ function lx_stats_summary(int $days): array {
         $d = $get(date('Y-m-d', strtotime("-$i days")));
         if ($d) foreach (['u', 'v', 'a'] as $k) $out['prev'][$k] += (int)($d[$k] ?? 0);
     }
-    foreach (['p', 'r', 'os', 'br', 'cp', 'c'] as $k) arsort($out[$k]);
+    foreach (['p', 'r', 'os', 'br', 'cp', 'c', 'ct', 'ci'] as $k) arsort($out[$k]);
     return $out;
 }

@@ -555,6 +555,17 @@ $trend = function (int $now, int $prev): string {
 $dur = fn(int $s) => $s >= 60 ? floor($s / 60) . ' Min. ' . ($s % 60) . ' Sek.' : $s . ' Sek.';
 $srcName = fn(string $k) => $k === 'direkt' ? 'Direkt / Lesezeichen' : $k;
 
+/* Statistik: Live-Liste nachladen und Export */
+if ($tab === 'statistik' && isset($_GET['live'])) { header('Content-Type: text/html; charset=utf-8'); header('Cache-Control: no-store'); echo live_html($srcName); exit; }
+if ($tab === 'statistik' && ($_GET['export'] ?? '') === 'csv') {
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="loggx-statistik-' . date('Y-m-d') . '-' . $range . 'tage.csv"');
+    $out = fopen('php://output', 'w'); fwrite($out, "\xEF\xBB\xBF");
+    fputcsv($out, ['Datum', 'Besucher', 'Seitenaufrufe', 'Anfragen'], ';');
+    foreach ($st['days'] as $d) fputcsv($out, [date('d.m.Y', strtotime($d['day'])), $d['u'], $d['v'], $d['a']], ';');
+    fclose($out); exit;
+}
+
 head('Admin – LoggX', true);
 ?>
 <header class="bar">
@@ -1024,6 +1035,7 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
 ?>
   <div class="page-head"><div><h1>Statistik</h1><p class="sub">Ohne Cookies, keine IP-Adressen gespeichert. Du selbst wirst nicht mitgezählt.</p></div><?= range_nav($range, 'statistik') ?></div>
   <?php if (!$statsOn): ?><p class="flash warn">Die Statistik ist ausgeschaltet – ganz unten kannst du sie wieder einschalten.</p><?php endif; ?>
+  <section class="card live-card" id="live" data-live="?tab=statistik&amp;live=1"><?= live_html($srcName) ?></section>
   <section class="kpis k6">
     <div><span>Besucher</span><b><?= $n($st['u']) ?></b><?= $trend($st['u'], $st['prev']['u']) ?></div>
     <div><span>Seitenaufrufe</span><b><?= $n($st['v']) ?></b><?= $trend($st['v'], $st['prev']['v']) ?></div>
@@ -1040,13 +1052,33 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
     </section>
     <section class="card"><h2>Weg zur Anfrage</h2><p class="hint">Wo springen Interessenten im Formular ab?</p>
       <div class="funnel"><?php $f0 = max(1, reset($funnel)); foreach ($funnel as $t => $v): ?><div class="frow"><span><?= e($t) ?></span><i style="--w:<?= min(100, round($v / $f0 * 100)) ?>%"></i><b><?= $n($v) ?></b></div><?php endforeach; ?></div>
+      <?php $cf = ['Check-Link oben geklickt' => $st['c']['check-hero'] ?? 0, 'Check-Formular begonnen' => $st['c']['check-start'] ?? 0, 'Check angefordert' => $st['c']['check-sent'] ?? 0]; if (array_sum($cf)): ?>
+      <h3 class="mt">Webseiten-Check</h3><div class="funnel"><?php $c0 = max(1, max($cf)); foreach ($cf as $t => $v): ?><div class="frow"><span><?= e($t) ?></span><i style="--w:<?= min(100, round($v / $c0 * 100)) ?>%"></i><b><?= $n($v) ?></b></div><?php endforeach; ?></div><?php endif; ?>
       <h3 class="mt">Seiten</h3><div class="bars"><?= bars($st['p'], 0, 8, fn($k) => $pages[$k] ?? $k) ?></div>
+    </section>
+  </div>
+  <?php
+    $since = time() - $range * 86400; $bySrc = [];
+    foreach ($leads as $x) if ((int)$x['created'] >= $since) { $k = lx_stats_source_name((string)($x['src'] ?? '')); $bySrc[$k] = ($bySrc[$k] ?? 0) + 1; }
+    $srcRows = []; foreach (array_unique(array_merge(array_keys($st['r']), array_keys($bySrc))) as $k) $srcRows[$k] = ['u' => (int)($st['r'][$k] ?? 0), 'a' => (int)($bySrc[$k] ?? 0)];
+    uasort($srcRows, fn($a, $b) => [$b['a'], $b['u']] <=> [$a['a'], $a['u']]);
+    $cities = $st['ci']; $countries = $st['ct'];
+  ?>
+  <div class="cols-1-1">
+    <section class="card"><h2>Welche Quelle bringt Anfragen?</h2><p class="hint">Besucher und Anfragen je Herkunft im gewählten Zeitraum.</p>
+      <?php if ($srcRows): ?><table class="src-table"><thead><tr><th>Quelle</th><th>Besucher</th><th>Anfragen</th><th>Quote</th></tr></thead><tbody>
+        <?php foreach (array_slice($srcRows, 0, 10, true) as $k => $r): ?><tr><td><?= e($srcName((string)$k)) ?></td><td><?= $n($r['u']) ?></td><td><?= $r['a'] ? '<b>' . $n($r['a']) . '</b>' : '0' ?></td><td><?= $r['u'] ? $n(min(100, $r['a'] / $r['u'] * 100), 1) . ' %' : '–' ?></td></tr><?php endforeach; ?>
+      </tbody></table><?php else: ?><p class="empty">Noch keine Daten.</p><?php endif; ?>
+    </section>
+    <section class="card"><h2>Standorte</h2><p class="hint">Ungefähr, über Cloudflare ermittelt. Es wird keine IP-Adresse gespeichert.</p>
+      <div class="cols-2in"><div><h3>Städte</h3><div class="bars"><?= $cities ? bars($cities, 0, 8) : '<p class="empty">Noch keine Städte. In Cloudflare unter <b>Rules → Settings → Managed Transforms</b> „Add visitor location headers“ einschalten, dann erscheinen sie hier.</p>' ?></div></div>
+      <div><h3>Länder</h3><div class="bars"><?= bars($countries, 0, 6, fn($k) => lx_stats_country($k === '??' ? '' : $k)) ?></div></div></div>
     </section>
   </div>
   <div class="cols-3">
     <section class="card"><h2>Herkunft</h2><div class="bars"><?= bars($st['r'], 0, 10, $srcName) ?></div>
       <?php if ($st['cp']): ?><h3 class="mt">Kampagnen <small>(utm_campaign)</small></h3><div class="bars"><?= bars($st['cp'], 0, 6) ?></div><?php endif; ?>
-      <p class="hint mt">Tipp: Hänge an Links in Anzeigen oder Posts <code>?utm_source=instagram&amp;utm_campaign=herbst</code> an – dann siehst du hier genau, was wirkt.</p></section>
+      <p class="hint mt">Fertige Links mit Kennung findest du unten bei „Links für Social Media“.</p></section>
     <section class="card"><h2>Klicks</h2><div class="bars"><?= bars($st['c'], max(1, $st['v']), 12, fn($k) => $clicks[$k] ?? $k) ?></div></section>
     <section class="card"><h2>Geräte</h2><div class="bars"><?= bars(array_filter(['Handy' => $st['g']['m'] ?? 0, 'Computer' => $st['g']['d'] ?? 0, 'Tablet' => $st['g']['t'] ?? 0])) ?></div>
       <h3 class="mt">Systeme</h3><div class="bars"><?= bars($st['os'], 0, 6) ?></div>
@@ -1058,7 +1090,16 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
     <section class="card"><h2>Wochentage</h2><p class="hint">Seitenaufrufe nach Wochentag.</p>
       <div class="hours wd"><?php foreach (['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as $i => $t): ?><span style="--h:<?= round($st['wd'][$i] / $wdMax * 100) ?>%" data-tip="<?= $t ?> · <?= $st['wd'][$i] ?>"><i></i><small><?= $t ?></small></span><?php endforeach; ?></div></section>
   </div>
+  <section class="card" id="links"><h2>Links für Social Media</h2>
+    <p class="hint">Nimm diese Links statt nur „loggx.de“ – dann siehst du oben genau, ob Besucher und Anfragen aus der Instagram-Bio, einer Story oder von TikTok kommen. Aktion eintragen (z. B. <i>launch</i>), die Links passen sich an.</p>
+    <label class="utm-camp">Aktion / Kampagne <small>(optional)</small><input type="text" id="utm-camp" maxlength="30" placeholder="z. B. launch" autocomplete="off"></label>
+    <?php $base = rtrim(lx_abs_url(''), '/') . '/'; $utm = ['Instagram-Bio' => ['instagram', 'bio'], 'Instagram-Story' => ['instagram', 'story'], 'Instagram-Post' => ['instagram', 'post'], 'TikTok-Bio' => ['tiktok', 'bio'], 'Facebook-Seite' => ['facebook', 'seite'], 'Google-Profil' => ['google-profil', 'profil'], 'WhatsApp' => ['whatsapp', ''], 'E-Mail-Signatur' => ['email-signatur', ''], 'Flyer / QR-Code' => ['flyer', '']]; ?>
+    <div class="utm-list" data-base="<?= e($base) ?>"><?php foreach ($utm as $t => [$src, $place]): ?>
+      <div class="utm-row" data-src="<?= e($src) ?>" data-place="<?= e($place) ?>"><span><?= e($t) ?></span><?php $u = $base . '?utm_source=' . $src . ($place ? '&utm_campaign=' . $place : ''); ?><code><?= e($u) ?></code><button type="button" class="btn btn-ghost btn-small" data-copy="<?= e($u) ?>">Kopieren</button></div>
+    <?php endforeach; ?></div>
+  </section>
   <section class="card stats-foot">
+    <a class="btn btn-ghost btn-small" href="?tab=statistik&amp;tage=<?= $range ?>&amp;export=csv">Tageswerte als CSV (Excel)</a>
     <form method="post" class="inline"><?= $hidden('stats') ?>
       <label class="check"><input type="checkbox" name="stats_on" value="1"<?= $statsOn ? ' checked' : '' ?> onchange="this.form.submit()"> Statistik eingeschaltet</label></form>
     <form method="post" class="inline" onsubmit="return confirm('Alle Statistikdaten löschen?')"><?= $hidden('stats_reset') ?><button class="btn btn-small btn-danger">Zurücksetzen</button></form>
@@ -1510,6 +1551,32 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
       else prompt("Link kopieren:", t);
     });
   });
+  /* Statistik: Live-Liste alle 30 Sek. neu laden (nur wenn sichtbar) */
+  (function () {
+    var box = document.getElementById("live"); if (!box) return;
+    var url = box.getAttribute("data-live");
+    setInterval(function () {
+      if (document.visibilityState !== "visible") return;
+      var keep = (box.querySelector(".visits") || {}).scrollTop || 0;
+      fetch(url, { credentials: "same-origin", cache: "no-store" }).then(function (r) { return r.ok ? r.text() : null; }).then(function (h) {
+        if (!h || h.indexOf("live-head") < 0) return;
+        box.innerHTML = h; var v = box.querySelector(".visits"); if (v) v.scrollTop = keep;
+      }).catch(function () {});
+    }, 30000);
+  })();
+  /* Statistik: Social-Links mit eigener Aktion */
+  (function () {
+    var inp = document.getElementById("utm-camp"), list = document.querySelector(".utm-list"); if (!inp || !list) return;
+    var base = list.getAttribute("data-base");
+    inp.addEventListener("input", function () {
+      var camp = inp.value.toLowerCase().replace(/[^a-z0-9äöüß_-]+/g, "-").replace(/^-+|-+$/g, "");
+      list.querySelectorAll(".utm-row").forEach(function (r) {
+        var place = r.getAttribute("data-place"), c = camp ? (place ? camp + "-" + place : camp) : place;
+        var u = base + "?utm_source=" + r.getAttribute("data-src") + (c ? "&utm_campaign=" + encodeURIComponent(c) : "");
+        r.querySelector("code").textContent = u; r.querySelector("[data-copy]").setAttribute("data-copy", u);
+      });
+    });
+  })();
   /* Suche: Taste „/“ springt ins Suchfeld */
   document.addEventListener("keydown", function (e) {
     if (e.key !== "/" || /input|textarea|select/i.test((document.activeElement || {}).tagName || "")) return;
@@ -1620,6 +1687,36 @@ LoggX – Webseiten für Unternehmen</textarea></label></div></details>
    Bausteine
    ========================================================================== */
 /** Balkenliste mit Anteil in % */
+/** Live: wer ist gerade auf der Seite, letzte Besuche mit Weg durch die Seite */
+function live_html(callable $srcName): string {
+    $list = lx_stats_live(30); $now = time();
+    $online = count(array_filter($list, fn($v) => (int)$v['t'] > $now - 300));
+    $td = lx_stats_summary(1);
+    $pages = lx_stats_pages(); $clicks = lx_stats_clicks();
+    $devs = ['m' => 'Handy', 't' => 'Tablet', 'd' => 'Computer'];
+    $o = '<div class="live-head"><h2><span class="pulse' . ($online ? ' on' : '') . '" aria-hidden="true"></span>Live</h2>'
+       . '<div class="live-kpis"><span><b>' . $online . '</b> gerade auf der Seite</span><span><b>' . (int)$td['u'] . '</b> Besucher heute</span><span><b>' . (int)$td['v'] . '</b> Aufrufe heute</span></div>'
+       . '<small class="live-upd">Stand ' . date('H:i') . ' Uhr · aktualisiert sich selbst</small></div>';
+    if (!$list) return $o . '<p class="empty">In den letzten 3 Tagen war noch niemand auf der Seite. Sobald jemand kommt, siehst du hier, woher er kam und was er sich angesehen hat.</p>';
+    $o .= '<ol class="visits">';
+    foreach ($list as $v) {
+        $t = (int)$v['t']; $on = $t > $now - 300;
+        $when = date('Y-m-d', $t) === date('Y-m-d') ? date('H:i', (int)$v['t0']) : (date('Y-m-d', $t) === date('Y-m-d', strtotime('-1 day')) ? 'gestern ' . date('H:i', (int)$v['t0']) : date('d.m. H:i', (int)$v['t0']));
+        $loc = trim((string)($v['city'] ?? ''));
+        $cc = (string)($v['cc'] ?? '');
+        $locTxt = $loc !== '' ? $loc . ($cc && $cc !== 'DE' ? ' · ' . lx_stats_country($cc) : '') : ($cc ? lx_stats_country($cc) : 'Ort unbekannt');
+        $path = implode('<i aria-hidden="true">→</i>', array_map(fn($p) => '<span>' . e(preg_replace('/^Seite: /', '', $pages[$p] ?? $p)) . '</span>', (array)$v['p']));
+        $tags = '';
+        foreach ((array)$v['c'] as $c) if (isset($clicks[$c]) && !in_array($c, ['nav-cta'], true)) $tags .= '<em>' . e($clicks[$c]) . '</em>';
+        if (!empty($v['lead'])) $tags .= '<em class="lead">✓ Anfrage gesendet</em>';
+        $d = (int)$v['d'];
+        $o .= '<li class="' . ($on ? 'on' : '') . (!empty($v['lead']) ? ' has-lead' : '') . '">'
+            . '<div class="v-when"><b>' . e($when) . '</b><small>' . ($on ? '<span class="dot"></span>online' : e(lx_ago($t))) . '</small></div>'
+            . '<div class="v-main"><div class="v-meta"><span class="v-src">' . e($srcName((string)$v['src'])) . (!empty($v['cp']) ? ' · ' . e((string)$v['cp']) : '') . '</span><span>' . e($locTxt) . '</span><span>' . e(($devs[$v['dev']] ?? 'Gerät') . ' · ' . $v['os']) . '</span>' . ($d ? '<span>' . ($d >= 60 ? floor($d / 60) . ' Min. ' : '') . ($d % 60) . ' Sek.</span>' : '') . '</div>'
+            . '<div class="v-path">' . $path . '</div>' . ($tags ? '<div class="v-tags">' . $tags . '</div>' : '') . '</div></li>';
+    }
+    return $o . '</ol>';
+}
 function bars(array $items, int $total = 0, int $limit = 8, ?callable $label = null): string {
     $items = array_filter($items, fn($v) => (int)$v > 0);
     if (!$items) return '<p class="empty">Noch keine Daten.</p>';
@@ -2132,6 +2229,46 @@ function head(string $title, bool $app = false): void { ?>
   .probe-list i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font: 800 .72rem/1 "Jakarta", sans-serif; font-style: normal; margin-top: 1px; }
   .pv-ok i { background: #E4F6EF; color: #0F6B4E; } .pv-warn i { background: #FFF1C2; color: #7A5B00; } .pv-bad i { background: #FDE8E9; color: #A3262B; } .pv-info i { background: #E8EDF5; color: var(--muted); }
   .pv-ok { color: var(--muted); }
+  /* Statistik: Live */
+  .live-card { margin-bottom: 18px; }
+  .live-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; margin-bottom: 14px; }
+  .live-head h2 { display: flex; align-items: center; gap: 10px; margin: 0; }
+  .pulse { width: 12px; height: 12px; border-radius: 50%; background: #B7C1CF; }
+  .pulse.on { background: #1FAA6B; box-shadow: 0 0 0 0 rgba(31,170,107,.5); animation: lxpulse 1.8s infinite; }
+  @keyframes lxpulse { 70% { box-shadow: 0 0 0 10px rgba(31,170,107,0); } 100% { box-shadow: 0 0 0 0 rgba(31,170,107,0); } }
+  @media (prefers-reduced-motion: reduce) { .pulse.on { animation: none; } }
+  .live-kpis { display: flex; flex-wrap: wrap; gap: 8px; }
+  .live-kpis span { padding: 6px 12px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-size: .88rem; color: var(--muted); }
+  .live-kpis b { color: var(--ink); font-size: 1rem; margin-right: 2px; }
+  .live-upd { margin-left: auto; color: var(--muted); font-size: .78rem; }
+  .visits { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; max-height: 520px; overflow: auto; border: 1px solid var(--line); border-radius: 14px; }
+  .visits li { display: grid; grid-template-columns: 92px 1fr; gap: 14px; padding: 12px 14px; border-top: 1px solid var(--line); }
+  .visits li:first-child { border-top: 0; }
+  .visits li.on { background: #F1FBF6; }
+  .visits li.has-lead { background: #FFF8E1; }
+  .v-when { display: grid; gap: 2px; } .v-when b { font-size: .95rem; } .v-when small { color: var(--muted); font-size: .76rem; display: flex; align-items: center; gap: 5px; }
+  .v-when .dot { width: 7px; height: 7px; border-radius: 50%; background: #1FAA6B; }
+  .v-main { min-width: 0; display: grid; gap: 6px; }
+  .v-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .84rem; color: var(--muted); }
+  .v-meta .v-src { color: var(--ink); font-weight: 700; }
+  .v-path { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: .86rem; }
+  .v-path span { padding: 3px 9px; border-radius: 8px; background: var(--paper); border: 1px solid var(--line); }
+  .v-path i { font-style: normal; color: var(--muted); }
+  .v-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .v-tags em { font-style: normal; font-size: .76rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: #E8EEFC; color: #2A4FA8; }
+  .v-tags em.lead { background: var(--sun); color: var(--ink); }
+  .src-table { width: 100%; border-collapse: collapse; font-size: .92rem; font-variant-numeric: tabular-nums; }
+  .src-table th { text-align: left; font-size: .76rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding: 0 8px 8px 0; }
+  .src-table td { padding: 8px 8px 8px 0; border-top: 1px solid var(--line); }
+  .src-table th:not(:first-child), .src-table td:not(:first-child) { text-align: right; }
+  .cols-2in { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; } .cols-2in h3 { margin-top: 0; }
+  .utm-camp { display: grid; gap: 4px; max-width: 320px; margin: 4px 0 14px; font-weight: 600; font-size: .9rem; }
+  .utm-list { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .utm-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); }
+  .utm-row:first-child { border-top: 0; }
+  .utm-row span { font-weight: 700; font-size: .9rem; }
+  .utm-row code { font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+  @media (max-width: 760px) { .visits li { grid-template-columns: 1fr; gap: 6px; } .v-when { display: flex; align-items: baseline; gap: 10px; } .cols-2in { grid-template-columns: 1fr; } .utm-row { grid-template-columns: 1fr auto; } .utm-row code { grid-column: 1 / -1; grid-row: 2; } .live-upd { margin-left: 0; } }
 </style>
 </head>
 <body class="<?= $app ? 'app' : 'auth-page' ?>">
